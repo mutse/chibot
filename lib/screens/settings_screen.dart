@@ -42,16 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('OpenAI API Key:', style: TextStyle(fontSize: 16)),
-              TextField(
-                controller: _apiKeyController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your API Key',
-                ),
-              ),
-              const SizedBox(height: 20),
-
               const Text('Model Provider URL (Optional):', style: TextStyle(fontSize: 16)),
               Text(
                 'Default: ${SettingsProvider.defaultOpenAIBaseUrl}',
@@ -63,6 +53,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   hintText: 'e.g., http://localhost:11434/v1',
                 ),
                 keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 20),
+
+              const Text('OpenAI API Key:', style: TextStyle(fontSize: 16)),
+              TextField(
+                controller: _apiKeyController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your API Key',
+                ),
               ),
               const SizedBox(height: 20),
 
