@@ -141,6 +141,25 @@ class _ChatScreenState extends State<ChatScreen> {
           _buildSidebarItem(context, Icons.code, 'SwiftUI GPT'),
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
+
+          _buildSidebarItem(context, Icons.info_outlined, 'About', onTap: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return const AboutDialog(
+                  applicationName: 'Chibot',
+                  applicationVersion: '1.0.0',
+                  applicationLegalese: '© 2025 Mutse Young. All rights reserved.',
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(top: 15),
+                      child: Text('Author: Mutse Young'),
+                    )
+                  ],
+                );
+              },
+            );
+          }),
           _buildSidebarItem(context, Icons.settings_outlined, 'Settings', onTap: () {
              Navigator.push(
                 context,
