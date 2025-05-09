@@ -29,19 +29,27 @@ Chi AI Chatbot follows a clean architecture with clear separation between presen
   
 1. Clone the repository:
 
+    ```zsh
     $ git clone https://github.com/mutse/chibot.git
+    ```
 
 2. Navigate to the project directory:  
 
+    ```zsh
     $ cd chibot
+    ```
 
 3. Install dependencies:  
 
+    ```zsh
     $ flutter pub get
+    ```
 
 4. Run the application:  
 
+    ```zsh
     $ flutter run
+    ```
 
 ### Configuration  
 
@@ -53,17 +61,17 @@ Chi AI Chatbot follows a clean architecture with clear separation between presen
 
 ## Project Structure  
 
-lib/
-├── main.dart # Application entry point
-├── models/
-│ └── chat_message.dart # Data model for chat messages
-├── providers/
-│ └── settings_provider.dart # State management for app settings
-├── screens/
-│ ├── chat_screen.dart # Main chat interface
-│ └── settings_screen.dart # Settings configuration
-└── services/
-└── openai_service.dart # Service for AI provider communication
+    lib/
+    ├── main.dart # Application entry point
+    ├── models/
+    │ └── chat_message.dart # Data model for chat messages
+    ├── providers/
+    │ └── settings_provider.dart # State management for app settings
+    ├── screens/
+    │ ├── chat_screen.dart # Main chat interface
+    │ └── settings_screen.dart # Settings configuration
+    └── services/
+    └── openai_service.dart # Service for AI provider communication
 
 ## Supported Platforms  
   
