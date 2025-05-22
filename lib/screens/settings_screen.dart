@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
@@ -46,10 +47,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
+    final theme = Theme.of(context); // Ensure theme is available
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.settings),
+        title: Text(l10n.settings, style: theme.appBarTheme.titleTextStyle), // Use themed textStyle
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -60,25 +62,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.selectModelProvider, style: const TextStyle(fontSize: 16)),
-                  TextButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.add),
+                  Text(l10n.selectModelProvider, style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(CupertinoIcons.add_circled, color: theme.colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(l10n.add, style: TextStyle(color: theme.colorScheme.primary, fontSize: 16)),
+                      ],
+                    ),
                     onPressed: () {
                       _showAddModelDialog(context, settings);
                     },
                   ),
                 ],
               ),
-              DropdownButton<String>(
+              _buildCupertinoPickerButton(
+                context: context,
                 value: settings.allProviderNames.contains(settings.selectedProvider) ? settings.selectedProvider : (settings.allProviderNames.isNotEmpty ? settings.allProviderNames.first : null),
-                isExpanded: true,
-                items: settings.allProviderNames.map((String provider) { // Use allProviderNames here
-                  return DropdownMenuItem<String>(
-                    value: provider,
-                    child: Text(provider),
-                  );
-                }).toList(),
+                items: settings.allProviderNames,
                 onChanged: (String? newValue) {
                   if (newValue != null) {
                     settings.setSelectedProvider(newValue);
@@ -86,61 +90,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              Text(l10n.modelProviderURLOptional, style: const TextStyle(fontSize: 16)),
+              Text(l10n.modelProviderURLOptional, style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
               Text(
                 l10n.defaultUrl(SettingsProvider.defaultBaseUrls['OpenAI'] ?? ''),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: CupertinoColors.secondaryLabel.resolveFrom(context)),
               ),
-              TextField(
+              TextField( // Will verify styling from inputDecorationTheme
                 controller: _providerUrlController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration( // Keep this to allow inputDecorationTheme to apply
                   hintText: 'e.g., http://localhost:11434/v1',
                 ),
                 keyboardType: TextInputType.url,
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               ),
               const SizedBox(height: 20),
 
-              Text(l10n.apiKey(settings.selectedProvider), style: const TextStyle(fontSize: 16)),
-              TextField(
+              Text(l10n.apiKey(settings.selectedProvider), style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+              TextField( // Will verify styling from inputDecorationTheme
                 controller: _apiKeyController,
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: InputDecoration( // Keep this to allow inputDecorationTheme to apply
                   hintText: l10n.enterYourAPIKey,
                 ),
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               ),
               const SizedBox(height: 20),
 
-              Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
-              DropdownButton<String>(
+              Text(l10n.selectModel, style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+              _buildCupertinoPickerButton(
+                context: context,
                 value: settings.availableModels.contains(settings.selectedModel) ? settings.selectedModel : (settings.availableModels.isNotEmpty ? settings.availableModels.first : null),
-                isExpanded: true,
-                items: settings.availableModels.map((String model) {
-                  return DropdownMenuItem<String>(
-                    value: model,
-                    child: Text(model),
-                  );
-                }).toList(),
+                items: settings.availableModels,
                 onChanged: (String? newValue) {
                   if (newValue != null) {
                     settings.setSelectedModel(newValue);
                   }
                 },
-                hint: settings.availableModels.isEmpty ? Text(l10n.noModelsAvailable) : null,
+                hintText: settings.availableModels.isEmpty ? l10n.noModelsAvailable : null,
               ),
               const SizedBox(height: 20),
-              Text(l10n.customModels, style: const TextStyle(fontSize: 16)),
+              Text(l10n.customModels, style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: TextField( // Will verify styling from inputDecorationTheme
                       controller: _customModelController,
-                      decoration: InputDecoration(
+                      decoration: InputDecoration( // Keep this to allow inputDecorationTheme to apply
                         hintText: l10n.enterCustomModelName,
                       ),
+                      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    child: Icon(CupertinoIcons.add_circled_solid, color: theme.colorScheme.primary, size: 28),
                     onPressed: () {
                       final modelName = _customModelController.text.trim();
                       if (modelName.isNotEmpty) {
@@ -153,17 +156,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 10),
               if (settings.customModels.isNotEmpty)
-                Text(l10n.yourCustomModels, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(l10n.yourCustomModels, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
               ListView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(), // to disable ListView's own scrolling
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: settings.customModels.length,
                 itemBuilder: (context, index) {
                   final model = settings.customModels[index];
-                  return ListTile(
-                    title: Text(model),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  return CupertinoListTile( // Using a conceptual CupertinoListTile, or style Container + Row
+                    title: Text(model, style: theme.textTheme.bodyMedium),
+                    trailing: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Icon(CupertinoIcons.trash, color: CupertinoColors.destructiveRed),
                       onPressed: () {
                         settings.removeCustomModel(model);
                       },
@@ -172,19 +176,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 30),
-              Center( // Wrap ElevatedButton with Center widget
-                child: ElevatedButton(
+              Center(
+                child: CupertinoButton.filled(
+                  child: Text(l10n.saveSettings),
                   onPressed: () {
                     settings.setApiKey(_apiKeyController.text.trim());
-                    settings.setProviderUrl(_providerUrlController.text.trim()); // 保存 Provider URL
+                    settings.setProviderUrl(_providerUrlController.text.trim());
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.settingsSaved)),
+                       SnackBar(content: Text(l10n.settingsSaved), backgroundColor: CupertinoColors.activeGreen.resolveFrom(context)),
                     );
                     if (Navigator.canPop(context)) {
                       Navigator.pop(context);
                     }
                   },
-                  child: Text(l10n.saveSettings),
                 ),
               ),
             ],
@@ -194,48 +198,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // Helper method to build a button that shows a CupertinoPicker
+  Widget _buildCupertinoPickerButton({
+    required BuildContext context,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    String? hintText,
+  }) {
+    final theme = Theme.of(context);
+    final bool isEmpty = items.isEmpty;
+
+    return GestureDetector(
+      onTap: isEmpty ? null : () {
+        if (items.isEmpty) return;
+        int initialItem = value != null ? items.indexOf(value) : 0;
+        if (initialItem < 0) initialItem = 0;
+
+        showCupertinoModalPopup<void>(
+          context: context,
+          builder: (BuildContext context) => Container(
+            height: 216,
+            padding: const EdgeInsets.only(top: 6.0),
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            color: CupertinoColors.systemBackground.resolveFrom(context),
+            child: SafeArea(
+              top: false,
+              child: CupertinoPicker(
+                magnification: 1.22,
+                squeeze: 1.2,
+                useMagnifier: true,
+                itemExtent: 32.0, // Standard iOS picker item height
+                scrollController: FixedExtentScrollController(initialItem: initialItem),
+                onSelectedItemChanged: (int selectedIndex) {
+                  onChanged(items[selectedIndex]);
+                },
+                children: List<Widget>.generate(items.length, (int index) {
+                  return Center(child: Text(items[index], style: TextStyle(color: theme.textTheme.bodyLarge?.color)));
+                }),
+              ),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+        decoration: BoxDecoration(
+          color: CupertinoColors.tertiarySystemFill.resolveFrom(context), // iOS-like field background
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(color: CupertinoColors.systemGrey4.resolveFrom(context), width: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text(
+              isEmpty ? (hintText ?? l10n.noItemsAvailable) : (value ?? hintText ?? l10n.pleaseSelect),
+              style: TextStyle(
+                color: isEmpty || value == null ? CupertinoColors.placeholderText.resolveFrom(context) : theme.textTheme.bodyMedium?.color,
+                fontSize: 15,
+              ),
+            ),
+            if (!isEmpty)
+              Icon(CupertinoIcons.chevron_down, color: CupertinoColors.secondaryLabel.resolveFrom(context), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Placeholder for CupertinoListTile if not directly available or for custom styling
+  Widget CupertinoListTile({required Widget title, Widget? trailing}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0), // Typical iOS list tile padding
+      // decoration: const BoxDecoration(
+      //   border: Border(bottom: BorderSide(color: CupertinoColors.separator, width: 0.5)),
+      // ), // Border removed for now
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(child: title),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
+
   void _showAddModelDialog(BuildContext context, SettingsProvider settings) {
     final TextEditingController providerController = TextEditingController();
     final TextEditingController modelsController = TextEditingController();
     String selectedProvider = 'OpenAI'; // Default provider
+    final theme = Theme.of(context); // Get theme for dialog styling
 
-    showDialog(
+    showCupertinoDialog( // Changed to showCupertinoDialog
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoAlertDialog( // Changed to CupertinoAlertDialog
           title: Text(l10n.addModelProvider),
-          content: StatefulBuilder( // Wrap with StatefulBuilder
+          content: StatefulBuilder( 
             builder: (BuildContext context, StateSetter setState) {
               return SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(labelText: l10n.modelProvider),
-                      value: selectedProvider,
-                      items: ['OpenAI', 'Google', l10n.custom].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() { // Use the setState from StatefulBuilder
-                          selectedProvider = newValue!;
-                        });
-                      },
+                    // Simplified Dropdown for dialog, full CupertinoPicker might be too much here
+                    // For a more Cupertino feel, this could be a tappable row that pushes a selection list
+                    // or uses CupertinoSegmentedControl if options are few.
+                    // Keeping DropdownButtonFormField for simplicity in dialog, but styled minimally.
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.modelProvider, style: TextStyle(fontSize: 13, color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+                          _buildCupertinoPickerButton(
+                            context: context,
+                            value: selectedProvider,
+                            items: ['OpenAI', 'Google', l10n.custom],
+                            onChanged: (String? newValue) {
+                                setState(() {
+                                  selectedProvider = newValue!;
+                                });
+                            }
+                          )
+                        ],
+                      )
                     ),
                     if (selectedProvider == l10n.custom)
-                      TextFormField(
+                      CupertinoTextField( // Changed to CupertinoTextField
                         controller: providerController,
-                        decoration: InputDecoration(
-                          hintText: l10n.providerNameHint,
-                        ),
+                        placeholder: l10n.providerNameHint,
+                        style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
                       ),
-                    TextFormField(
+                    const SizedBox(height: 8),
+                    CupertinoTextField( // Changed to CupertinoTextField
                       controller: modelsController,
-                      decoration: InputDecoration(
-                        hintText: l10n.modelsHint,
-                      ),
+                      placeholder: l10n.modelsHint,
+                      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
                     ),
                   ],
                 ),
@@ -243,33 +345,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           actions: <Widget>[
-            TextButton(
+            CupertinoDialogAction( // Changed to CupertinoDialogAction
               child: Text(l10n.cancel),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
+            CupertinoDialogAction( // Changed to CupertinoDialogAction
+              isDefaultAction: true,
               child: Text(l10n.add),
               onPressed: () {
-                final provider = selectedProvider == 'Custom' ? providerController.text.trim() : selectedProvider;
+                final providerName = selectedProvider == l10n.custom ? providerController.text.trim() : selectedProvider;
                 final models = modelsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-                if (provider.isNotEmpty && models.isNotEmpty) {
-                  // Logic to add provider and models to settings
-                  // This part needs to be implemented in SettingsProvider
-                  // For example: settings.addCustomProviderModels(provider, models);
-                    // print('Provider: $provider, Models: $models'); // Placeholder
-                    if (selectedProvider == 'Custom') {
-                      settings.addCustomProviderWithModels(providerController.text.trim(), models);
+                if (providerName.isNotEmpty && models.isNotEmpty) {
+                    if (selectedProvider == l10n.custom) {
+                      // For a new custom provider
+                      settings.addCustomProviderWithModels(providerName, models);
                     } else {
-                      // For existing providers, add models to their custom list or general custom list
+                      // For existing, predefined providers (OpenAI, Google), add models to their general custom list
+                      // The SettingsProvider needs a way to associate custom models with a specific predefined provider,
+                      // or models added here are considered general custom models.
+                      // Assuming general custom models for now if not a 'custom' provider type.
                       for (final model in models) {
-                        settings.addCustomModel(model); // Add to general custom models
+                        settings.addCustomModel(model); // Add to general custom models list
                       }
-                      // Optionally, set the provider if it's different and refresh
-                      if (settings.selectedProvider != provider) {
-                        settings.setSelectedProvider(provider);
-                      }
+                      // If the user selected 'OpenAI' or 'Google' and added models,
+                      // they might expect these models to be available when that provider is selected.
+                      // The current SettingsProvider.addCustomModel adds to a general list.
+                      // This behavior is kept as per current provider capabilities.
+                    }
+                    // Optionally, select the provider if it's different, especially if it was a new custom provider
+                    if (settings.selectedProvider != providerName && selectedProvider == l10n.custom) {
+                       settings.setSelectedProvider(providerName);
+                    } else if (settings.selectedProvider != providerName && (providerName == 'OpenAI' || providerName == 'Google')) {
+                       // If they were adding models to an existing provider and it wasn't selected, select it.
+                       settings.setSelectedProvider(providerName);
                     }
                     Navigator.of(context).pop();
                   }
