@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,6 +11,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  late AppLocalizations l10n;
   String? _selectedProviderValue; // To manage radio button state locally if needed, or drive from provider
   late TextEditingController _apiKeyController;
   late TextEditingController _providerUrlController; // 新增 Controller
@@ -38,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Initialize _selectedProviderValue when the widget is first built or dependencies change
     // This ensures the radio buttons reflect the provider's state correctly.
     _selectedProviderValue = Provider.of<SettingsProvider>(context, listen: false).selectedProvider;
+    l10n = AppLocalizations.of(context)!;
   }
 
   @override
@@ -46,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settings),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -54,41 +57,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('Select Model Provider:', style: TextStyle(fontSize: 16)),
               Row(
-                children: <Widget>[
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('OpenAI'),
-                      value: 'OpenAI',
-                      groupValue: settings.selectedProvider, // Use provider's value directly
-                      onChanged: (String? value) {
-                        if (value != null) {
-                          settings.setSelectedProvider(value);
-                          // No need to call setState if UI updates are handled by Provider
-                        }
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('Google'),
-                      value: 'Google',
-                      groupValue: settings.selectedProvider, // Use provider's value directly
-                      onChanged: (String? value) {
-                        if (value != null) {
-                          settings.setSelectedProvider(value);
-                          // No need to call setState if UI updates are handled by Provider
-                        }
-                      },
-                    ),
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.selectModelProvider, style: const TextStyle(fontSize: 16)),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.add),
+                    onPressed: () {
+                      _showAddModelDialog(context, settings);
+                    },
                   ),
                 ],
               ),
+              DropdownButton<String>(
+                value: settings.allProviderNames.contains(settings.selectedProvider) ? settings.selectedProvider : (settings.allProviderNames.isNotEmpty ? settings.allProviderNames.first : null),
+                isExpanded: true,
+                items: settings.allProviderNames.map((String provider) { // Use allProviderNames here
+                  return DropdownMenuItem<String>(
+                    value: provider,
+                    child: Text(provider),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    settings.setSelectedProvider(newValue);
+                  }
+                },
+              ),
               const SizedBox(height: 20),
-              const Text('Model Provider URL (Optional):', style: TextStyle(fontSize: 16)),
+              Text(l10n.modelProviderURLOptional, style: const TextStyle(fontSize: 16)),
               Text(
-                'Default: ${SettingsProvider.defaultBaseUrls['OpenAI']}',
+                l10n.defaultUrl(SettingsProvider.defaultBaseUrls['OpenAI'] ?? ''),
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               TextField(
@@ -100,17 +100,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 20),
 
-              const Text('OpenAI API Key:', style: TextStyle(fontSize: 16)),
+              Text(l10n.apiKey(settings.selectedProvider), style: const TextStyle(fontSize: 16)),
               TextField(
                 controller: _apiKeyController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your API Key',
+                decoration: InputDecoration(
+                  hintText: l10n.enterYourAPIKey,
                 ),
               ),
               const SizedBox(height: 20),
 
-              const Text('Select Model:', style: TextStyle(fontSize: 16)),
+              Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
               DropdownButton<String>(
                 value: settings.availableModels.contains(settings.selectedModel) ? settings.selectedModel : (settings.availableModels.isNotEmpty ? settings.availableModels.first : null),
                 isExpanded: true,
@@ -125,17 +125,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     settings.setSelectedModel(newValue);
                   }
                 },
-                hint: settings.availableModels.isEmpty ? const Text("No models available for this provider") : null,
+                hint: settings.availableModels.isEmpty ? Text(l10n.noModelsAvailable) : null,
               ),
               const SizedBox(height: 20),
-              const Text('Custom Models:', style: TextStyle(fontSize: 16)),
+              Text(l10n.customModels, style: const TextStyle(fontSize: 16)),
               Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _customModelController,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter custom model name',
+                      decoration: InputDecoration(
+                        hintText: l10n.enterCustomModelName,
                       ),
                     ),
                   ),
@@ -153,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 10),
               if (settings.customModels.isNotEmpty)
-                const Text('Your Custom Models:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(l10n.yourCustomModels, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(), // to disable ListView's own scrolling
@@ -172,43 +172,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  settings.setApiKey(_apiKeyController.text.trim());
-                  settings.setProviderUrl(_providerUrlController.text.trim()); // 保存 Provider URL
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Settings saved!')),
-                  );
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                },
-                //icon: const Icon(Icons.info_outline),
-                // onPressed: () {
-                //   showDialog(
-                //     context: context,
-                //     builder: (BuildContext context) {
-                //       return AlertDialog(
-                //         title: const Text('About'),
-                //         content: const Text('App 作者: Mutse Young\nApp 名称: Chibot\n版本号: 1.0.0\n版权: © 2023 Chibot\n联系邮箱: contact@chibot.com'),
-                //         actions: <Widget>[
-                //           TextButton(
-                //             child: const Text('关闭'),
-                //             onPressed: () {
-                //               Navigator.of(context).pop();
-                //             },
-                //           ),
-                //         ],
-                //       );
-                //     },
-                //   );
-                // },
-                child: const Text('Save Settings'),
+              Center( // Wrap ElevatedButton with Center widget
+                child: ElevatedButton(
+                  onPressed: () {
+                    settings.setApiKey(_apiKeyController.text.trim());
+                    settings.setProviderUrl(_providerUrlController.text.trim()); // 保存 Provider URL
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.settingsSaved)),
+                    );
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(l10n.saveSettings),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void _showAddModelDialog(BuildContext context, SettingsProvider settings) {
+    final TextEditingController providerController = TextEditingController();
+    final TextEditingController modelsController = TextEditingController();
+    String selectedProvider = 'OpenAI'; // Default provider
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.addModelProvider),
+          content: StatefulBuilder( // Wrap with StatefulBuilder
+            builder: (BuildContext context, StateSetter setState) {
+              return SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(labelText: l10n.modelProvider),
+                      value: selectedProvider,
+                      items: ['OpenAI', 'Google', l10n.custom].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() { // Use the setState from StatefulBuilder
+                          selectedProvider = newValue!;
+                        });
+                      },
+                    ),
+                    if (selectedProvider == l10n.custom)
+                      TextFormField(
+                        controller: providerController,
+                        decoration: InputDecoration(
+                          hintText: l10n.providerNameHint,
+                        ),
+                      ),
+                    TextFormField(
+                      controller: modelsController,
+                      decoration: InputDecoration(
+                        hintText: l10n.modelsHint,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(l10n.cancel),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text(l10n.add),
+              onPressed: () {
+                final provider = selectedProvider == 'Custom' ? providerController.text.trim() : selectedProvider;
+                final models = modelsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                if (provider.isNotEmpty && models.isNotEmpty) {
+                  // Logic to add provider and models to settings
+                  // This part needs to be implemented in SettingsProvider
+                  // For example: settings.addCustomProviderModels(provider, models);
+                    // print('Provider: $provider, Models: $models'); // Placeholder
+                    if (selectedProvider == 'Custom') {
+                      settings.addCustomProviderWithModels(providerController.text.trim(), models);
+                    } else {
+                      // For existing providers, add models to their custom list or general custom list
+                      for (final model in models) {
+                        settings.addCustomModel(model); // Add to general custom models
+                      }
+                      // Optionally, set the provider if it's different and refresh
+                      if (settings.selectedProvider != provider) {
+                        settings.setSelectedProvider(provider);
+                      }
+                    }
+                    Navigator.of(context).pop();
+                  }
+                }
+            ),
+          ],
+        );
+      },
     );
   }
 }

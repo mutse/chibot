@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/settings_provider.dart';
 import 'screens/chat_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +17,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => SettingsProvider(),
       child: MaterialApp(
-        title: 'Chi AI Chatbot',
+        title: "Chi AI Chatbot",
         theme: ThemeData(
           brightness: Brightness.light,
           primaryColor: const Color(0xFF2D2F3E), // A dark color, can be used for accents or sidebar
@@ -41,7 +43,7 @@ class MyApp extends StatelessWidget {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: Colors.grey[300]!), // Light border
+              borderSide: BorderSide(color: Colors.grey[300] ?? Colors.grey), // Light border
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12.0),
@@ -61,6 +63,16 @@ class MyApp extends StatelessWidget {
         ),
         home: const ChatScreen(),
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          AppLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en', ''), // English, no country code
+          Locale('zh', ''), // Chinese, no country code
+        ],
       ),
     );
   }

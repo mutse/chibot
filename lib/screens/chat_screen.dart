@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
 import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'settings_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final OpenAIService _openAIService = OpenAIService();
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+
 
   void _sendMessage() async {
     final text = _textController.text.trim();
@@ -45,7 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(
-            text: "Error: API Key not set. Please set it in settings.",
+            text: AppLocalizations.of(context)!.apiKeyNotSetError,
             sender: MessageSender.ai,
             timestamp: DateTime.now(),
           ));
@@ -124,10 +126,10 @@ class _ChatScreenState extends State<ChatScreen> {
               color: const Color(0xFF343541), // Darker input field background
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: const TextField(
+            child: TextField(
               style: TextStyle(color: Colors.white70),
               decoration: InputDecoration(
-                hintText: '搜索',
+                hintText: AppLocalizations.of(context)!.search,
                 hintStyle: TextStyle(color: Colors.white54),
                 icon: Icon(Icons.search, color: Colors.white54, size: 20),
                 border: InputBorder.none,
@@ -136,13 +138,13 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: 20),
           // List of chats (example items)
-          _buildSidebarItem(context, Icons.chat_bubble_outline, 'ChatGPT', isSelected: true),
-          _buildSidebarItem(context, Icons.search, 'GTP search'),
-          _buildSidebarItem(context, Icons.code, 'SwiftUI GPT'),
+          _buildSidebarItem(context, Icons.chat_bubble_outline, 'ChatGPT', isSelected: true), // Keep 'ChatGPT' as it's a model name
+          _buildSidebarItem(context, Icons.search, 'GTP search'), // Keep 'GTP search' as it's a model name
+          _buildSidebarItem(context, Icons.code, 'SwiftUI GPT'), // Keep 'SwiftUI GPT' as it's a model name
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
 
-          _buildSidebarItem(context, Icons.info_outlined, 'About', onTap: () {
+          _buildSidebarItem(context, Icons.info_outlined, AppLocalizations.of(context)!.about, onTap: () { // Use l10n here
             showDialog(
               context: context,
               builder: (BuildContext context) {
@@ -157,10 +159,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     )
                   ],
                 );
-              },
-            );
+              },);
           }),
-          _buildSidebarItem(context, Icons.settings_outlined, 'Settings', onTap: () {
+          _buildSidebarItem(context, Icons.settings_outlined, AppLocalizations.of(context)!.settings, onTap: () { // Use l10n here
              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
@@ -215,6 +216,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final settings = Provider.of<SettingsProvider>(context);
+    bool isApiKeySet = settings.apiKey != null && settings.apiKey!.isNotEmpty;
     // Determine if we should show the sidebar based on screen width
     // For simplicity, we'll always show it here, but in a real app, you might hide it on smaller screens.
     bool showSidebar = MediaQuery.of(context).size.width > 600; // Example breakpoint
@@ -235,8 +239,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 AppBar(
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                   elevation: 1, // Subtle shadow for separation
-                  title: const Text(
-                    'ChatGPT', // Updated title
+                  title: Text(
+                    AppLocalizations.of(context)!.chatGPTTitle, // Updated title
                     style: TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
                   ),
                   automaticallyImplyLeading: false, // Remove back button if sidebar is present
@@ -257,14 +261,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       if (_isLoading)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.all(8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               CircularProgressIndicator(strokeWidth: 2),
                               SizedBox(width: 10),
-                              Text("AI is thinking..."),
+                              Text(AppLocalizations.of(context)!.aiIsThinking),
                             ],
                           ),
                         ),
@@ -362,7 +366,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           height: 1.4,
                         ),
                         decoration: InputDecoration(
-                          hintText: '询问任何问题',
+                          hintText: AppLocalizations.of(context)!.askAnyQuestion,
                           hintStyle: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 15,

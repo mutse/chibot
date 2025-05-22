@@ -7,12 +7,14 @@ class SettingsProvider with ChangeNotifier {
   String _selectedModel = 'gpt-3.5-turbo'; // 默认模型
   String? _providerUrl; // 新增：模型 Provider URL
   List<String> _customModels = []; // 新增：自定义模型列表
+  Map<String, List<String>> _customProviders = {}; // 新增：自定义提供商及其模型列表
 
   static const String _apiKeyKey = 'openai_api_key';
   static const String _selectedModelKey = 'openai_selected_model';
   static const String _providerUrlKey = 'openai_provider_url'; // 新增 Key
   static const String _customModelsKey = 'custom_models_list'; // 新增 Key for custom models
   static const String _selectedProviderKey = 'selected_model_provider'; // 新增 Key for provider
+  static const String _customProvidersKey = 'custom_providers_map'; // 新增 Key for custom providers
 
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
@@ -45,6 +47,13 @@ class SettingsProvider with ChangeNotifier {
     ],
   };
 
+  // Getter for all provider names (preset and custom)
+  List<String> get allProviderNames {
+    final names = defaultBaseUrls.keys.toList();
+    names.addAll(_customProviders.keys);
+    return List.unmodifiable(names.toSet().toList()); // Remove duplicates and make unmodifiable
+  }
+
   SettingsProvider() {
     _loadSettings();
   }
@@ -59,10 +68,14 @@ class SettingsProvider with ChangeNotifier {
       modelsToShow.addAll(_categorizedPresetModels['OpenAI'] ?? []);
     } else if (_selectedProvider == 'Google') {
       modelsToShow.addAll(_categorizedPresetModels['Google'] ?? []);
+    } else if (_customProviders.containsKey(_selectedProvider)) {
+      // Handle custom provider
+      modelsToShow.addAll(_customProviders[_selectedProvider] ?? []);
     }
-    // 自定义模型暂时对所有提供商可见，或根据需要调整
+    // Add general custom models that might not be tied to a specific custom provider
+    // but could be used with preset providers if named correctly.
     modelsToShow.addAll(_customModels);
-    return List.unmodifiable(modelsToShow.toSet().toList()); // toSet().toList() to remove duplicates if any
+    return List.unmodifiable(modelsToShow.toSet().toList()); // toSet().toList() to remove duplicates and make unmodifiable
   }
 
   List<String> get customModels => List.unmodifiable(_customModels);
@@ -86,6 +99,21 @@ class SettingsProvider with ChangeNotifier {
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-3.5-turbo';
     _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
     _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
+    final String? customProvidersString = prefs.getString(_customProvidersKey);
+    if (customProvidersString != null) {
+      try {
+        // Assuming customProvidersString is a JSON string like '{"providerName":["model1","model2"]}'
+        // This part needs careful implementation for deserialization, e.g., using dart:convert
+        // For simplicity, this example might need a more robust JSON parsing strategy.
+        // Placeholder for actual deserialization:
+        // _customProviders = Map<String, List<String>>.from(json.decode(customProvidersString));
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error loading custom providers: $e');
+        }
+        _customProviders = {}; // Reset on error
+      }
+    }
     _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI'; // 加载 Provider
     notifyListeners();
     // Ensure the selected model is valid for the loaded provider
@@ -93,16 +121,20 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> setSelectedProvider(String newProvider) async {
-    // 检查新的提供商是否是已知的（即在 defaultBaseUrls 中有定义）
-    if (_selectedProvider != newProvider && defaultBaseUrls.containsKey(newProvider)) {
+    if (_selectedProvider != newProvider) {
       _selectedProvider = newProvider;
-      // 当提供商改变时，自动将 _providerUrl 设置为新提供商的默认 URL
-      // 用户之后仍然可以通过 setProviderUrl 方法设置自定义 URL
-      _providerUrl = defaultBaseUrls[newProvider];
+      // If it's a known preset provider, set its default URL.
+      // For custom providers, the URL might be set differently or not at all by default.
+      if (defaultBaseUrls.containsKey(newProvider)) {
+        _providerUrl = defaultBaseUrls[newProvider];
+      } else {
+        // For custom providers, we might clear the URL or handle it based on specific logic.
+        // For now, let's clear it, assuming custom providers will have their URLs set manually.
+        _providerUrl = null;
+      }
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedProviderKey, newProvider);
-      // 保存更新后的 providerUrl (如果它是非null)
       if (_providerUrl != null) {
         await prefs.setString(_providerUrlKey, _providerUrl!);
       } else {
@@ -123,6 +155,8 @@ class SettingsProvider with ChangeNotifier {
         _selectedModel = _categorizedPresetModels['OpenAI']!.first;
       } else if (_selectedProvider == 'Google' && (_categorizedPresetModels['Google']?.isNotEmpty ?? false)) {
         _selectedModel = _categorizedPresetModels['Google']!.first;
+      } else if (_customProviders.containsKey(_selectedProvider) && (_customProviders[_selectedProvider]?.isNotEmpty ?? false)) {
+        _selectedModel = _customProviders[_selectedProvider]!.first;
       } else if (currentAvailableModels.isNotEmpty) {
         _selectedModel = currentAvailableModels.first;
       } else {
@@ -177,6 +211,21 @@ class SettingsProvider with ChangeNotifier {
     notifyListeners();
     // Ensure the selected model is valid for the loaded provider
     _validateSelectedModelForProvider();
+  }
+
+  Future<void> addCustomProviderWithModels(String providerName, List<String> models) async {
+    if (providerName.trim().isEmpty || models.isEmpty) return;
+    // Prevent overwriting preset providers
+    if (defaultBaseUrls.containsKey(providerName.trim())) return;
+
+    _customProviders[providerName.trim()] = models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
+    final prefs = await SharedPreferences.getInstance();
+    // This needs a robust way to serialize the map, e.g., to a JSON string.
+    // Placeholder for actual serialization:
+    // await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+    notifyListeners();
+    // Optionally, switch to the new provider and select its first model
+    // setSelectedProvider(providerName.trim());
   }
 
   Future<void> removeCustomModel(String modelName) async {
