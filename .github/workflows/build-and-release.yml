@@ -98,6 +98,7 @@ jobs:
         if: ${{ matrix.platform != 'windows' }}
         shell: bash
         run: |
+          flutter gen-l10n
           case $PLATFORM in
             linux) flutter build linux --release ;;
             macos) flutter build macos --release ;;
@@ -112,6 +113,7 @@ jobs:
         if: ${{ matrix.platform == 'windows' }}
         shell: powershell
         run: |
+          flutter gen-l10n
           flutter build windows --release
 
       - name: Create DMG package (macOS only)
