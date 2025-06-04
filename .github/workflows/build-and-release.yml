@@ -81,9 +81,7 @@ jobs:
             export PATH="$PATH:$HOME/Library/Flutter/bin"
           fi
           flutter doctor
-          flutter clean
           flutter pub get
-          flutter gen-l10n
 
       - name: Set up Flutter for Windows
         if: ${{ matrix.platform == 'windows' }}
@@ -97,9 +95,10 @@ jobs:
           refreshenv
           flutter --version
           flutter doctor
-          flutter clean
           flutter pub get
-          flutter gen-l10n
+
+      - name: Generate Localizations # Only if you didn't set synthetic-package: false
+        run: flutter gen-l10n
 
       - name: Build Flutter App (Unix-like)
         if: ${{ matrix.platform != 'windows' }}
