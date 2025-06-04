@@ -52,7 +52,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  flutter_gen: ^5.10.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -60,6 +59,14 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   generate: true
+  localizations:
+    arb-dir: lib/l10n
+    template-arb-file: app_en.arb
+    output-localization-file: app_localizations.dart
+    output-class: AppLocalizations
+    preferred-supported-locales:
+      - en
+      - zh
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
