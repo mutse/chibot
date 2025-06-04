@@ -81,6 +81,7 @@ jobs:
             export PATH="$PATH:$HOME/Library/Flutter/bin"
           fi
           flutter doctor
+          flutter clean
           flutter pub get
           flutter gen-l10n
 
@@ -95,6 +96,8 @@ jobs:
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
           flutter --version
+          flutter doctor
+          flutter clean
           flutter pub get
           flutter gen-l10n
 
