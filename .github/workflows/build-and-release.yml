@@ -81,6 +81,7 @@ jobs:
             export PATH="$PATH:$HOME/Library/Flutter/bin"
           fi
           flutter doctor
+          flutter pub get
           flutter gen-l10n
 
       - name: Set up Flutter for Windows
@@ -94,6 +95,8 @@ jobs:
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
           flutter --version
+          flutter pub get
+          flutter gen-l10n
 
       - name: Build Flutter App (Unix-like)
         if: ${{ matrix.platform != 'windows' }}
