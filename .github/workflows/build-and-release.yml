@@ -81,8 +81,7 @@ jobs:
             export PATH="$PATH:$HOME/Library/Flutter/bin"
           fi
           flutter doctor
-          flutter pub get
-
+      
       - name: Set up Flutter for Windows
         if: ${{ matrix.platform == 'windows' }}
         shell: powershell
@@ -95,8 +94,22 @@ jobs:
           refreshenv
           flutter --version
           flutter doctor
-          flutter pub get
 
+      - name: Get Flutter Dependencies
+        run: flutter pub get
+
+      - name: Create l10n.yaml configuration
+        shell: bash
+        run: |
+          cat > l10n.yaml << EOF
+          arb-dir: lib/l10n
+          template-arb-file: app_en.arb
+          output-localization-file: app_localizations.dart
+          output-class: AppLocalizations
+          output-dir: lib/flutter_gen/gen_l10n
+          synthetic-package: false
+          EOF
+          
       - name: Generate Localizations # Only if you didn't set synthetic-package: false
         run: flutter gen-l10n
 
