@@ -186,7 +186,7 @@ jobs:
           files: |
             release-artifacts/**/*.dmg
             release-artifacts/**/chibot.exe
-            release-artifacts/**/chibot-release.apk
+            release-artifacts/**/app-release.apk
             release-artifacts/**/chibot.app.zip
             release-artifacts/build-linux-x64/linux/x64/release/bundle/chibot
         env:
