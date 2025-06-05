@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
 import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
 
 class ChatScreen extends StatefulWidget {
