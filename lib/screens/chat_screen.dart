@@ -224,65 +224,56 @@ class _ChatScreenState extends State<ChatScreen> {
     bool showSidebar = MediaQuery.of(context).size.width > 600; // Example breakpoint
 
     return Scaffold(
-      // The AppBar is now part of the main content area to allow the sidebar to be on its left.
-      // If you want a global AppBar above the sidebar and chat, structure it differently.
-      body: Row(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 1,
+        title: Text(
+          AppLocalizations.of(context)!.chatGPTTitle,
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
+        ),
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black87),
+              onPressed: () { Scaffold.of(context).openDrawer(); },
+            );
+          },
+        ),
+      ),
+      drawer: Drawer(
+        width: _sidebarWidth,
+        child: _buildSidebar(context),
+      ),
+      body: Column(
         children: <Widget>[
-          // Sidebar (conditionally shown or always shown based on your design)
-          // For this example, let's assume it's always shown for simplicity matching the image.
-          _buildSidebar(context),
-          // Main chat content
           Expanded(
-            child: Column(
-              children: <Widget>[
-                // Custom AppBar for the chat area
-                AppBar(
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  elevation: 1, // Subtle shadow for separation
-                  title: Text(
-                    AppLocalizations.of(context)!.chatGPTTitle, // Updated title
-                    style: TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
-                  ),
-                  automaticallyImplyLeading: false, // Remove back button if sidebar is present
-                ), 
-                // The rest of the chat screen content
-                Expanded(
-                  child: Column( // Added Column widget
-                    children: <Widget>[
-                      Expanded(
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(8.0),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final message = _messages[index];
-                            return _buildMessageBubble(message);
-                          },
-                        ),
-                      ),
-                      if (_isLoading)
-                        Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircularProgressIndicator(strokeWidth: 2),
-                              SizedBox(width: 10),
-                              Text(AppLocalizations.of(context)!.aiIsThinking),
-                            ],
-                          ),
-                        ),
-                      _buildInputField(),
-                    ], // This closes the new Column's children
-                  ), // This closes the new Column
-                ), // This closes the Expanded for 'the rest of the chat screen content'
-              ], // This closes the Expanded (main chat content)
-            ), // This closes the Row children (sidebar + main content)
-           ), // This closes the Scaffold body's Row
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(8.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return _buildMessageBubble(message);
+              },
+            ),
+          ),
+          if (_isLoading)
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(strokeWidth: 2),
+                  SizedBox(width: 10),
+                  Text(AppLocalizations.of(context)!.aiIsThinking),
+                ],
+              ),
+            ),
+          _buildInputField(),
         ],
       ),
-    ); // This closes the Scaffold body's Row
-  } // This closes the build method
+    );
+  }
 
   Widget _buildMessageBubble(ChatMessage message) {
     final bool isUserMessage = message.sender == MessageSender.user;
