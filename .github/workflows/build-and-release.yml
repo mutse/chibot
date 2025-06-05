@@ -157,7 +157,7 @@ jobs:
             build/macos/*.dmg
             build/linux/x64/release/bundle/chibot
             build/windows/x64/runner/Release/chibot.exe
-            build/app/outputs/flutter-apk/chibot-release.apk
+            build/app/outputs/flutter-apk/app-release.apk
             build/ios/iphoneos/chibot.app.zip
 
   release:
