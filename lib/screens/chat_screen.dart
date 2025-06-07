@@ -114,7 +114,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Placeholder for sidebar content, matching the image's style
     return Container(
       width: _sidebarWidth,
-      color: const Color(0xFF202123), // Dark background for sidebar
+      color: Colors.white12,
       padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,14 +123,14 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
-              color: const Color(0xFF343541), // Darker input field background
+              color: const Color.fromARGB(255, 227, 229, 249), // Darker input field background
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: TextField(
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: AppLocalizations.of(context)!.search,
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: TextStyle(color: Colors.black12),
                 icon: Icon(Icons.search, color: Colors.white54, size: 20),
                 border: InputBorder.none,
               ),
@@ -148,16 +148,15 @@ class _ChatScreenState extends State<ChatScreen> {
             showDialog(
               context: context,
               builder: (BuildContext context) {
-                return const AboutDialog(
+                return AboutDialog(
                   applicationName: 'Chibot',
                   applicationVersion: '1.0.0',
+                  applicationIcon: Image.asset(
+                    'assets/images/logo.png',
+                    height: 64,
+                    width: 64,
+                  ),
                   applicationLegalese: '© 2025 Mutse Young. All rights reserved.',
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(top: 15),
-                      child: Text('Author: Mutse Young'),
-                    )
-                  ],
                 );
               },);
           }),
@@ -174,20 +173,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildSidebarItem(BuildContext context, IconData icon, String text, {bool isSelected = false, VoidCallback? onTap}) {
     return Material(
-      color: Colors.transparent,
+      color: Colors.white,
       child: InkWell(
         onTap: onTap ?? () {},
         borderRadius: BorderRadius.circular(12.0),
-        hoverColor: const Color(0xFF2D2F3E),
+        hoverColor: const Color.fromARGB(255, 218, 222, 252),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF343541) : Colors.transparent,
+            color: isSelected ? const Color.fromARGB(255, 250, 245, 245) : Colors.white10,
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
-              color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.transparent,
+              color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white10,
               width: 1.0,
             ),
           ),
@@ -202,7 +201,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Text(
                 text,
                 style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.white,
+                  color: isSelected ? Colors.blue : Colors.black87,
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                 ),
