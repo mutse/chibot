@@ -22,14 +22,16 @@ class OpenAIService {
     return geminiContents;
   }
 
-  Future<String> getChatResponse({
+  Stream<String> getChatResponse({
     required String apiKey,
     required String model,
     required List<ChatMessage> messages,
     required String providerBaseUrl, // 新增：基础 URL
-  }) async {
+  }) {
     if (apiKey.isEmpty) {
-      throw Exception('API Key is not set.');
+      // Instead of throwing, return a stream with an error event.
+      // This allows the UI to handle the error gracefully.
+      return Stream<String>.error(Exception('API Key is not set.'));
     }
 
     String endpointUrl;
@@ -54,6 +56,10 @@ class OpenAIService {
       };
 
       final geminiContents = _chatMessagesToGeminiContents(messages);
+      // For streaming, we need to add 'stream': true to the request body for OpenAI compatible APIs
+      // For Gemini, the API itself is unary, so true streaming isn't directly supported in the same way.
+      // We will simulate streaming for Gemini by returning the full response as a single stream event.
+      // However, if Gemini's SDK or a different endpoint supports streaming, that would be preferred.
       requestBody = jsonEncode({
         'contents': geminiContents,
         'generationConfig': {
@@ -74,68 +80,127 @@ class OpenAIService {
         'Authorization': 'Bearer $apiKey',
       };
 
-      List<Map<String, String>> apiMessages =
-          messages.map((msg) => msg.toApiJson()).toList();
+      List<Map<String, String>> apiMessages = messages
+          .map((msg) => msg.toApiJson())
+          .where((item) => item != null)
+          .cast<Map<String, String>>() // Cast to the correct type after filtering
+          .toList();
+      // For streaming, we need to add 'stream': true to the request body for OpenAI compatible APIs
+      // For Gemini, the API itself is unary, so true streaming isn't directly supported in the same way.
+      // We will simulate streaming for Gemini by returning the full response as a single stream event.
+      // However, if Gemini's SDK or a different endpoint supports streaming, that would be preferred.
       requestBody = jsonEncode({
         'model': model,
         'messages': apiMessages,
         'temperature': 0.7,
+        // Add stream: true for OpenAI compatible APIs
+        if (!(model.toLowerCase().startsWith('google/gemini') || model.toLowerCase().startsWith('gemini-'))) 'stream': true,
       });
     }
 
     final uri = Uri.parse(endpointUrl);
 
-    try {
-      final response = await http.post(uri, headers: requestHeaders, body: requestBody);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
-        
-        if (model.toLowerCase().startsWith('google/gemini') || model.toLowerCase().startsWith('gemini-')) {
-          if (data['candidates'] != null &&
-              data['candidates'].isNotEmpty &&
-              data['candidates'][0]['content'] != null &&
-              data['candidates'][0]['content']['parts'] != null &&
-              data['candidates'][0]['content']['parts'].isNotEmpty) {
-            return data['candidates'][0]['content']['parts'][0]['text'].toString().trim();
-          } else if (data['error'] != null && data['error']['message'] != null) {
-            throw Exception('Gemini API Error: ${data['error']['message']} (Code: ${data['error']['code']})');
-          } else {
-            throw Exception('No valid response candidates found in Gemini API response. Body: ${response.body}');
-          }
-        } else {
-          // OpenAI-compatible response parsing
-          if (data['choices'] != null && data['choices'].isNotEmpty) {
-            return data['choices'][0]['message']['content'].toString().trim();
-          } else if (data['error'] != null && data['error']['message'] != null) { 
-            throw Exception('API Error: ${data['error']['message']} (Type: ${data['error']['type']})');
-          } else {
-            throw Exception('No response choices found and no error field. Response: ${response.body}');
-          }
-        }
-      } else {
-        print('API Error: ${response.statusCode} for model $model at $endpointUrl');
-        print('API Response: ${response.body}');
-        String errorMessage = 'Failed to get response from API: ${response.statusCode} ${response.reasonPhrase}';
+    // For Gemini, since it's not a streaming API by default, we'll wrap the single response in a stream.
+    if (model.toLowerCase().startsWith('google/gemini') || model.toLowerCase().startsWith('gemini-')) {
+      Stream<String> generateGeminiResponse() async* {
         try {
-          final errorData = jsonDecode(utf8.decode(response.bodyBytes));
-          if (errorData['error'] != null && errorData['error']['message'] != null) {
-            errorMessage += '\nDetails: ${errorData['error']['message']}';
-            if (errorData['error']['code'] != null) errorMessage += ' (Code: ${errorData['error']['code']})';
-            if (errorData['error']['status'] != null) errorMessage += ' (Status: ${errorData['error']['status']})';
-          } else if (errorData['detail'] != null) { // Some other APIs (e.g. Ollama sometimes)
-             errorMessage += '\nDetails: ${errorData['detail']}';
+          final response = await http.post(uri, headers: requestHeaders, body: requestBody);
+          if (response.statusCode == 200) {
+            final data = jsonDecode(utf8.decode(response.bodyBytes));
+            if (data['candidates'] != null &&
+                data['candidates'].isNotEmpty &&
+                data['candidates'][0]['content'] != null &&
+                data['candidates'][0]['content']['parts'] != null &&
+                data['candidates'][0]['content']['parts'].isNotEmpty) {
+              yield data['candidates'][0]['content']['parts'][0]['text'].toString().trim();
+            } else if (data['error'] != null && data['error']['message'] != null) {
+              throw Exception('Gemini API Error: ${data['error']['message']} (Code: ${data['error']['code']})');
+            } else {
+              throw Exception('No valid response candidates found in Gemini API response. Body: ${response.body}');
+            }
           } else {
-             errorMessage += '\nRaw Response: ${response.body}';
+            print('API Error: ${response.statusCode} for model $model at $endpointUrl');
+            print('API Response: ${response.body}');
+            String errorMessage = 'Failed to get response from API: ${response.statusCode} ${response.reasonPhrase}';
+             try {
+              final errorData = jsonDecode(utf8.decode(response.bodyBytes));
+              if (errorData['error'] != null && errorData['error']['message'] != null) {
+                errorMessage += '\nDetails: ${errorData['error']['message']}';
+                if (errorData['error']['code'] != null) errorMessage += ' (Code: ${errorData['error']['code']})';
+                if (errorData['error']['status'] != null) errorMessage += ' (Status: ${errorData['error']['status']})';
+              } else if (errorData['detail'] != null) {
+                 errorMessage += '\nDetails: ${errorData['detail']}';
+              } else {
+                 errorMessage += '\nRaw Response: ${response.body}';
+              }
+            } catch (e) {
+              errorMessage += '\nRaw Response: ${response.body}';
+            }
+            throw Exception(errorMessage);
           }
         } catch (e) {
-          errorMessage += '\nRaw Response: ${response.body}';
+          print('Error in Gemini Service: $e');
+          yield* Stream<String>.error(e); // Yield the error to the stream
         }
-        throw Exception(errorMessage);
       }
-    } catch (e) {
-      print('Error in Service (${model.startsWith("google/gemini") ? "Gemini" : "OpenAI/Compatible"}): $e');
-      rethrow;
+      return generateGeminiResponse();
+    } else {
+      // OpenAI-compatible streaming logic
+      Stream<String> generateOpenAIResponse() async* {
+        try {
+          final request = http.Request('POST', uri);
+          request.headers.addAll(requestHeaders);
+          request.body = requestBody;
+
+          final streamedResponse = await request.send();
+
+          if (streamedResponse.statusCode == 200) {
+            await for (var chunk in streamedResponse.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+              if (chunk.startsWith('data: ')) {
+                final dataString = chunk.substring(6);
+                if (dataString == '[DONE]') {
+                  break;
+                }
+                try {
+                  final data = jsonDecode(dataString);
+                  if (data['choices'] != null && data['choices'].isNotEmpty) {
+                    final delta = data['choices'][0]['delta'];
+                    if (delta != null && delta['content'] != null) {
+                      yield delta['content'].toString();
+                    }
+                  }
+                } catch (e) {
+                  // Handle potential JSON parsing errors for incomplete chunks, though LineSplitter should help
+                  print('Error parsing stream chunk: $e, chunk: $dataString');
+                }
+              }
+            }
+          } else {
+            final responseBody = await streamedResponse.stream.bytesToString();
+            print('API Error: ${streamedResponse.statusCode} for model $model at $endpointUrl');
+            print('API Response: $responseBody');
+            String errorMessage = 'Failed to get response from API: ${streamedResponse.statusCode} ${streamedResponse.reasonPhrase}';
+            try {
+              final errorData = jsonDecode(responseBody);
+              if (errorData['error'] != null && errorData['error']['message'] != null) {
+                errorMessage += '\nDetails: ${errorData['error']['message']}';
+                 if (errorData['error']['code'] != null) errorMessage += ' (Code: ${errorData['error']['code']})';
+              } else if (errorData['detail'] != null) {
+                 errorMessage += '\nDetails: ${errorData['detail']}';
+              } else {
+                errorMessage += '\nRaw Response: $responseBody';
+              }
+            } catch (e) {
+              errorMessage += '\nRaw Response: $responseBody';
+            }
+            throw Exception(errorMessage);
+          }
+        } catch (e) {
+          print('Error in OpenAI/Compatible Service: $e');
+          yield* Stream<String>.error(e); // Yield the error to the stream
+        }
+      }
+      return generateOpenAIResponse();
     }
   }
 }

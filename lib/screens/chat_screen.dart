@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
 import '../providers/settings_provider.dart';
@@ -58,43 +59,97 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    // Create a placeholder for the AI's message
+    final aiMessage = ChatMessage(
+      text: "", // Start with empty text
+      sender: MessageSender.ai,
+      timestamp: DateTime.now(),
+      isLoading: true, // Add a flag to indicate this message is loading
+    );
+
+    if (mounted) {
+      setState(() {
+        _messages.add(aiMessage);
+      });
+    }
+    _scrollToBottom();
+
     try {
-      final aiResponseText = await _openAIService.getChatResponse(
+      final stream = _openAIService.getChatResponse(
         apiKey: settings.apiKey!,
         model: settings.selectedModel,
         messages: List.from(_messages),
         providerBaseUrl: settings.providerUrl, // 传递 Provider URL
       );
 
-      final aiMessage = ChatMessage(
-        text: aiResponseText,
-        sender: MessageSender.ai,
-        timestamp: DateTime.now(),
-      );
+      String fullResponse = "";
+      await for (final chunk in stream) {
+        fullResponse += chunk;
+        if (mounted) {
+          setState(() {
+            // Update the last message (which is the AI's message placeholder)
+            final lastMessageIndex = _messages.length - 1;
+            if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
+              _messages[lastMessageIndex] = ChatMessage(
+                text: fullResponse,
+                sender: MessageSender.ai,
+                timestamp: _messages[lastMessageIndex].timestamp, // Keep original timestamp
+                isLoading: true, // Still loading until stream is done
+              );
+            }
+          });
+        }
+        _scrollToBottom();
+      }
+
+      // Stream finished, update the isLoading flag for the AI message
       if (mounted) {
         setState(() {
-          _messages.add(aiMessage);
+          final lastMessageIndex = _messages.length - 1;
+          if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
+             _messages[lastMessageIndex] = ChatMessage(
+                text: fullResponse.isEmpty ? AppLocalizations.of(context)!.noResponseFromAI : fullResponse, // Handle empty response
+                sender: MessageSender.ai,
+                timestamp: _messages[lastMessageIndex].timestamp,
+                isLoading: false, // Done loading
+              );
+          }
+          _isLoading = false; // Overall loading state for the input field
         });
       }
+
     } catch (e) {
-      final errorMessage = ChatMessage(
-        text: "Error: ${e.toString()}",
-        sender: MessageSender.ai,
-        timestamp: DateTime.now(),
-      );
       if (mounted) {
         setState(() {
-          _messages.add(errorMessage);
+          // Update the AI message placeholder with the error
+          final lastMessageIndex = _messages.length - 1;
+          if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
+            _messages[lastMessageIndex] = ChatMessage(
+              text: "Error: ${e.toString()}",
+              sender: MessageSender.ai,
+              timestamp: _messages[lastMessageIndex].timestamp,
+              isLoading: false,
+            );
+          } else {
+            // If for some reason the placeholder wasn't added, add a new error message
+             _messages.add(ChatMessage(
+              text: "Error: ${e.toString()}",
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ));
+          }
+          _isLoading = false;
         });
       }
-      print("Error sending message: $e");
+      print("Error receiving stream: $e");
     } finally {
-      if (mounted) {
+      // Ensure isLoading is false if not already set by success/error blocks
+      if (mounted && _isLoading) {
         setState(() {
           _isLoading = false;
         });
       }
-      _scrollToBottom();
+       _scrollToBottom();
     }
   }
 
@@ -287,6 +342,30 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageBubble(ChatMessage message) {
     final bool isUserMessage = message.sender == MessageSender.user;
     final theme = Theme.of(context);
+    final bool isAiLoading = message.sender == MessageSender.ai && (message.isLoading ?? false);
+    Widget messageContent;
+    if (isAiLoading && message.text.isEmpty) {
+      messageContent = SizedBox(
+        width: 50,
+        height: 20,
+        child: Center(
+          child: SpinKitThreeBounce(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            size: 18.0,
+          ),
+        ),
+      );
+    } else {
+      messageContent = SelectableText(
+        message.text,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: isUserMessage
+              ? theme.colorScheme.onPrimary
+              : theme.colorScheme.onSurface,
+        ),
+      );
+    }
+
     return Align(
       alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -316,17 +395,10 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 1.0,
           ) : null,
         ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: isUserMessage ? Colors.white : Colors.black87,
-            fontSize: 15,
-            height: 1.4,
-          ),
+          child: messageContent,
         ),
-      ),
-    );
-  }
+      );
+    }
 
   Widget _buildInputField() {
     final theme = Theme.of(context);

@@ -25,11 +25,12 @@
   "apiKeyNotSetError": "API Key not set. Please set it in settings.",
   "search": "Search",
   "about": "About",
-  "chatGPTTitle": "ChatGPT Title",
+  "chatGPTTitle": "Chibot Title",
   "aiIsThinking": "AI is Thinking",
   "askAnyQuestion": "Ask Any Question",
   "addModelProvider": "Add Model Provider",
   "providerNameHint": "Provider Name Hint",
   "modelsHint": "Models Hint",
-  "appTitle": "Chi AI Chatbot"
+  "appTitle": "Chi AI Chatbot",
+  "noResponseFromAI": "AI did not return a response."
 }

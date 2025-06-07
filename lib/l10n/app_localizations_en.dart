@@ -88,7 +88,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
-  String get chatGPTTitle => 'ChatGPT Title';
+  String get chatGPTTitle => 'Chibot Title';
 
   @override
   String get aiIsThinking => 'AI is Thinking';
@@ -107,4 +107,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appTitle => 'Chi AI Chatbot';
+
+  @override
+  String get noResponseFromAI => 'AI did not return a response.';
 }

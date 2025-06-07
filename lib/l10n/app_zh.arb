@@ -25,11 +25,12 @@
   "apiKeyNotSetError": "API 密钥未设置。请在设置中进行设置。",
   "search": "搜索",
   "about": "关于",
-  "chatGPTTitle": "ChatGPT 标题",
+  "chatGPTTitle": "Chibot 标题",
   "aiIsThinking": "AI 正在思考中",
   "askAnyQuestion": "提问任一问题",
   "addModelProvider": "添加模型提供商",
   "providerNameHint": "提供商名称提示",
   "modelsHint": "模型提示",
-  "appTitle": "Chi AI Chatbot"
+  "appTitle": "Chi AI Chatbot",
+  "noResponseFromAI": "AI 未返回响应。"
 }

@@ -248,7 +248,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatGPTTitle.
   ///
   /// In en, this message translates to:
-  /// **'ChatGPT Title'**
+  /// **'Chibot Title'**
   String get chatGPTTitle;
 
   /// No description provided for @aiIsThinking.
@@ -286,6 +286,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Chi AI Chatbot'**
   String get appTitle;
+
+  /// No description provided for @noResponseFromAI.
+  ///
+  /// In en, this message translates to:
+  /// **'AI did not return a response.'**
+  String get noResponseFromAI;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
