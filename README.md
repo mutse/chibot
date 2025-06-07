@@ -1,7 +1,11 @@
 # Chi Chatbot  
   
-Chi AI Chatbot is a Flutter-based cross-platform application that provides an intuitive chat interface for interacting with AI language models. It currently supports integration with both OpenAI models (like GPT-4) and Google's Gemini models through a unified interface.  
-  
+Chi Chatbot AI is a Flutter-based cross-platform application that provides an intuitive chat interface for interacting with AI language models. It currently supports integration with both OpenAI models (like GPT-4) and Google's Gemini models through a unified interface.  
+
+## Screenshots
+
+![](./images/chibot-mac.jpg)
+
 ## Features  
   
 - **Multi-provider Support**: Interact with both OpenAI and Google Gemini AI models  
