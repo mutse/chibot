@@ -61,6 +61,7 @@ Chi AI Chatbot follows a clean architecture with clear separation between presen
 
 ## Project Structure  
 
+    ```zsh
     lib/
     ├── main.dart # Application entry point
     ├── models/
@@ -72,15 +73,16 @@ Chi AI Chatbot follows a clean architecture with clear separation between presen
     │ └── settings_screen.dart # Settings configuration
     └── services/
     └── openai_service.dart # Service for AI provider communication
+    ```
 
 ## Supported Platforms  
   
-- macOS  
-- iOS (likely)  
-- Android (likely)  
+- macOS
+- iOS 
+- Android
 - Web (possible)  
-- Windows (possible)  
-- Linux (possible)  
+- Windows 
+- Linux
   
 ## Technology Stack  
   

@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsProvider with ChangeNotifier {
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
   String? _apiKey;
-  String _selectedModel = 'gpt-3.5-turbo'; // 默认模型
+  String _selectedModel = 'gpt-4o'; // 默认模型
   String? _providerUrl; // 新增：模型 Provider URL
   List<String> _customModels = []; // 新增：自定义模型列表
   Map<String, List<String>> _customProviders = {}; // 新增：自定义提供商及其模型列表
@@ -24,26 +24,26 @@ class SettingsProvider with ChangeNotifier {
 
   // 可选模型列表
   final List<String> _presetModels = [
-    'gpt-3.5-turbo',
     'gpt-4',
-    'gpt-4-turbo-preview',
-    'gemini-1.0-pro', // 更新为实际存在的 Gemini 模型
-    'gemini-1.5-pro-latest',
-    'gemini-pro-vision',
+    'gpt-4o',
+    'gpt-4.1',
+    'gemini-2.0-flash', // 更新为实际存在的 Gemini 模型
+    'gemini-2.5-pro-preview-06-05',
+    'gemini-2.5-flash-preview-05-20',
     // 你可以根据需要添加更多模型
   ];
 
   // 分类预设模型
   final Map<String, List<String>> _categorizedPresetModels = {
     'OpenAI': [
-      'gpt-3.5-turbo',
       'gpt-4',
-      'gpt-4-turbo-preview',
+      'gpt-4o',
+      'gpt-4.1',
     ],
     'Google': [
-      'gemini-1.0-pro',
-      'gemini-1.5-pro-latest',
-      'gemini-pro-vision',
+      'gemini-2.0-flash',
+      'gemini-2.5-pro-preview-06-05',
+      'gemini-2.5-flash-preview-05-20',
     ],
   };
 
@@ -96,7 +96,7 @@ class SettingsProvider with ChangeNotifier {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _apiKey = prefs.getString(_apiKeyKey);
-    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-3.5-turbo';
+    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
     _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
     _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
     final String? customProvidersString = prefs.getString(_customProvidersKey);
