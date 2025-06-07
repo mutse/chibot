@@ -227,9 +227,19 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 1,
-        title: Text(
-          AppLocalizations.of(context)!.chatGPTTitle,
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 24.0,
+              width: 24.0,
+            ),
+            const SizedBox(width: 8.0),
+            Text(
+              AppLocalizations.of(context)!.chatGPTTitle,
+              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
+            ),
+          ],
         ),
         leading: Builder(
           builder: (BuildContext context) {

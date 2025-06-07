@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
       create: (context) => SettingsProvider(),
       child: MaterialApp(
         title: "Chi AI Chatbot",
+        home: const ChatScreen(),
         theme: ThemeData(
           brightness: Brightness.light,
           primaryColor: const Color(0xFF2D2F3E), // A dark color, can be used for accents or sidebar
@@ -61,7 +62,6 @@ class MyApp extends StatelessWidget {
           ),
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: const ChatScreen(),
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
