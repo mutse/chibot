@@ -346,7 +346,7 @@ class _ChatScreenState extends State<ChatScreen> {
     Widget messageContent;
     if (isAiLoading && message.text.isEmpty) {
       messageContent = SizedBox(
-        width: 50,
+        width: 80,
         height: 20,
         child: Center(
           child: SpinKitThreeBounce(
@@ -459,26 +459,32 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 12.0),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              child: Material(
-                color: _isLoading || _textController.text.isEmpty
-                    ? Colors.grey[300]
-                    : const Color(0xFF2B7FFF),
-                borderRadius: BorderRadius.circular(20.0),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20.0),
-                  onTap: _isLoading || _textController.text.isEmpty ? null : _sendMessage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Icon(
-                      Icons.arrow_upward_rounded,
-                      color: Colors.white,
-                      size: 24,
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _textController,
+              builder: (context, value, child) {
+                final bool isEmpty = value.text.isEmpty;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  child: Material(
+                    color: _isLoading || isEmpty
+                        ? Colors.grey[300]
+                        : const Color(0xFF2B7FFF),
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20.0),
+                      onTap: _isLoading || isEmpty ? null : _sendMessage,
+                      child: Container(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Icon(
+                          Icons.arrow_upward_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),

@@ -136,6 +136,10 @@ class OpenAIService {
             } catch (e) {
               errorMessage += '\nRaw Response: ${response.body}';
             }
+            // Check if the error response is HTML, suggesting a configuration or network issue
+            if (response.headers['content-type']?.toLowerCase().contains('text/html') ?? false) {
+              throw Exception('Failed to connect to API: Received HTML response (Status ${response.statusCode}). Please check Provider URL, API key, and ensure the Generative Language API is enabled in your Google Cloud project.');
+            }
             throw Exception(errorMessage);
           }
         } catch (e) {
@@ -192,6 +196,11 @@ class OpenAIService {
               }
             } catch (e) {
               errorMessage += '\nRaw Response: $responseBody';
+            }
+            // Check if the error response is HTML, suggesting a configuration or network issue
+            final contentType = streamedResponse.headers['content-type']?.toLowerCase();
+            if (contentType?.contains('text/html') ?? false) {
+              throw Exception('Failed to connect to API: Received HTML response (Status ${streamedResponse.statusCode}). Please check Provider URL and API key.');
             }
             throw Exception(errorMessage);
           }
