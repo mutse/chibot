@@ -12,6 +12,7 @@ Chi Chatbot AI is a Flutter-based cross-platform application that provides an in
   
 - **Multi-provider Support**: Interact with both OpenAI and Google Gemini AI models
 - **Streaming Output**: Real-time responses from AI models
+- **Text to Image**: Generate images based on text prompts
 - **Clean Chat Interface**: User-friendly interface for sending messages and viewing AI responses  
 - **Customizable Settings**: Configure API keys, model selection, and provider URLs  
 - **Cross-platform**: Built with Flutter for compatibility across multiple platforms  
