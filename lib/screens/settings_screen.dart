@@ -312,8 +312,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
                   if (settings.selectedModelType == ModelType.text) {
                     settings.setApiKey(_apiKeyController.text.trim());
                     settings.setProviderUrl(_providerUrlController.text.trim());
@@ -330,6 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
                 child: Text(l10n.saveSettings),
               ),
+            ),
             ],
           ),
         ),
