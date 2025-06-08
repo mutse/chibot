@@ -179,6 +179,24 @@ abstract class AppLocalizations {
   /// **'Settings saved!'**
   String get settingsSaved;
 
+  /// No description provided for @selectModelType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Model Type:'**
+  String get selectModelType;
+
+  /// No description provided for @textModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Model'**
+  String get textModel;
+
+  /// No description provided for @imageModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Model'**
+  String get imageModel;
+
   /// No description provided for @addNewModelConfiguration.
   ///
   /// In en, this message translates to:
@@ -292,6 +310,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AI did not return a response.'**
   String get noResponseFromAI;
+
+  /// No description provided for @pleaseEnterPromptAfterImagine.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a prompt after /imagine.'**
+  String get pleaseEnterPromptAfterImagine;
+
+  /// No description provided for @failedToGenerateImageNoUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to generate image: No image URL returned.'**
+  String get failedToGenerateImageNoUrl;
+
+  /// No description provided for @errorLoadingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading image.'**
+  String get errorLoadingImage;
+
+  /// No description provided for @noImageGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'No image generated.'**
+  String get noImageGenerated;
+
+  /// No description provided for @errorGeneratingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error generating image: {error}'**
+  String errorGeneratingImage(Object error);
+
+  /// No description provided for @imageGenerationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Generation Settings'**
+  String get imageGenerationSettings;
+
+  /// No description provided for @selectImageProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Image Provider:'**
+  String get selectImageProvider;
+
+  /// No description provided for @imageProviderURLOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Image Provider URL (Optional):'**
+  String get imageProviderURLOptional;
+
+  /// No description provided for @enterImageProviderURL.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter image provider URL'**
+  String get enterImageProviderURL;
+
+  /// No description provided for @selectImageModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Image Model:'**
+  String get selectImageModel;
+
+  /// No description provided for @customImageModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Image Models:'**
+  String get customImageModels;
+
+  /// No description provided for @enterCustomImageModelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter custom image model name'**
+  String get enterCustomImageModelName;
+
+  /// No description provided for @providerAndModelAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider and model added!'**
+  String get providerAndModelAdded;
+
+  /// No description provided for @providerAndModelNameCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider name and model name cannot be empty.'**
+  String get providerAndModelNameCannotBeEmpty;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -14,6 +14,9 @@
   "yourCustomModels": "您的自定义模型：",
   "saveSettings": "保存设置",
   "settingsSaved": "设置已保存！",
+  "selectModelType": "选择模型类型:",
+  "textModel": "文本模型",
+  "imageModel": "图像模型",
   "addNewModelConfiguration": "添加新的模型配置",
   "modelProvider": "模型提供商",
   "enterProviderName": "输入提供商名称",
@@ -32,5 +35,6 @@
   "providerNameHint": "提供商名称提示",
   "modelsHint": "模型提示",
   "appTitle": "Chi AI Chatbot",
-  "noResponseFromAI": "AI 未返回响应。"
+  "noResponseFromAI": "AI 未返回响应。",
+  "pleaseEnterPromptAfterImagine": "请在 /imagine 后输入提示。"
 }

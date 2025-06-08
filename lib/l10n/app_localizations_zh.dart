@@ -55,6 +55,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSaved => '设置已保存！';
 
   @override
+  String get selectModelType => '选择模型类型:';
+
+  @override
+  String get textModel => '文本模型';
+
+  @override
+  String get imageModel => '图像模型';
+
+  @override
   String get addNewModelConfiguration => '添加新的模型配置';
 
   @override
@@ -110,4 +119,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noResponseFromAI => 'AI 未返回响应。';
+
+  @override
+  String get pleaseEnterPromptAfterImagine => '请在 /imagine 后输入提示。';
+
+  @override
+  String get failedToGenerateImageNoUrl => 'Failed to generate image: No image URL returned.';
+
+  @override
+  String get errorLoadingImage => 'Error loading image.';
+
+  @override
+  String get noImageGenerated => 'No image generated.';
+
+  @override
+  String errorGeneratingImage(Object error) {
+    return 'Error generating image: $error';
+  }
+
+  @override
+  String get imageGenerationSettings => 'Image Generation Settings';
+
+  @override
+  String get selectImageProvider => 'Select Image Provider:';
+
+  @override
+  String get imageProviderURLOptional => 'Image Provider URL (Optional):';
+
+  @override
+  String get enterImageProviderURL => 'Enter image provider URL';
+
+  @override
+  String get selectImageModel => 'Select Image Model:';
+
+  @override
+  String get customImageModels => 'Custom Image Models:';
+
+  @override
+  String get enterCustomImageModelName => 'Enter custom image model name';
+
+  @override
+  String get providerAndModelAdded => 'Provider and model added!';
+
+  @override
+  String get providerAndModelNameCannotBeEmpty => 'Provider name and model name cannot be empty.';
 }

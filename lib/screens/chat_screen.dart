@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
 import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
+import '../models/image_message.dart'; // Added for image messages
+import '../services/image_generation_service.dart'; // Added for image generation
+import 'dart:convert'; // For base64 decoding
 import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
 
@@ -20,6 +23,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _textController = TextEditingController();
   final OpenAIService _openAIService = OpenAIService();
+  final ImageGenerationService _imageGenerationService = ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -27,6 +31,15 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
+
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    if (settings.selectedModelType == ModelType.image) {
+      _generateImage(text);
+      _textController.clear();
+      return;
+    }
+
+    _textController.clear();
 
     _textController.clear();
     final userMessage = ChatMessage(
@@ -43,8 +56,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    if (settings.apiKey == null || settings.apiKey!.isEmpty) {
+    final settings1 = Provider.of<SettingsProvider>(context, listen: false);
+    if (settings1.apiKey == null || settings1.apiKey!.isEmpty) {
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(
@@ -317,7 +330,7 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
-                return _buildMessageBubble(message);
+                return _buildMessageBubble(message, index); // Pass index
               },
             ),
           ),
@@ -339,9 +352,15 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
+  Widget _buildMessageBubble(ChatMessage message, int index) { // Added index
     final bool isUserMessage = message.sender == MessageSender.user;
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
+
+    if (message is ImageMessage) {
+      return _buildImageMessageBubble(message, isUserMessage, index == _messages.length - 1, localizations);
+    }
+
     final bool isAiLoading = message.sender == MessageSender.ai && (message.isLoading ?? false);
     Widget messageContent;
     if (isAiLoading && message.text.isEmpty) {
@@ -399,6 +418,144 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     }
+
+  Widget _buildImageMessageBubble(ImageMessage message, bool isUser, bool isLastMessage, AppLocalizations localizations) {
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7 - _sidebarWidth * (MediaQuery.of(context).size.width > 600 ? 0.7 : 0)),
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: isUser ? const Color(0xFF2B7FFF) : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(isUser ? 20.0 : 4.0),
+            topRight: Radius.circular(isUser ? 4.0 : 20.0),
+            bottomLeft: const Radius.circular(20.0),
+            bottomRight: const Radius.circular(20.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isUser 
+                ? const Color(0xFF2B7FFF).withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: !isUser ? Border.all(
+            color: Colors.grey.withOpacity(0.1),
+            width: 1.0,
+          ) : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Show prompt for user's image request message, or for AI's image message if it's not just a loading placeholder
+            if (message.text.isNotEmpty && (isUser || (message.isLoading != true && message.imageUrl.isNotEmpty)))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Text(
+                  isUser ? '/imagine ${message.text}' : message.text,
+                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isUser 
+                        ? Theme.of(context).colorScheme.onPrimary 
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            if (message.isLoading ?? false)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: SpinKitThreeBounce(
+                  color: isUser ? Colors.white : Theme.of(context).colorScheme.primary,
+                  size: 20.0,
+                ),
+              )
+            else if (message.error?.isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  message.error!,
+                  style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                ),
+              )
+            else if (message.imageUrl.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: message.imageUrl.startsWith('data:image')
+                      ? Image.memory(
+                          base64Decode(message.imageUrl.split(',').last),
+                          width: 250,
+                          height: 250,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 250,
+                              height: 250,
+                              color: Colors.grey[200],
+                              child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
+                            );
+                          },
+                        )
+                      : Image.network(
+                          message.imageUrl,
+                          width: 250,
+                          height: 250,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              width: 250,
+                              height: 250,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 250,
+                              height: 250,
+                              color: Colors.grey[200],
+                              child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
+                            );
+                          },
+                        ),
+                )
+              )
+            else if (!isUser) // Show "No image generated" only for AI responses that are not loading and have no error/image
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  localizations.noImageGenerated,
+                  style: TextStyle(color: Colors.orange[700], fontStyle: FontStyle.italic),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 5.0),
+              child: Text(
+                '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isUser ? Colors.white70 : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildInputField() {
     final theme = Theme.of(context);
@@ -490,5 +647,136 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  void _generateImage(String prompt) async {
+    if (mounted) {
+      setState(() {
+        // Add user's /imagine message first
+        _messages.add(ChatMessage(
+          text: '/imagine $prompt', 
+          sender: MessageSender.user, 
+          timestamp: DateTime.now()
+));
+        // Then add the AI's placeholder message for the image
+        _messages.add(ImageMessage(
+          text: prompt, // Assign prompt to text
+          imageUrl: '', 
+          sender: MessageSender.ai, 
+          timestamp: DateTime.now(), 
+          isLoading: true
+        ));
+        _isLoading = true; // For the general input field loader
+      });
+    }
+    _scrollToBottom();
+
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    // Check for both general and image-specific API keys
+    if (settings.apiKey == null || settings.apiKey!.isEmpty || settings.imageApiKey == null || settings.imageApiKey!.isEmpty) {
+      if (mounted) {
+        setState(() {
+          // Try to update the loading ImageMessage with an error
+          int imageMessageIndex = -1;
+          for (int i = _messages.length - 1; i >= 0; i--) {
+            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+              imageMessageIndex = i;
+              break;
+            }
+          }
+
+          if (imageMessageIndex != -1) {
+            _messages[imageMessageIndex] = ImageMessage(
+              text: prompt, // Assign prompt to text
+              imageUrl: '',
+              sender: MessageSender.ai,
+              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              isLoading: false,
+              error: AppLocalizations.of(context)!.apiKeyNotSetError, // More specific error
+            );
+          } else {
+             _messages.add(ChatMessage(
+              text: AppLocalizations.of(context)!.apiKeyNotSetError,
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ));
+          }
+          _isLoading = false;
+        });
+      }
+      _scrollToBottom();
+      return;
+    }
+
+    try {
+      final imageUrl = await _imageGenerationService.generateImage(
+        apiKey: settings.imageApiKey!, // Use image API key
+        prompt: prompt,
+        model: settings.selectedImageModel, 
+        providerBaseUrl: settings.imageProviderUrl, 
+      );
+
+      if (mounted) {
+        setState(() {
+          // Find the correct ImageMessage to update
+          int imageMessageIndex = -1;
+          for (int i = _messages.length - 1; i >= 0; i--) {
+            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+              imageMessageIndex = i;
+              break;
+            }
+          }
+
+          if (imageMessageIndex != -1) {
+            _messages[imageMessageIndex] = ImageMessage(
+              text: prompt, // Assign prompt to text
+              imageUrl: imageUrl ?? '', 
+              sender: MessageSender.ai,
+              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              isLoading: false,
+              error: imageUrl == null ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl : null,
+            );
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          int imageMessageIndex = -1;
+          for (int i = _messages.length - 1; i >= 0; i--) {
+            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+              imageMessageIndex = i;
+              break;
+            }
+          }
+          if (imageMessageIndex != -1) {
+            _messages[imageMessageIndex] = ImageMessage(
+              text: prompt,
+              imageUrl: '',
+              sender: MessageSender.ai,
+              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              isLoading: false,
+              error: AppLocalizations.of(context)!.errorGeneratingImage(e.toString()),
+            );
+          } else {
+            _messages.add(ChatMessage(
+              text: AppLocalizations.of(context)!.errorGeneratingImage(e.toString()),
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ));
+          }
+          _isLoading = false;
+        });
+      }
+      print("Error generating image: $e");
+    } finally {
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      _scrollToBottom();
+    }
   }
 }

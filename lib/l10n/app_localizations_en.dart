@@ -55,6 +55,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSaved => 'Settings saved!';
 
   @override
+  String get selectModelType => 'Select Model Type:';
+
+  @override
+  String get textModel => 'Text Model';
+
+  @override
+  String get imageModel => 'Image Model';
+
+  @override
   String get addNewModelConfiguration => 'Add New Model Configuration';
 
   @override
@@ -110,4 +119,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResponseFromAI => 'AI did not return a response.';
+
+  @override
+  String get pleaseEnterPromptAfterImagine => 'Please enter a prompt after /imagine.';
+
+  @override
+  String get failedToGenerateImageNoUrl => 'Failed to generate image: No image URL returned.';
+
+  @override
+  String get errorLoadingImage => 'Error loading image.';
+
+  @override
+  String get noImageGenerated => 'No image generated.';
+
+  @override
+  String errorGeneratingImage(Object error) {
+    return 'Error generating image: $error';
+  }
+
+  @override
+  String get imageGenerationSettings => 'Image Generation Settings';
+
+  @override
+  String get selectImageProvider => 'Select Image Provider:';
+
+  @override
+  String get imageProviderURLOptional => 'Image Provider URL (Optional):';
+
+  @override
+  String get enterImageProviderURL => 'Enter image provider URL';
+
+  @override
+  String get selectImageModel => 'Select Image Model:';
+
+  @override
+  String get customImageModels => 'Custom Image Models:';
+
+  @override
+  String get enterCustomImageModelName => 'Enter custom image model name';
+
+  @override
+  String get providerAndModelAdded => 'Provider and model added!';
+
+  @override
+  String get providerAndModelNameCannotBeEmpty => 'Provider name and model name cannot be empty.';
 }
