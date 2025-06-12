@@ -6,9 +6,14 @@ import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
 import '../models/image_message.dart'; // Added for image messages
 import '../services/image_generation_service.dart'; // Added for image generation
+import '../services/image_save_service.dart';
 import 'dart:convert'; // For base64 decoding
 import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -206,9 +211,9 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: 20),
           // List of chats (example items)
-          _buildSidebarItem(context, Icons.chat_bubble_outline, 'ChatGPT', isSelected: true), // Keep 'ChatGPT' as it's a model name
-          _buildSidebarItem(context, Icons.search, 'GTP search'), // Keep 'GTP search' as it's a model name
-          _buildSidebarItem(context, Icons.code, 'SwiftUI GPT'), // Keep 'SwiftUI GPT' as it's a model name
+          _buildSidebarItem(context, Icons.chat_bubble_outline, 'Chi Chat', isSelected: true), // Keep 'ChatGPT' as it's a model name
+          _buildSidebarItem(context, Icons.search, 'Chi Search'), // Keep 'GTP search' as it's a model name
+          _buildSidebarItem(context, Icons.code, 'Chi Code'), // Keep 'SwiftUI GPT' as it's a model name
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
 
@@ -452,7 +457,6 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Show prompt for user's image request message, or for AI's image message if it's not just a loading placeholder
             if (message.text.isNotEmpty && (isUser || (message.isLoading != true && message.imageUrl.isNotEmpty)))
               Padding(
                 padding: const EdgeInsets.only(bottom: 4.0),
@@ -485,54 +489,79 @@ class _ChatScreenState extends State<ChatScreen> {
             else if (message.imageUrl.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: message.imageUrl.startsWith('data:image')
-                      ? Image.memory(
-                          base64Decode(message.imageUrl.split(',').last),
-                          width: 250,
-                          height: 250,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 250,
-                              height: 250,
-                              color: Colors.grey[200],
-                              child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
-                            );
-                          },
-                        )
-                      : Image.network(
-                          message.imageUrl,
-                          width: 250,
-                          height: 250,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return SizedBox(
-                              width: 250,
-                              height: 250,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
+                child: GestureDetector(
+                  onLongPress: () {
+                    if (Platform.isAndroid || Platform.isIOS) {
+                      ImageSaveService.saveImage(message.imageUrl, context);
+                    }
+                  },
+                  onSecondaryTapDown: (details) {
+                    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+                      _showImageContextMenu(details.globalPosition, message.imageUrl);
+                    }
+                  },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Listener(
+                      onPointerDown: (event) {
+                        if (Platform.isMacOS && event.kind == PointerDeviceKind.mouse) {
+                          // 检查是否是 Control+点击
+                          if (event.buttons == kSecondaryMouseButton) {
+                            _showImageContextMenu(event.position, message.imageUrl);
+                          }
+                        }
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: message.imageUrl.startsWith('data:image')
+                            ? Image.memory(
+                                base64Decode(message.imageUrl.split(',').last),
+                                width: 250,
+                                height: 250,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 250,
+                                    height: 250,
+                                    color: Colors.grey[200],
+                                    child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
+                                  );
+                                },
+                              )
+                            : Image.network(
+                                message.imageUrl,
+                                width: 250,
+                                height: 250,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return SizedBox(
+                                    width: 250,
+                                    height: 250,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 250,
+                                    height: 250,
+                                    color: Colors.grey[200],
+                                    child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 250,
-                              height: 250,
-                              color: Colors.grey[200],
-                              child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
-                            );
-                          },
-                        ),
-                )
+                      ),
+                    ),
+                  ),
+                ),
               )
-            else if (!isUser) // Show "No image generated" only for AI responses that are not loading and have no error/image
+            else if (!isUser)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
@@ -556,6 +585,32 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  void _showImageContextMenu(Offset tapPosition, String imageUrl) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        tapPosition,
+        tapPosition,
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          child: const Text('Save Image'),
+          onTap: () {
+            // 使用 Future.delayed 确保菜单关闭后再执行保存操作
+            Future.delayed(Duration.zero, () {
+              ImageSaveService.saveImage(imageUrl, context);
+            });
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _buildInputField() {
     final theme = Theme.of(context);
