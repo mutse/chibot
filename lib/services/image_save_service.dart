@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path/path.dart' as path;
+import 'package:saver_gallery/saver_gallery.dart';
+import 'dart:async';
 
 class ImageSaveService {
   static Future<bool> _requestPermissions() async {
@@ -48,25 +50,56 @@ class ImageSaveService {
       }
 
       // 获取图片数据
-      final response = await http.get(Uri.parse(imageUrl));
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download image');
+      Uint8List imageBytes;
+      try {
+        final client = http.Client();
+        final response = await client.get(
+          Uri.parse(imageUrl),
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+          },
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException('The connection has timed out, Please try again!');
+          },
+        );
+        
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download image: ${response.statusCode}');
+        }
+        
+        imageBytes = response.bodyBytes;
+        client.close();
+      } catch (e) {
+        if (e is TimeoutException) {
+          throw Exception('Connection timed out. Please check your internet connection and try again.');
+        } else if (e is HandshakeException) {
+          throw Exception('SSL handshake failed. Please check your network connection and try again.');
+        } else {
+          throw Exception('Failed to download image: $e');
+        }
       }
-
-      final Uint8List imageBytes = response.bodyBytes;
 
       if (kIsWeb) {
         // Web平台处理
         throw UnsupportedError('Web platform is not supported');
       } else if (Platform.isAndroid || Platform.isIOS) {
         // 移动平台处理
-        final result = await ImageGallerySaver.saveImage(
-          imageBytes,
-          quality: 100,
-          name: "chibot_image_${DateTime.now().millisecondsSinceEpoch}",
-        );
+        final fileName = 'chibot_image_${DateTime.now().millisecondsSinceEpoch}.png';
         
-        if (result['isSuccess']) {
+        // 保存到相册
+        final result = await SaverGallery.saveImage(
+            Uint8List.fromList(imageBytes),
+            quality: 80,
+
+            androidRelativePath: "Pictures/chibot",
+
+            fileName: fileName,
+            skipIfExists: true,
+          );
+        
+        if (result.isSuccess) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -102,11 +135,12 @@ class ImageSaveService {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving image: $e'),
+            content: Text('Error saving image: ${e.toString()}'),
             duration: const Duration(seconds: 3),
           ),
         );
       }
+      debugPrint('Error saving image: $e');
     }
   }
-} 
+}
