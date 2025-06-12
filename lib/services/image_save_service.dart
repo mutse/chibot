@@ -12,15 +12,13 @@ import 'dart:async';
 class ImageSaveService {
   static Future<bool> _requestPermissions() async {
     if (Platform.isAndroid) {
-      // 检查 Android 版本
-      if (await Permission.storage.status.isDenied) {
-        // Android 13 以下版本
-        if (await Permission.storage.request().isGranted) {
-          return true;
-        }
-      } else {
-        // Android 13 及以上版本
-        if (await Permission.photos.request().isGranted) {
+      final plugin = Permission.photos;
+      final status = await plugin.status;
+      if (status.isGranted) {
+        return true;
+      }
+      if (status.isDenied) {
+        if (await plugin.request().isGranted) {
           return true;
         }
       }

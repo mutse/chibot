@@ -497,7 +497,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                   onSecondaryTapDown: (details) {
                     if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-                      _showImageContextMenu(details.globalPosition, message.imageUrl);
+                      _showImageContextMenu(details.globalPosition, message.imageUrl, localizations);
                     }
                   },
                   child: MouseRegion(
@@ -507,7 +507,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (Platform.isMacOS && event.kind == PointerDeviceKind.mouse) {
                           // 检查是否是 Control+点击
                           if (event.buttons == kSecondaryMouseButton) {
-                            _showImageContextMenu(event.position, message.imageUrl);
+                            _showImageContextMenu(event.position, message.imageUrl, localizations);
                           }
                         }
                       },
@@ -585,7 +585,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showImageContextMenu(Offset tapPosition, String imageUrl) {
+  void _showImageContextMenu(Offset tapPosition, String imageUrl, AppLocalizations localizations) {
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
@@ -600,7 +600,7 @@ class _ChatScreenState extends State<ChatScreen> {
       position: position,
       items: [
         PopupMenuItem(
-          child: const Text('Save Image'),
+          child: Text(localizations.saveImage),
           onTap: () {
             // 使用 Future.delayed 确保菜单关闭后再执行保存操作
             Future.delayed(Duration.zero, () {
