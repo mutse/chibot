@@ -118,6 +118,14 @@ jobs:
         run: |
           flutter build windows --release
 
+      - name: Zip Windows Release
+        if: ${{ matrix.platform == 'windows' }}
+        shell: powershell
+        run: |
+          $releaseDir = "build/windows/x64/runner/Release"
+          $zipPath = "$releaseDir/chibot-windows.zip"
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath $zipPath
+
       - name: Create DMG package (macOS only)
         if: ${{ matrix.platform == 'macos' }}
         run: |
@@ -156,7 +164,7 @@ jobs:
           path: |
             build/macos/*.dmg
             build/linux/x64/release/bundle/chibot
-            build/windows/x64/runner/Release/chibot.exe
+            build/windows/x64/runner/Release/chibot-windows.zip
             build/app/outputs/flutter-apk/app-release.apk
             build/ios/iphoneos/chibot.app.zip
 
@@ -185,7 +193,7 @@ jobs:
           name: Daily Build ${{ github.run_number }}
           files: |
             release-artifacts/**/*.dmg
-            release-artifacts/**/chibot.exe
+            release-artifacts/**/chibot-windows.zip
             release-artifacts/**/app-release.apk
             release-artifacts/**/chibot.app.zip
             release-artifacts/build-linux-x64/linux/x64/release/bundle/chibot
