@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
+import '../models/chat_session.dart';
+import '../services/chat_session_service.dart';
 import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
 import '../models/image_message.dart'; // Added for image messages
@@ -13,7 +15,6 @@ import 'settings_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/services.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -26,12 +27,50 @@ class _ChatScreenState extends State<ChatScreen> {
   // Sidebar width - can be adjusted
   final double _sidebarWidth = 260.0;
   final List<ChatMessage> _messages = [];
+  final ChatSessionService _sessionService = ChatSessionService();
+  List<ChatSession> _chatSessions = [];
+  String? _currentSessionId;
   final TextEditingController _textController = TextEditingController();
   final OpenAIService _openAIService = OpenAIService();
   final ImageGenerationService _imageGenerationService = ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChatSessions();
+  }
+
+  Future<void> _loadChatSessions() async {
+    final sessions = await _sessionService.loadSessions();
+    setState(() {
+      _chatSessions = sessions;
+      if (_chatSessions.isNotEmpty) {
+        // Optionally load the last active session or start a new one
+        // For now, we'll just ensure the list is loaded.
+      }
+    });
+  }
+
+  void _startNewChat() {
+    setState(() {
+      _messages.clear();
+      _currentSessionId = null;
+      _isLoading = false;
+    });
+  }
+
+  void _loadSession(ChatSession session) {
+    setState(() {
+      _messages.clear();
+      _messages.addAll(session.messages);
+      _currentSessionId = session.id;
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
 
   void _sendMessage() async {
     final text = _textController.text.trim();
@@ -58,6 +97,19 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add(userMessage);
         _isLoading = true;
       });
+    }
+
+    // If it's a new chat, create a session ID and save the initial message
+    if (_currentSessionId == null) {
+      _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      final newSession = ChatSession(
+        id: _currentSessionId!,
+        title: text.length > 30 ? '${text.substring(0, 30)}...' : text, // Use first part of message as title
+        messages: [userMessage],
+        createdAt: DateTime.now(),
+      );
+      await _sessionService.saveSession(newSession);
+      _loadChatSessions(); // Reload sessions to update sidebar
     }
     _scrollToBottom();
 
@@ -131,6 +183,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 timestamp: _messages[lastMessageIndex].timestamp,
                 isLoading: false, // Done loading
               );
+            // Save the updated session
+            if (_currentSessionId != null) {
+              final updatedSession = ChatSession(
+                id: _currentSessionId!,
+                title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
+                messages: List.from(_messages),
+                createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+              );
+              _sessionService.saveSession(updatedSession);
+            }
           }
           _isLoading = false; // Overall loading state for the input field
         });
@@ -168,6 +230,17 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
        _scrollToBottom();
+    }
+    // After sending message, save the session
+    if (_currentSessionId != null) {
+      final currentSession = ChatSession(
+        id: _currentSessionId!,
+        title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
+        messages: List.from(_messages),
+        createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+      );
+      await _sessionService.saveSession(currentSession);
+      _loadChatSessions(); // Reload sessions to update sidebar
     }
   }
 
@@ -214,6 +287,24 @@ class _ChatScreenState extends State<ChatScreen> {
           _buildSidebarItem(context, Icons.chat_bubble_outline, 'Chi Chat', isSelected: true), // Keep 'ChatGPT' as it's a model name
           _buildSidebarItem(context, Icons.search, 'Chi Search'), // Keep 'GTP search' as it's a model name
           _buildSidebarItem(context, Icons.code, 'Chi Code'), // Keep 'SwiftUI GPT' as it's a model name
+          const SizedBox(height: 20),
+          _buildSidebarItem(context, Icons.add_comment_outlined, AppLocalizations.of(context)!.newChat, onTap: _startNewChat),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _chatSessions.length,
+              itemBuilder: (context, index) {
+                final session = _chatSessions[index];
+                return _buildSidebarItem(
+                  context,
+                  Icons.history,
+                  session.title,
+                  isSelected: _currentSessionId == session.id,
+                  onTap: () => _loadSession(session),
+                );
+              },
+            ),
+          ),
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
 
@@ -791,6 +882,16 @@ class _ChatScreenState extends State<ChatScreen> {
               isLoading: false,
               error: imageUrl == null ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl : null,
             );
+            // Save the updated session
+            if (_currentSessionId != null) {
+              final updatedSession = ChatSession(
+                id: _currentSessionId!,
+                title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
+                messages: List.from(_messages),
+                createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+              );
+              _sessionService.saveSession(updatedSession);
+            }
           }
           _isLoading = false;
         });

@@ -15,6 +15,15 @@ class ChatMessage {
     this.error,
   });
 
+  // Convert a ChatMessage object into a Map object
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'sender': sender.toString().split('.').last, // Convert enum to string
+        'timestamp': timestamp.toIso8601String(),
+        'isLoading': isLoading,
+        'error': error,
+      };
+
   // OpenAI API 需要的格式
   Map<String, String>? toApiJson() {
     if (text.isEmpty) {
@@ -25,6 +34,16 @@ class ChatMessage {
       'content': text,
     };
   }
+
+  // Convert a Map object into a ChatMessage object
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
+        text: json['text'],
+        sender: MessageSender.values.firstWhere(
+            (e) => e.toString().split('.').last == json['sender']),
+        timestamp: DateTime.parse(json['timestamp']),
+        isLoading: json['isLoading'],
+        error: json['error'],
+      );
 
   // CopyWith method for easier updates, especially for streaming
   ChatMessage copyWith({

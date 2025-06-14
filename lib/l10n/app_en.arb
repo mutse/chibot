@@ -50,5 +50,6 @@
   "enterCustomImageModelName": "Enter custom image model name",
   "providerAndModelAdded": "Provider and model added!",
   "providerAndModelNameCannotBeEmpty": "Provider name and model name cannot be empty.",
-  "saveImage": "Save image"
+  "saveImage": "Save image",
+  "newChat": "New Chat"
 }
