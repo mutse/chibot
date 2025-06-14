@@ -336,6 +336,24 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          const SizedBox(height: 20),
+          _buildSidebarItem(context, Icons.add_photo_alternate_outlined, AppLocalizations.of(context)!.newImageSession, onTap: _startNewImageSession),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _imageSessions.length,
+              itemBuilder: (context, index) {
+                final session = _imageSessions[index];
+                return _buildSidebarItem(
+                  context,
+                  Icons.image,
+                  session.title,
+                  isSelected: _currentImageSessionId == session.id,
+                  onTap: () => _loadImageSession(session),
+                );
+              },
+            ),
+          ),
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
 

@@ -52,5 +52,6 @@
   "providerAndModelNameCannotBeEmpty": "Provider name and model name cannot be empty.",
   "saveImage": "Save image",
   "newChat": "New Chat",
-  "imageGeneratedSuccessfully": "Image generated successfully!"
+  "imageGeneratedSuccessfully": "Image generated successfully!",
+  "newImageSession": "New Image Session"
 }
