@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'dart:convert'; // For base64 decoding
+import 'dart:io';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../services/chat_session_service.dart';
@@ -9,12 +13,9 @@ import '../services/openai_service.dart';
 import '../models/image_message.dart'; // Added for image messages
 import '../services/image_generation_service.dart'; // Added for image generation
 import '../services/image_save_service.dart';
-import 'dart:convert'; // For base64 decoding
 import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
+
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -35,7 +36,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final ImageGenerationService _imageGenerationService = ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
-
 
   @override
   void initState() {
@@ -548,7 +548,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (message.text.isNotEmpty && (isUser || (message.isLoading != true && message.imageUrl.isNotEmpty)))
+            if (message.text?.isNotEmpty == true && (isUser || (message.isLoading != true && message.imageUrl?.isNotEmpty == true)))
               Padding(
                 padding: const EdgeInsets.only(bottom: 4.0),
                 child: Text(
@@ -577,18 +577,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
                 ),
               )
-            else if (message.imageUrl.isNotEmpty)
+            else if (message.imageUrl?.isNotEmpty == true)
               Padding(
                 padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
                 child: GestureDetector(
                   onLongPress: () {
-                    if (Platform.isAndroid || Platform.isIOS) {
-                      ImageSaveService.saveImage(message.imageUrl, context);
+                    if ((Platform.isAndroid || Platform.isIOS) && message.imageUrl != null) {
+                      ImageSaveService.saveImage(message.imageUrl!, context);
                     }
                   },
                   onSecondaryTapDown: (details) {
-                    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-                      _showImageContextMenu(details.globalPosition, message.imageUrl, localizations);
+                    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux) && message.imageUrl != null) {
+                      _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
                     }
                   },
                   child: MouseRegion(
@@ -598,15 +598,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (Platform.isMacOS && event.kind == PointerDeviceKind.mouse) {
                           // 检查是否是 Control+点击
                           if (event.buttons == kSecondaryMouseButton) {
-                            _showImageContextMenu(event.position, message.imageUrl, localizations);
+                            if (message.imageUrl != null) {
+                              _showImageContextMenu(event.position, message.imageUrl!, localizations);
+                            }
                           }
                         }
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
-                        child: message.imageUrl.startsWith('data:image')
+                        child: message.imageUrl?.startsWith('data:image') == true
                             ? Image.memory(
-                                base64Decode(message.imageUrl.split(',').last),
+                                base64Decode(message.imageUrl!.split(',').last),
                                 width: 250,
                                 height: 250,
                                 fit: BoxFit.cover,
@@ -620,7 +622,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 },
                               )
                             : Image.network(
-                                message.imageUrl,
+                                message.imageUrl!,
                                 width: 250,
                                 height: 250,
                                 fit: BoxFit.cover,
