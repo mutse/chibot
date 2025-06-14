@@ -7,7 +7,9 @@ import 'dart:convert'; // For base64 decoding
 import 'dart:io';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
+import '../models/image_session.dart';
 import '../services/chat_session_service.dart';
+import '../services/image_session_service.dart';
 import '../providers/settings_provider.dart';
 import '../services/openai_service.dart';
 import '../models/image_message.dart'; // Added for image messages
@@ -31,6 +33,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatSessionService _sessionService = ChatSessionService();
   List<ChatSession> _chatSessions = [];
   String? _currentSessionId;
+  final ImageSessionService _imageSessionService = ImageSessionService();
+  List<ImageSession> _imageSessions = [];
+  String? _currentImageSessionId;
   final TextEditingController _textController = TextEditingController();
   final OpenAIService _openAIService = OpenAIService();
   final ImageGenerationService _imageGenerationService = ImageGenerationService(); // Added
@@ -41,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _loadChatSessions();
+    _loadImageSessions();
   }
 
   Future<void> _loadChatSessions() async {
@@ -51,6 +57,13 @@ class _ChatScreenState extends State<ChatScreen> {
         // Optionally load the last active session or start a new one
         // For now, we'll just ensure the list is loaded.
       }
+    });
+  }
+
+  Future<void> _loadImageSessions() async {
+    final sessions = await _imageSessionService.loadSessions();
+    setState(() {
+      _imageSessions = sessions;
     });
   }
 
@@ -67,6 +80,24 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages.clear();
       _messages.addAll(session.messages);
       _currentSessionId = session.id;
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
+
+  void _startNewImageSession() {
+    setState(() {
+      _messages.clear();
+      _currentImageSessionId = null;
+      _isLoading = false;
+    });
+  }
+
+  void _loadImageSession(ImageSession session) {
+    setState(() {
+      _messages.clear();
+      _messages.addAll(session.messages);
+      _currentImageSessionId = session.id;
       _isLoading = false;
     });
     _scrollToBottom();
@@ -587,6 +618,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   },
                   onSecondaryTapDown: (details) {
+                    print("on secondary tap down");
                     if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux) && message.imageUrl != null) {
                       _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
                     }
@@ -885,14 +917,37 @@ class _ChatScreenState extends State<ChatScreen> {
               error: imageUrl == null ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl : null,
             );
             // Save the updated session
-            if (_currentSessionId != null) {
-              final updatedSession = ChatSession(
-                id: _currentSessionId!,
-                title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
-                messages: List.from(_messages),
-                createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+            if (_currentImageSessionId != null) {
+              _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+              final newSession = ImageSession(
+                id: _currentImageSessionId!,
+                title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+                messages: _messages.whereType<ImageMessage>().toList(),
+                createdAt: DateTime.now(),
+                model: settings.selectedImageModel,
               );
-              _sessionService.saveSession(updatedSession);
+              _imageSessionService.saveSession(newSession);
+              _loadImageSessions();
+            } else {
+                final existingSession = _imageSessions.firstWhere(
+                (s) => s.id == _currentImageSessionId,
+                orElse: () => ImageSession(
+                  id: _currentImageSessionId!,
+                  title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+                  messages: [],
+                  createdAt: DateTime.now(),
+                  model: settings.selectedImageModel,
+                ),
+              );
+
+              final updatedSession = ImageSession(
+                id: _currentImageSessionId!,
+                title: existingSession.title,
+                messages: _messages.whereType<ImageMessage>().toList(),
+                createdAt: existingSession.createdAt,
+                model: settings.selectedImageModel,
+              );
+              _imageSessionService.saveSession(updatedSession);
             }
           }
           _isLoading = false;
