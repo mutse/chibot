@@ -386,7 +386,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildSidebarItem(BuildContext context, IconData icon, String text, {bool isSelected = false, VoidCallback? onTap}) {
     return Material(
-      color: Colors.white,
       child: InkWell(
         onTap: onTap ?? () {},
         borderRadius: BorderRadius.circular(12.0),
@@ -396,7 +395,7 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           decoration: BoxDecoration(
-            color: isSelected ? const Color.fromARGB(255, 250, 245, 245) : Colors.white10,
+            color: isSelected ? const Color.fromARGB(255, 250, 245, 245) : Colors.transparent,
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
               color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white10,
@@ -407,7 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: <Widget>[
               Icon(
                 icon,
-                color: isSelected ? Colors.blue : Colors.white70,
+                color: isSelected ? Colors.blue : Colors.black87,
                 size: 20,
               ),
               const SizedBox(width: 12.0),
@@ -497,6 +496,27 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  void _showImageContextMenu(Offset position, String imageUrl, AppLocalizations localizations) {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        position & const Size(40, 40), // Smaller rectangle around the tapped position
+        Offset.zero & overlay.size, // Full screen size
+      ),
+      items: <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'save',
+          child: Text(localizations.saveImage),
+        ),
+      ],
+    ).then((String? value) {
+      if (value == 'save') {
+        ImageSaveService.saveImage(imageUrl, context);
+      }
+    });
+  }
+
   Widget _buildMessageBubble(ChatMessage message, int index) { // Added index
     final bool isUserMessage = message.sender == MessageSender.user;
     final theme = Theme.of(context);
@@ -567,16 +587,22 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildImageMessageBubble(ImageMessage message, bool isUser, bool isLastMessage, AppLocalizations localizations) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7 - _sidebarWidth * (MediaQuery.of(context).size.width > 600 ? 0.7 : 0)),
-        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: isUser ? const Color(0xFF2B7FFF) : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isUser ? 20.0 : 4.0),
-            topRight: Radius.circular(isUser ? 4.0 : 20.0),
-            bottomLeft: const Radius.circular(20.0),
+      child: GestureDetector(
+        onSecondaryTapDown: (details) {
+          if (message.imageUrl != null) {
+            _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
+          }
+        },
+        child: Container(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7 - _sidebarWidth * (MediaQuery.of(context).size.width > 600 ? 0.7 : 0)),
+          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: isUser ? const Color(0xFF2B7FFF) : Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(isUser ? 20.0 : 4.0),
+              topRight: Radius.circular(isUser ? 4.0 : 20.0),
+              bottomLeft: const Radius.circular(20.0),
             bottomRight: const Radius.circular(20.0),
           ),
           boxShadow: [
@@ -712,34 +738,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showImageContextMenu(Offset tapPosition, String imageUrl, AppLocalizations localizations) {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        tapPosition,
-        tapPosition,
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu(
-      context: context,
-      position: position,
-      items: [
-        PopupMenuItem(
-          child: Text(localizations.saveImage),
-          onTap: () {
-            // 使用 Future.delayed 确保菜单关闭后再执行保存操作
-            Future.delayed(Duration.zero, () {
-              ImageSaveService.saveImage(imageUrl, context);
-            });
-          },
-        ),
-      ],
-    );
+    ));
   }
 
   Widget _buildInputField() {

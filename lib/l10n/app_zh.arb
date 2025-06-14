@@ -37,7 +37,7 @@
   "appTitle": "Chi AI Chatbot",
   "noResponseFromAI": "AI 未返回响应。",
   "pleaseEnterPromptAfterImagine": "请在 /imagine 后输入提示。",
-  "saveImage": "保存图片",
   "imageGeneratedSuccessfully": "图片生成成功！",
-  "newImageSession": "新图片会话"
+  "newImageSession": "新图片会话",
+  "saveImage": "保存图片"
 }

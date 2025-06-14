@@ -41,6 +41,7 @@
   "errorLoadingImage": "Error loading image.",
   "noImageGenerated": "No image generated.",
   "errorGeneratingImage": "Error generating image: {error}",
+  "saveImage": "Save Image",
   "imageGenerationSettings": "Image Generation Settings",
   "selectImageProvider": "Select Image Provider:",
   "imageProviderURLOptional": "Image Provider URL (Optional):",
