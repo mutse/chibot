@@ -541,8 +541,8 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 1.0,
           ) : null,
         ),
-          child: messageContent,
-        ),
+        child: messageContent,
+      ),
       );
     }
 
@@ -618,25 +618,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   },
                   onSecondaryTapDown: (details) {
-                    print("on secondary tap down");
                     if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux) && message.imageUrl != null) {
                       _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
                     }
                   },
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: Listener(
-                      onPointerDown: (event) {
-                        if (Platform.isMacOS && event.kind == PointerDeviceKind.mouse) {
-                          // 检查是否是 Control+点击
-                          if (event.buttons == kSecondaryMouseButton) {
-                            if (message.imageUrl != null) {
-                              _showImageContextMenu(event.position, message.imageUrl!, localizations);
-                            }
-                          }
-                        }
-                      },
-                      child: ClipRRect(
+                    child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
                         child: message.imageUrl?.startsWith('data:image') == true
                             ? Image.memory(
@@ -684,9 +672,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                   ),
-                ),
-              )
-            else if (!isUser)
+                )
+          else if (!isUser)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
@@ -916,8 +903,9 @@ class _ChatScreenState extends State<ChatScreen> {
               isLoading: false,
               error: imageUrl == null ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl : null,
             );
-            // Save the updated session
-            if (_currentImageSessionId != null) {
+            // Corrected session saving logic
+            if (_currentImageSessionId == null) {
+              // This is the first message in a new image session
               _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
               final newSession = ImageSession(
                 id: _currentImageSessionId!,
@@ -927,27 +915,29 @@ class _ChatScreenState extends State<ChatScreen> {
                 model: settings.selectedImageModel,
               );
               _imageSessionService.saveSession(newSession);
-              _loadImageSessions();
+              _loadImageSessions(); // Reload sidebar
             } else {
-                final existingSession = _imageSessions.firstWhere(
-                (s) => s.id == _currentImageSessionId,
-                orElse: () => ImageSession(
-                  id: _currentImageSessionId!,
-                  title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
-                  messages: [],
-                  createdAt: DateTime.now(),
-                  model: settings.selectedImageModel,
-                ),
-              );
+              // Update existing image session
+              // Find the existing session to preserve its original title and creation time
+              ImageSession? existingSession;
+              try {
+                existingSession = _imageSessions.firstWhere((s) => s.id == _currentImageSessionId);
+              } catch (e) {
+                // If for some reason the session is not found (e.g., deleted externally),
+                // treat it as a new session. This is a fallback.
+                print("Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e");
+                _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString(); // Generate a new ID for the new session
+              }
 
               final updatedSession = ImageSession(
-                id: _currentImageSessionId!,
-                title: existingSession.title,
+                id: _currentImageSessionId!, // Use the current or newly generated ID
+                title: existingSession?.title ?? (prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt), // Keep original title or use prompt
                 messages: _messages.whereType<ImageMessage>().toList(),
-                createdAt: existingSession.createdAt,
+                createdAt: existingSession?.createdAt ?? DateTime.now(), // Keep original creation time or use now
                 model: settings.selectedImageModel,
               );
               _imageSessionService.saveSession(updatedSession);
+              _loadImageSessions(); // Reload sidebar
             }
           }
           _isLoading = false;
