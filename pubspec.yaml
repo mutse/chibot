@@ -41,6 +41,7 @@ dependencies:
   saver_gallery: ^4.0.0
   permission_handler: ^12.0.0+1
   path: ^1.9.0
+  device_info_plus: ^10.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

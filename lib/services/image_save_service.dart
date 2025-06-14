@@ -1,33 +1,37 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path/path.dart' as path;
 import 'package:saver_gallery/saver_gallery.dart';
 import 'dart:async';
 
 class ImageSaveService {
   static Future<bool> _requestPermissions() async {
     if (Platform.isAndroid) {
-      final plugin = Permission.photos;
-      final status = await plugin.status;
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+
+      Permission permissionToRequest;
+      if (androidInfo.version.sdkInt >= 33) {
+        permissionToRequest = Permission.photos;
+      } else {
+        permissionToRequest = Permission.storage;
+      }
+
+      final status = await permissionToRequest.status;
       if (status.isGranted) {
         return true;
       }
-      if (status.isDenied) {
-        if (await plugin.request().isGranted) {
-          return true;
-        }
-      }
-      return false;
+
+      // If not granted, request it
+      final requestStatus = await permissionToRequest.request();
+      return requestStatus.isGranted;
     } else if (Platform.isIOS) {
-      if (await Permission.photos.request().isGranted) {
-        return true;
-      }
-      return false;
+      final status = await Permission.photos.request();
+      return status.isGranted;
     }
     return true; // 桌面平台不需要权限
   }
