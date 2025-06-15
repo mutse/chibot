@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -53,33 +54,42 @@ class ImageSaveService {
 
       // 获取图片数据
       Uint8List imageBytes;
-      try {
-        final client = http.Client();
-        final response = await client.get(
-          Uri.parse(imageUrl),
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-          },
-        ).timeout(
-          const Duration(seconds: 30),
-          onTimeout: () {
-            throw TimeoutException('The connection has timed out, Please try again!');
-          },
-        );
-        
-        if (response.statusCode != 200) {
-          throw Exception('Failed to download image: ${response.statusCode}');
-        }
-        
-        imageBytes = response.bodyBytes;
-        client.close();
-      } catch (e) {
-        if (e is TimeoutException) {
-          throw Exception('Connection timed out. Please check your internet connection and try again.');
-        } else if (e is HandshakeException) {
-          throw Exception('SSL handshake failed. Please check your network connection and try again.');
-        } else {
-          throw Exception('Failed to download image: $e');
+      final base64RegExp = RegExp(r'^data:image/png;base64,');
+
+      if (base64RegExp.hasMatch(imageUrl)) {
+        // 如果是base64编码的图片数据
+        final String base64String = imageUrl.replaceFirst(base64RegExp, '');
+        imageBytes = base64Decode(base64String);
+      } else {
+        // 否则，按URL下载图片
+        try {
+          final client = http.Client();
+          final response = await client.get(
+            Uri.parse(imageUrl),
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+            },
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('The connection has timed out, Please try again!');
+            },
+          );
+          
+          if (response.statusCode != 200) {
+            throw Exception('Failed to download image: ${response.statusCode}');
+          }
+          
+          imageBytes = response.bodyBytes;
+          client.close();
+        } catch (e) {
+          if (e is TimeoutException) {
+            throw Exception('Connection timed out. Please check your internet connection and try again.');
+          } else if (e is HandshakeException) {
+            throw Exception('SSL handshake failed. Please check your network connection and try again.');
+          } else {
+            throw Exception('Failed to download image: $e');
+          }
         }
       }
 
