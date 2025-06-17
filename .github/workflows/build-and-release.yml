@@ -103,7 +103,7 @@ jobs:
         shell: bash
         run: |
           case $PLATFORM in
-            linux) flutter build linux --release ;;
+            linux) ./scripts/build_deb.sh ;;
             macos) flutter build macos --release ;;
             ios) flutter build ios --release --no-codesign ;;
             android)
@@ -163,7 +163,7 @@ jobs:
           name: build-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             build/macos/*.dmg
-            build/linux/x64/release/bundle/chibot
+            build/linux/x64/release/*.deb
             build/windows/x64/runner/Release/chibot-windows.zip
             build/app/outputs/flutter-apk/app-release.apk
             build/ios/iphoneos/chibot.app.zip
@@ -196,6 +196,6 @@ jobs:
             release-artifacts/**/chibot-windows.zip
             release-artifacts/**/app-release.apk
             release-artifacts/**/chibot.app.zip
-            release-artifacts/build-linux-x64/linux/x64/release/bundle/chibot
+            release-artifacts/build-linux-x64/linux/x64/release/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
