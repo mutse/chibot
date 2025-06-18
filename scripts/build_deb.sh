@@ -34,7 +34,7 @@ EOF
 # Copy application files
 cp -f build/linux/x64/release/bundle/$APP_NAME $PACKAGE_DIR/usr/bin/
 cp -r build/linux/x64/release/bundle/data $PACKAGE_DIR/usr/bin/
-cp -f build/linux/x64/release/bundle/lib $PACKAGE_DIR/usr/
+cp -r build/linux/x64/release/bundle/lib $PACKAGE_DIR/usr/
 
 # Make executable
 chmod +x $PACKAGE_DIR/usr/bin/$APP_NAME
