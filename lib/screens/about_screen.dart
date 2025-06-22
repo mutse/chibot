@@ -44,7 +44,7 @@ class AboutScreen extends StatelessWidget {
             _buildFeaturesSection(context),
 
             // Supported Features Section
-            _buildSupportedFeaturesSection(context),
+            // _buildSupportedFeaturesSection(context),
 
             // Supported Models Section
             _buildSupportedModelsSection(context),
@@ -64,6 +64,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildAppInfoSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -95,9 +96,9 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // App Name
-          const Text(
-            'Chibot AI',
-            style: TextStyle(
+          Text(
+            localizations.appName,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -106,9 +107,9 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 4),
 
           // App Description
-          const Text(
-            '智能对话助手',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+          Text(
+            localizations.appDesc,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const SizedBox(height: 12),
 
@@ -116,9 +117,9 @@ class AboutScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                '版本 1.0.0',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                localizations.version,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(width: 16),
               const Text(
@@ -126,9 +127,9 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(width: 16),
-              const Text(
-                '2025年06月',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              Text(
+                localizations.releaseDate,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -138,6 +139,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildFeaturesSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -146,9 +148,9 @@ class AboutScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '功能特色',
-            style: TextStyle(
+          Text(
+            localizations.features,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -159,8 +161,8 @@ class AboutScreen extends StatelessWidget {
           // Feature Cards
           _buildFeatureCard(
             icon: Icons.chat_bubble_outline,
-            title: '智能对话',
-            description: '支持多种AI模型，提供自然流畅的对话体验',
+            title: localizations.featureSmartChat,
+            description: localizations.featureSmartDesc,
             gradient: const LinearGradient(
               colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
               begin: Alignment.topLeft,
@@ -171,8 +173,8 @@ class AboutScreen extends StatelessWidget {
 
           _buildFeatureCard(
             icon: Icons.image,
-            title: '文生图',
-            description: '将文字描述转换为精美图片',
+            title: localizations.featureImageGen,
+            description: localizations.featureImageGenDesc,
             gradient: const LinearGradient(
               colors: [Color(0xFFF093FB), Color(0xFFF5576C)],
               begin: Alignment.topLeft,
@@ -183,8 +185,8 @@ class AboutScreen extends StatelessWidget {
 
           _buildFeatureCard(
             icon: Icons.settings,
-            title: '灵活配置',
-            description: '支持多种模型提供商和自定义配置',
+            title: localizations.featureFlexible,
+            description: localizations.featureFlexibleDesc,
             gradient: const LinearGradient(
               colors: [Color(0xFF4FACFE), Color(0xFF00F2FE)],
               begin: Alignment.topLeft,
@@ -284,18 +286,18 @@ class AboutScreen extends StatelessWidget {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
             ),
             itemCount: features.length,
             itemBuilder: (context, index) {
               return Row(
                 children: [
-                  const Icon(Icons.check, color: Colors.green, size: 16),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.check, color: Colors.green, size: 14),
+                  const SizedBox(width: 4),
                   Text(
                     features[index],
-                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    style: const TextStyle(fontSize: 11, color: Colors.black87),
                   ),
                 ],
               );
@@ -404,6 +406,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildHelpSupportSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final helpItems = [
       {
         'icon': Icons.help_outline,
@@ -455,6 +458,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildLegalSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final legalItems = [
       {'icon': Icons.security, 'title': '隐私政策'},
       {'icon': Icons.description, 'title': '服务条款'},

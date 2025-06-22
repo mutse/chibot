@@ -39,5 +39,17 @@
   "pleaseEnterPromptAfterImagine": "请在 /imagine 后输入提示。",
   "imageGeneratedSuccessfully": "图片生成成功！",
   "newImageSession": "新图片会话",
-  "saveImage": "保存图片"
+  "saveImage": "保存图片",
+  "appName": "Chibot AI",
+  "appDesc": "智能聊天助手",
+  "version": "版本 v1.0.0",
+  "releaseDate": "2025年6月",
+  "featuresTitle": "特性",
+  "featureSmartChat": "智能聊天",
+  "featureSmartDesc": "支持多种AI模型，提供自然流畅的对话体验。",
+  "features": "功能特色",
+  "featureImageGen": "文生图",
+  "featureImageGenDesc": "将文字描述转换为精美图片。",
+  "featureFlexible": "灵活配置",
+  "featureFlexibleDesc": "支持多种模型提供商和自定义配置。"
 }

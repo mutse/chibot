@@ -54,5 +54,16 @@
   "saveImage": "Save image",
   "newChat": "New Chat",
   "imageGeneratedSuccessfully": "Image generated successfully!",
-  "newImageSession": "New Image Session"
+  "newImageSession": "New Image Session",
+  "appName": "Chibot AI",
+  "appDesc": "Smart Chat Assistant",
+  "version": "Version v1.0.0",
+  "releaseDate": "June 2025",
+  "featureSmartChat": "Smart Chat",
+  "featureSmartDesc": "Supports multiple AI models for natural conversations.",
+  "features": "Features",
+  "featureImageGen": "Text-to-Image",
+  "featureImageGenDesc": "Generate beautiful images from text prompts.",
+  "featureFlexible": "Flexible Configuration",
+  "featureFlexibleDesc": "Supports multiple model providers and custom settings."
 }

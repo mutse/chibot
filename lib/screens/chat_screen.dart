@@ -17,7 +17,7 @@ import '../services/image_generation_service.dart'; // Added for image generatio
 import '../services/image_save_service.dart';
 import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
-
+import 'about_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -38,7 +38,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _currentImageSessionId;
   final TextEditingController _textController = TextEditingController();
   final OpenAIService _openAIService = OpenAIService();
-  final ImageGenerationService _imageGenerationService = ImageGenerationService(); // Added
+  final ImageGenerationService _imageGenerationService =
+      ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -135,7 +136,10 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
       final newSession = ChatSession(
         id: _currentSessionId!,
-        title: text.length > 30 ? '${text.substring(0, 30)}...' : text, // Use first part of message as title
+        title:
+            text.length > 30
+                ? '${text.substring(0, 30)}...'
+                : text, // Use first part of message as title
         messages: [userMessage],
         createdAt: DateTime.now(),
       );
@@ -148,11 +152,13 @@ class _ChatScreenState extends State<ChatScreen> {
     if (settings1.apiKey == null || settings1.apiKey!.isEmpty) {
       if (mounted) {
         setState(() {
-          _messages.add(ChatMessage(
-            text: AppLocalizations.of(context)!.apiKeyNotSetError,
-            sender: MessageSender.ai,
-            timestamp: DateTime.now(),
-          ));
+          _messages.add(
+            ChatMessage(
+              text: AppLocalizations.of(context)!.apiKeyNotSetError,
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ),
+          );
           _isLoading = false;
         });
       }
@@ -190,11 +196,14 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {
             // Update the last message (which is the AI's message placeholder)
             final lastMessageIndex = _messages.length - 1;
-            if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
+            if (lastMessageIndex >= 0 &&
+                _messages[lastMessageIndex].sender == MessageSender.ai) {
               _messages[lastMessageIndex] = ChatMessage(
                 text: fullResponse,
                 sender: MessageSender.ai,
-                timestamp: _messages[lastMessageIndex].timestamp, // Keep original timestamp
+                timestamp:
+                    _messages[lastMessageIndex]
+                        .timestamp, // Keep original timestamp
                 isLoading: true, // Still loading until stream is done
               );
             }
@@ -207,20 +216,30 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           final lastMessageIndex = _messages.length - 1;
-          if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
-             _messages[lastMessageIndex] = ChatMessage(
-                text: fullResponse.isEmpty ? AppLocalizations.of(context)!.noResponseFromAI : fullResponse, // Handle empty response
-                sender: MessageSender.ai,
-                timestamp: _messages[lastMessageIndex].timestamp,
-                isLoading: false, // Done loading
-              );
+          if (lastMessageIndex >= 0 &&
+              _messages[lastMessageIndex].sender == MessageSender.ai) {
+            _messages[lastMessageIndex] = ChatMessage(
+              text:
+                  fullResponse.isEmpty
+                      ? AppLocalizations.of(context)!.noResponseFromAI
+                      : fullResponse, // Handle empty response
+              sender: MessageSender.ai,
+              timestamp: _messages[lastMessageIndex].timestamp,
+              isLoading: false, // Done loading
+            );
             // Save the updated session
             if (_currentSessionId != null) {
               final updatedSession = ChatSession(
                 id: _currentSessionId!,
-                title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
+                title:
+                    _chatSessions
+                        .firstWhere((s) => s.id == _currentSessionId!)
+                        .title, // Keep original title
                 messages: List.from(_messages),
-                createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+                createdAt:
+                    _chatSessions
+                        .firstWhere((s) => s.id == _currentSessionId!)
+                        .createdAt,
               );
               _sessionService.saveSession(updatedSession);
             }
@@ -228,13 +247,13 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false; // Overall loading state for the input field
         });
       }
-
     } catch (e) {
       if (mounted) {
         setState(() {
           // Update the AI message placeholder with the error
           final lastMessageIndex = _messages.length - 1;
-          if (lastMessageIndex >= 0 && _messages[lastMessageIndex].sender == MessageSender.ai) {
+          if (lastMessageIndex >= 0 &&
+              _messages[lastMessageIndex].sender == MessageSender.ai) {
             _messages[lastMessageIndex] = ChatMessage(
               text: "Error: ${e.toString()}",
               sender: MessageSender.ai,
@@ -243,11 +262,13 @@ class _ChatScreenState extends State<ChatScreen> {
             );
           } else {
             // If for some reason the placeholder wasn't added, add a new error message
-             _messages.add(ChatMessage(
-              text: "Error: ${e.toString()}",
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ));
+            _messages.add(
+              ChatMessage(
+                text: "Error: ${e.toString()}",
+                sender: MessageSender.ai,
+                timestamp: DateTime.now(),
+              ),
+            );
           }
           _isLoading = false;
         });
@@ -260,15 +281,21 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       }
-       _scrollToBottom();
+      _scrollToBottom();
     }
     // After sending message, save the session
     if (_currentSessionId != null) {
       final currentSession = ChatSession(
         id: _currentSessionId!,
-        title: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).title, // Keep original title
+        title:
+            _chatSessions
+                .firstWhere((s) => s.id == _currentSessionId!)
+                .title, // Keep original title
         messages: List.from(_messages),
-        createdAt: _chatSessions.firstWhere((s) => s.id == _currentSessionId!).createdAt,
+        createdAt:
+            _chatSessions
+                .firstWhere((s) => s.id == _currentSessionId!)
+                .createdAt,
       );
       await _sessionService.saveSession(currentSession);
       _loadChatSessions(); // Reload sessions to update sidebar
@@ -300,7 +327,12 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 227, 229, 249), // Darker input field background
+              color: const Color.fromARGB(
+                255,
+                227,
+                229,
+                249,
+              ), // Darker input field background
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: TextField(
@@ -315,11 +347,29 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(height: 20),
           // List of chats (example items)
-          _buildSidebarItem(context, Icons.chat_bubble_outline, 'Chi Chat', isSelected: true), // Keep 'ChatGPT' as it's a model name
-          _buildSidebarItem(context, Icons.search, 'Chi Search'), // Keep 'GTP search' as it's a model name
-          _buildSidebarItem(context, Icons.code, 'Chi Code'), // Keep 'SwiftUI GPT' as it's a model name
+          _buildSidebarItem(
+            context,
+            Icons.chat_bubble_outline,
+            'Chi Chat',
+            isSelected: true,
+          ), // Keep 'ChatGPT' as it's a model name
+          // _buildSidebarItem(
+          //   context,
+          //   Icons.search,
+          //   'Chi Search',
+          // ), // Keep 'GTP search' as it's a model name
+          // _buildSidebarItem(
+          //   context,
+          //   Icons.code,
+          //   'Chi Code',
+          // ), // Keep 'SwiftUI GPT' as it's a model name
           const SizedBox(height: 20),
-          _buildSidebarItem(context, Icons.add_comment_outlined, AppLocalizations.of(context)!.newChat, onTap: _startNewChat),
+          _buildSidebarItem(
+            context,
+            Icons.add_comment_outlined,
+            AppLocalizations.of(context)!.newChat,
+            onTap: _startNewChat,
+          ),
           const SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
@@ -337,7 +387,12 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          _buildSidebarItem(context, Icons.add_photo_alternate_outlined, AppLocalizations.of(context)!.newImageSession, onTap: _startNewImageSession),
+          _buildSidebarItem(
+            context,
+            Icons.add_photo_alternate_outlined,
+            AppLocalizations.of(context)!.newImageSession,
+            onTap: _startNewImageSession,
+          ),
           const SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
@@ -357,34 +412,42 @@ class _ChatScreenState extends State<ChatScreen> {
           // Add more items or a ListView for scrollable content
           const Spacer(), // Pushes settings to the bottom
 
-          _buildSidebarItem(context, Icons.info_outlined, AppLocalizations.of(context)!.about, onTap: () { // Use l10n here
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AboutDialog(
-                  applicationName: 'Chibot',
-                  applicationVersion: '1.0.0',
-                  applicationIcon: Image.asset(
-                    'assets/images/logo.png',
-                    height: 64,
-                    width: 64,
-                  ),
-                  applicationLegalese: '© 2025 Mutse Young. All rights reserved.',
-                );
-              },);
-          }),
-          _buildSidebarItem(context, Icons.settings_outlined, AppLocalizations.of(context)!.settings, onTap: () { // Use l10n here
-             Navigator.push(
+          _buildSidebarItem(
+            context,
+            Icons.info_outlined,
+            AppLocalizations.of(context)!.about,
+            onTap: () {
+              // Use l10n here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
+          ),
+          _buildSidebarItem(
+            context,
+            Icons.settings_outlined,
+            AppLocalizations.of(context)!.settings,
+            onTap: () {
+              // Use l10n here
+              Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
-          }),
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSidebarItem(BuildContext context, IconData icon, String text, {bool isSelected = false, VoidCallback? onTap}) {
+  Widget _buildSidebarItem(
+    BuildContext context,
+    IconData icon,
+    String text, {
+    bool isSelected = false,
+    VoidCallback? onTap,
+  }) {
     return Material(
       child: InkWell(
         onTap: onTap ?? () {},
@@ -395,7 +458,10 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           decoration: BoxDecoration(
-            color: isSelected ? const Color.fromARGB(255, 250, 245, 245) : Colors.transparent,
+            color:
+                isSelected
+                    ? const Color.fromARGB(255, 250, 245, 245)
+                    : Colors.transparent,
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
               color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white10,
@@ -427,12 +493,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final settings = Provider.of<SettingsProvider>(context);
     bool isApiKeySet = settings.apiKey != null && settings.apiKey!.isNotEmpty;
     // Determine if we should show the sidebar based on screen width
     // For simplicity, we'll always show it here, but in a real app, you might hide it on smaller screens.
-    bool showSidebar = MediaQuery.of(context).size.width > 600; // Example breakpoint
+    bool showSidebar =
+        MediaQuery.of(context).size.width > 600; // Example breakpoint
 
     return Scaffold(
       appBar: AppBar(
@@ -440,15 +506,15 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 1,
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/logo.png',
-              height: 24.0,
-              width: 24.0,
-            ),
+            Image.asset('assets/images/logo.png', height: 24.0, width: 24.0),
             const SizedBox(width: 8.0),
             Text(
               AppLocalizations.of(context)!.chatGPTTitle,
-              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.normal, fontSize: 18),
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.normal,
+                fontSize: 18,
+              ),
             ),
           ],
         ),
@@ -456,15 +522,14 @@ class _ChatScreenState extends State<ChatScreen> {
           builder: (BuildContext context) {
             return IconButton(
               icon: const Icon(Icons.menu, color: Colors.black87),
-              onPressed: () { Scaffold.of(context).openDrawer(); },
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
             );
           },
         ),
       ),
-      drawer: Drawer(
-        width: _sidebarWidth,
-        child: _buildSidebar(context),
-      ),
+      drawer: Drawer(width: _sidebarWidth, child: _buildSidebar(context)),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -496,12 +561,18 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showImageContextMenu(Offset position, String imageUrl, AppLocalizations localizations) {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  void _showImageContextMenu(
+    Offset position,
+    String imageUrl,
+    AppLocalizations localizations,
+  ) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
     showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
-        position & const Size(40, 40), // Smaller rectangle around the tapped position
+        position &
+            const Size(40, 40), // Smaller rectangle around the tapped position
         Offset.zero & overlay.size, // Full screen size
       ),
       items: <PopupMenuEntry<String>>[
@@ -517,16 +588,23 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Widget _buildMessageBubble(ChatMessage message, int index) { // Added index
+  Widget _buildMessageBubble(ChatMessage message, int index) {
+    // Added index
     final bool isUserMessage = message.sender == MessageSender.user;
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
 
     if (message is ImageMessage) {
-      return _buildImageMessageBubble(message, isUserMessage, index == _messages.length - 1, localizations);
+      return _buildImageMessageBubble(
+        message,
+        isUserMessage,
+        index == _messages.length - 1,
+        localizations,
+      );
     }
 
-    final bool isAiLoading = message.sender == MessageSender.ai && (message.isLoading ?? false);
+    final bool isAiLoading =
+        message.sender == MessageSender.ai && (message.isLoading ?? false);
     Widget messageContent;
     if (isAiLoading && message.text.isEmpty) {
       messageContent = SizedBox(
@@ -543,9 +621,10 @@ class _ChatScreenState extends State<ChatScreen> {
       messageContent = SelectableText(
         message.text,
         style: theme.textTheme.bodyLarge?.copyWith(
-          color: isUserMessage
-              ? theme.colorScheme.onPrimary
-              : theme.colorScheme.onSurface,
+          color:
+              isUserMessage
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onSurface,
         ),
       );
     }
@@ -553,7 +632,12 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7 - _sidebarWidth * (MediaQuery.of(context).size.width > 600 ? 0.7 : 0)),
+        constraints: BoxConstraints(
+          maxWidth:
+              MediaQuery.of(context).size.width * 0.7 -
+              _sidebarWidth *
+                  (MediaQuery.of(context).size.width > 600 ? 0.7 : 0),
+        ),
         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
         decoration: BoxDecoration(
@@ -566,35 +650,50 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: isUserMessage 
-                ? const Color(0xFF2B7FFF).withOpacity(0.3)
-                : Colors.black.withOpacity(0.05),
+              color:
+                  isUserMessage
+                      ? const Color(0xFF2B7FFF).withOpacity(0.3)
+                      : Colors.black.withOpacity(0.05),
               spreadRadius: 0,
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
-          border: !isUserMessage ? Border.all(
-            color: Colors.grey.withOpacity(0.1),
-            width: 1.0,
-          ) : null,
+          border:
+              !isUserMessage
+                  ? Border.all(color: Colors.grey.withOpacity(0.1), width: 1.0)
+                  : null,
         ),
         child: messageContent,
       ),
-      );
-    }
+    );
+  }
 
-  Widget _buildImageMessageBubble(ImageMessage message, bool isUser, bool isLastMessage, AppLocalizations localizations) {
+  Widget _buildImageMessageBubble(
+    ImageMessage message,
+    bool isUser,
+    bool isLastMessage,
+    AppLocalizations localizations,
+  ) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
         onSecondaryTapDown: (details) {
           if (message.imageUrl != null) {
-            _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
+            _showImageContextMenu(
+              details.globalPosition,
+              message.imageUrl!,
+              localizations,
+            );
           }
         },
         child: Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7 - _sidebarWidth * (MediaQuery.of(context).size.width > 600 ? 0.7 : 0)),
+          constraints: BoxConstraints(
+            maxWidth:
+                MediaQuery.of(context).size.width * 0.7 -
+                _sidebarWidth *
+                    (MediaQuery.of(context).size.width > 600 ? 0.7 : 0),
+          ),
           margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
           decoration: BoxDecoration(
@@ -603,142 +702,203 @@ class _ChatScreenState extends State<ChatScreen> {
               topLeft: Radius.circular(isUser ? 20.0 : 4.0),
               topRight: Radius.circular(isUser ? 4.0 : 20.0),
               bottomLeft: const Radius.circular(20.0),
-            bottomRight: const Radius.circular(20.0),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isUser 
-                ? const Color(0xFF2B7FFF).withOpacity(0.3)
-                : Colors.black.withOpacity(0.05),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              bottomRight: const Radius.circular(20.0),
             ),
-          ],
-          border: !isUser ? Border.all(
-            color: Colors.grey.withOpacity(0.1),
-            width: 1.0,
-          ) : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (message.text?.isNotEmpty == true && (isUser || (message.isLoading != true && message.imageUrl?.isNotEmpty == true)))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
-                child: Text(
-                  isUser ? '/imagine ${message.text}' : message.text,
-                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isUser 
-                        ? Theme.of(context).colorScheme.onPrimary 
-                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    isUser
+                        ? const Color(0xFF2B7FFF).withOpacity(0.3)
+                        : Colors.black.withOpacity(0.05),
+                spreadRadius: 0,
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border:
+                !isUser
+                    ? Border.all(
+                      color: Colors.grey.withOpacity(0.1),
+                      width: 1.0,
+                    )
+                    : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (message.text?.isNotEmpty == true &&
+                  (isUser ||
+                      (message.isLoading != true &&
+                          message.imageUrl?.isNotEmpty == true)))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: Text(
+                    isUser ? '/imagine ${message.text}' : message.text,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color:
+                          isUser
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.8),
+                    ),
                   ),
                 ),
-              ),
-            if (message.isLoading ?? false)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: SpinKitThreeBounce(
-                  color: isUser ? Colors.white : Theme.of(context).colorScheme.primary,
-                  size: 20.0,
-                ),
-              )
-            else if (message.error?.isNotEmpty == true)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  message.error!,
-                  style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
-                ),
-              )
-            else if (message.imageUrl?.isNotEmpty == true)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-                child: GestureDetector(
-                  onLongPress: () {
-                    if ((Platform.isAndroid || Platform.isIOS) && message.imageUrl != null) {
-                      ImageSaveService.saveImage(message.imageUrl!, context);
-                    }
-                  },
-                  onSecondaryTapDown: (details) {
-                    if (!kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux) && message.imageUrl != null) {
-                      _showImageContextMenu(details.globalPosition, message.imageUrl!, localizations);
-                    }
-                  },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: ClipRRect(
+              if (message.isLoading ?? false)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: SpinKitThreeBounce(
+                    color:
+                        isUser
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.primary,
+                    size: 20.0,
+                  ),
+                )
+              else if (message.error?.isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    message.error!,
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else if (message.imageUrl?.isNotEmpty == true)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+                  child: GestureDetector(
+                    onLongPress: () {
+                      if ((Platform.isAndroid || Platform.isIOS) &&
+                          message.imageUrl != null) {
+                        ImageSaveService.saveImage(message.imageUrl!, context);
+                      }
+                    },
+                    onSecondaryTapDown: (details) {
+                      if (!kIsWeb &&
+                          (Platform.isMacOS ||
+                              Platform.isWindows ||
+                              Platform.isLinux) &&
+                          message.imageUrl != null) {
+                        _showImageContextMenu(
+                          details.globalPosition,
+                          message.imageUrl!,
+                          localizations,
+                        );
+                      }
+                    },
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(12.0),
-                        child: message.imageUrl?.startsWith('data:image') == true
-                            ? Image.memory(
-                                base64Decode(message.imageUrl!.split(',').last),
-                                width: 250,
-                                height: 250,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 250,
-                                    height: 250,
-                                    color: Colors.grey[200],
-                                    child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
-                                  );
-                                },
-                              )
-                            : Image.network(
-                                message.imageUrl!,
-                                width: 250,
-                                height: 250,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return SizedBox(
-                                    width: 250,
-                                    height: 250,
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                            : null,
+                        child:
+                            message.imageUrl?.startsWith('data:image') == true
+                                ? Image.memory(
+                                  base64Decode(
+                                    message.imageUrl!.split(',').last,
+                                  ),
+                                  width: 250,
+                                  height: 250,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 250,
+                                      height: 250,
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: Text(
+                                          localizations.errorLoadingImage,
+                                          style: TextStyle(
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 250,
-                                    height: 250,
-                                    color: Colors.grey[200],
-                                    child: Center(child: Text(localizations.errorLoadingImage, style: TextStyle(color: Colors.red[700]))),
-                                  );
-                                },
-                              ),
+                                    );
+                                  },
+                                )
+                                : Image.network(
+                                  message.imageUrl!,
+                                  width: 250,
+                                  height: 250,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (
+                                    BuildContext context,
+                                    Widget child,
+                                    ImageChunkEvent? loadingProgress,
+                                  ) {
+                                    if (loadingProgress == null) return child;
+                                    return SizedBox(
+                                      width: 250,
+                                      height: 250,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          value:
+                                              loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 250,
+                                      height: 250,
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: Text(
+                                          localizations.errorLoadingImage,
+                                          style: TextStyle(
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                       ),
                     ),
                   ),
                 )
-          else if (!isUser)
+              else if (!isUser)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(
+                    localizations.noImageGenerated,
+                    style: TextStyle(
+                      color: Colors.orange[700],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.only(top: 5.0),
                 child: Text(
-                  localizations.noImageGenerated,
-                  style: TextStyle(color: Colors.orange[700], fontStyle: FontStyle.italic),
+                  '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color:
+                        isUser
+                            ? Colors.white70
+                            : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.only(top: 5.0),
-              child: Text(
-                '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isUser ? Colors.white70 : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildInputField() {
@@ -774,12 +934,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: TextField(
                         controller: _textController,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          height: 1.4,
-                        ),
+                        style: const TextStyle(fontSize: 15, height: 1.4),
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.askAnyQuestion,
+                          hintText:
+                              AppLocalizations.of(context)!.askAnyQuestion,
                           hintStyle: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 15,
@@ -807,9 +965,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   child: Material(
-                    color: _isLoading || isEmpty
-                        ? Colors.grey[300]
-                        : const Color(0xFF2B7FFF),
+                    color:
+                        _isLoading || isEmpty
+                            ? Colors.grey[300]
+                            : const Color(0xFF2B7FFF),
                     borderRadius: BorderRadius.circular(20.0),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20.0),
@@ -837,19 +996,23 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) {
       setState(() {
         // Add user's /imagine message first
-        _messages.add(ChatMessage(
-          text: '/imagine $prompt', 
-          sender: MessageSender.user, 
-          timestamp: DateTime.now()
-));
+        _messages.add(
+          ChatMessage(
+            text: '/imagine $prompt',
+            sender: MessageSender.user,
+            timestamp: DateTime.now(),
+          ),
+        );
         // Then add the AI's placeholder message for the image
-        _messages.add(ImageMessage(
-          text: prompt, // Assign prompt to text
-          imageUrl: '', 
-          sender: MessageSender.ai, 
-          timestamp: DateTime.now(), 
-          isLoading: true
-        ));
+        _messages.add(
+          ImageMessage(
+            text: prompt, // Assign prompt to text
+            imageUrl: '',
+            sender: MessageSender.ai,
+            timestamp: DateTime.now(),
+            isLoading: true,
+          ),
+        );
         _isLoading = true; // For the general input field loader
       });
     }
@@ -857,13 +1020,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     // Check for both general and image-specific API keys
-    if (settings.apiKey == null || settings.apiKey!.isEmpty || settings.imageApiKey == null || settings.imageApiKey!.isEmpty) {
+    if (settings.apiKey == null ||
+        settings.apiKey!.isEmpty ||
+        settings.imageApiKey == null ||
+        settings.imageApiKey!.isEmpty) {
       if (mounted) {
         setState(() {
           // Try to update the loading ImageMessage with an error
           int imageMessageIndex = -1;
           for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+            if (_messages[i] is ImageMessage &&
+                (_messages[i] as ImageMessage).text == prompt &&
+                ((_messages[i] as ImageMessage).isLoading ?? false)) {
               imageMessageIndex = i;
               break;
             }
@@ -874,16 +1042,22 @@ class _ChatScreenState extends State<ChatScreen> {
               text: prompt, // Assign prompt to text
               imageUrl: '',
               sender: MessageSender.ai,
-              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              timestamp:
+                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
               isLoading: false,
-              error: AppLocalizations.of(context)!.apiKeyNotSetError, // More specific error
+              error:
+                  AppLocalizations.of(
+                    context,
+                  )!.apiKeyNotSetError, // More specific error
             );
           } else {
-             _messages.add(ChatMessage(
-              text: AppLocalizations.of(context)!.apiKeyNotSetError,
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ));
+            _messages.add(
+              ChatMessage(
+                text: AppLocalizations.of(context)!.apiKeyNotSetError,
+                sender: MessageSender.ai,
+                timestamp: DateTime.now(),
+              ),
+            );
           }
           _isLoading = false;
         });
@@ -896,8 +1070,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final imageUrl = await _imageGenerationService.generateImage(
         apiKey: settings.imageApiKey!, // Use image API key
         prompt: prompt,
-        model: settings.selectedImageModel, 
-        providerBaseUrl: settings.imageProviderUrl, 
+        model: settings.selectedImageModel,
+        providerBaseUrl: settings.imageProviderUrl,
       );
 
       if (mounted) {
@@ -905,7 +1079,9 @@ class _ChatScreenState extends State<ChatScreen> {
           // Find the correct ImageMessage to update
           int imageMessageIndex = -1;
           for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+            if (_messages[i] is ImageMessage &&
+                (_messages[i] as ImageMessage).text == prompt &&
+                ((_messages[i] as ImageMessage).isLoading ?? false)) {
               imageMessageIndex = i;
               break;
             }
@@ -914,19 +1090,27 @@ class _ChatScreenState extends State<ChatScreen> {
           if (imageMessageIndex != -1) {
             _messages[imageMessageIndex] = ImageMessage(
               text: prompt, // Assign prompt to text
-              imageUrl: imageUrl ?? '', 
+              imageUrl: imageUrl ?? '',
               sender: MessageSender.ai,
-              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              timestamp:
+                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
               isLoading: false,
-              error: imageUrl == null ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl : null,
+              error:
+                  imageUrl == null
+                      ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl
+                      : null,
             );
             // Corrected session saving logic
             if (_currentImageSessionId == null) {
               // This is the first message in a new image session
-              _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+              _currentImageSessionId =
+                  DateTime.now().millisecondsSinceEpoch.toString();
               final newSession = ImageSession(
                 id: _currentImageSessionId!,
-                title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+                title:
+                    prompt.length > 30
+                        ? '${prompt.substring(0, 30)}...'
+                        : prompt,
                 messages: _messages.whereType<ImageMessage>().toList(),
                 createdAt: DateTime.now(),
                 model: settings.selectedImageModel,
@@ -938,19 +1122,31 @@ class _ChatScreenState extends State<ChatScreen> {
               // Find the existing session to preserve its original title and creation time
               ImageSession? existingSession;
               try {
-                existingSession = _imageSessions.firstWhere((s) => s.id == _currentImageSessionId);
+                existingSession = _imageSessions.firstWhere(
+                  (s) => s.id == _currentImageSessionId,
+                );
               } catch (e) {
                 // If for some reason the session is not found (e.g., deleted externally),
                 // treat it as a new session. This is a fallback.
-                print("Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e");
-                _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString(); // Generate a new ID for the new session
+                print(
+                  "Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e",
+                );
+                _currentImageSessionId =
+                    DateTime.now().millisecondsSinceEpoch
+                        .toString(); // Generate a new ID for the new session
               }
 
               final updatedSession = ImageSession(
                 id: _currentImageSessionId!, // Use the current or newly generated ID
-                title: existingSession?.title ?? (prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt), // Keep original title or use prompt
+                title:
+                    existingSession?.title ??
+                    (prompt.length > 30
+                        ? '${prompt.substring(0, 30)}...'
+                        : prompt), // Keep original title or use prompt
                 messages: _messages.whereType<ImageMessage>().toList(),
-                createdAt: existingSession?.createdAt ?? DateTime.now(), // Keep original creation time or use now
+                createdAt:
+                    existingSession?.createdAt ??
+                    DateTime.now(), // Keep original creation time or use now
                 model: settings.selectedImageModel,
               );
               _imageSessionService.saveSession(updatedSession);
@@ -965,7 +1161,9 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           int imageMessageIndex = -1;
           for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage && (_messages[i] as ImageMessage).text == prompt && ((_messages[i] as ImageMessage).isLoading ?? false)) {
+            if (_messages[i] is ImageMessage &&
+                (_messages[i] as ImageMessage).text == prompt &&
+                ((_messages[i] as ImageMessage).isLoading ?? false)) {
               imageMessageIndex = i;
               break;
             }
@@ -975,16 +1173,23 @@ class _ChatScreenState extends State<ChatScreen> {
               text: prompt,
               imageUrl: '',
               sender: MessageSender.ai,
-              timestamp: (_messages[imageMessageIndex] as ImageMessage).timestamp,
+              timestamp:
+                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
               isLoading: false,
-              error: AppLocalizations.of(context)!.errorGeneratingImage(e.toString()),
+              error: AppLocalizations.of(
+                context,
+              )!.errorGeneratingImage(e.toString()),
             );
           } else {
-            _messages.add(ChatMessage(
-              text: AppLocalizations.of(context)!.errorGeneratingImage(e.toString()),
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ));
+            _messages.add(
+              ChatMessage(
+                text: AppLocalizations.of(
+                  context,
+                )!.errorGeneratingImage(e.toString()),
+                sender: MessageSender.ai,
+                timestamp: DateTime.now(),
+              ),
+            );
           }
           _isLoading = false;
         });
