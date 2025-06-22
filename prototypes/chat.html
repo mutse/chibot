@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天界面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chat-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .ai-bubble {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        .mode-switch {
+            transition: all 0.3s ease;
+        }
+        .mode-switch.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-white h-screen flex flex-col">
+    <!-- 顶部状态栏 -->
+    <div class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-robot text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold text-gray-900">AI 助手</h1>
+                <p class="text-xs text-gray-500">GPT-4 · 在线</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+                <i class="fas fa-search text-sm"></i>
+            </button>
+            <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+                <i class="fas fa-ellipsis-v text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 模式切换 -->
+    <div class="bg-gray-50 px-4 py-3 flex space-x-2">
+        <button class="mode-switch active flex-1 py-2 px-4 rounded-lg text-sm font-medium">
+            <i class="fas fa-comment mr-2"></i>文字对话
+        </button>
+        <button class="mode-switch flex-1 py-2 px-4 rounded-lg text-sm font-medium text-gray-600 bg-white">
+            <i class="fas fa-image mr-2"></i>文生图
+        </button>
+    </div>
+
+    <!-- 聊天内容区域 -->
+    <div class="flex-1 overflow-y-auto px-4 py-2 space-y-4">
+        <!-- AI 消息 -->
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-white text-xs"></i>
+            </div>
+            <div class="chat-bubble ai-bubble rounded-2xl px-4 py-3">
+                <p class="text-sm">你好！我是你的AI助手，有什么可以帮助你的吗？我可以帮你回答问题、生成文字内容，或者根据你的描述生成图片。</p>
+            </div>
+        </div>
+
+        <!-- 用户消息 -->
+        <div class="flex items-start justify-end space-x-3">
+            <div class="chat-bubble user-bubble rounded-2xl px-4 py-3">
+                <p class="text-sm">请帮我写一篇关于人工智能发展前景的文章</p>
+            </div>
+            <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user text-white text-xs"></i>
+            </div>
+        </div>
+
+        <!-- AI 回复 -->
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-white text-xs"></i>
+            </div>
+            <div class="chat-bubble ai-bubble rounded-2xl px-4 py-3">
+                <p class="text-sm">人工智能的发展前景非常广阔，主要体现在以下几个方面：</p>
+                <p class="text-sm mt-2">1. <strong>技术突破</strong>：深度学习、自然语言处理等技术不断进步</p>
+                <p class="text-sm">2. <strong>应用场景</strong>：医疗、教育、金融、交通等领域的深度融合</p>
+                <p class="text-sm">3. <strong>产业变革</strong>：推动传统产业数字化转型</p>
+                <p class="text-sm mt-2">未来AI将成为推动社会进步的重要引擎。</p>
+            </div>
+        </div>
+
+        <!-- 用户消息 -->
+        <div class="flex items-start justify-end space-x-3">
+            <div class="chat-bubble user-bubble rounded-2xl px-4 py-3">
+                <p class="text-sm">能生成一张未来城市的图片吗？</p>
+            </div>
+            <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user text-white text-xs"></i>
+            </div>
+        </div>
+
+        <!-- AI 正在输入指示器 -->
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-white text-xs"></i>
+            </div>
+            <div class="typing-indicator bg-gray-100 rounded-2xl">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="bg-white border-t border-gray-200 px-4 py-3">
+        <div class="flex items-end space-x-3">
+            <div class="flex-1 bg-gray-100 rounded-2xl px-4 py-3 min-h-[44px] max-h-32">
+                <textarea 
+                    placeholder="输入消息..." 
+                    class="w-full bg-transparent border-none outline-none resize-none text-sm"
+                    rows="1"
+                    style="min-height: 20px; max-height: 80px;"
+                ></textarea>
+            </div>
+            <button class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white">
+                <i class="fas fa-paper-plane text-sm"></i>
+            </button>
+        </div>
+        
+        <!-- 快捷操作 -->
+        <div class="flex items-center justify-between mt-3">
+            <div class="flex items-center space-x-4">
+                <button class="p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-microphone text-lg"></i>
+                </button>
+                <button class="p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-image text-lg"></i>
+                </button>
+                <button class="p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-paperclip text-lg"></i>
+                </button>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400">0/2000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bg-white border-t border-gray-200 px-4 py-2">
+        <div class="flex items-center justify-around">
+            <button class="flex flex-col items-center py-2 px-3 text-blue-600">
+                <i class="fas fa-comments text-lg mb-1"></i>
+                <span class="text-xs font-medium">聊天</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-3 text-gray-400">
+                <i class="fas fa-history text-lg mb-1"></i>
+                <span class="text-xs">历史</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-3 text-gray-400">
+                <i class="fas fa-cog text-lg mb-1"></i>
+                <span class="text-xs">设置</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-3 text-gray-400">
+                <i class="fas fa-info-circle text-lg mb-1"></i>
+                <span class="text-xs">关于</span>
+            </button>
+        </div>
+    </div>
+</body>
+</html> 

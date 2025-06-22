@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot AI App - 原型展示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .prototype-container {
+            width: 375px;
+            height: 812px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin: 20px;
+            display: inline-block;
+        }
+        .prototype-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .prototype-title {
+            text-align: center;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Chatbot AI App 原型展示</h1>
+        <p class="text-center text-gray-600 mb-12">以下是所有界面的高保真原型设计，可直接用于开发参考</p>
+        
+        <div class="flex flex-wrap justify-center">
+            <!-- 聊天主界面 -->
+            <div class="prototype-container">
+                <div class="prototype-title">聊天主界面</div>
+                <iframe src="chat.html" class="prototype-frame"></iframe>
+            </div>
+            
+            <!-- 历史记录界面 -->
+            <div class="prototype-container">
+                <div class="prototype-title">历史记录</div>
+                <iframe src="records.html" class="prototype-frame"></iframe>
+            </div>
+            
+            <!-- 模型设置界面 -->
+            <div class="prototype-container">
+                <div class="prototype-title">模型设置</div>
+                <iframe src="settings.html" class="prototype-frame"></iframe>
+            </div>
+            
+            <!-- 关于页面 -->
+            <div class="prototype-container">
+                <div class="prototype-title">关于页面</div>
+                <iframe src="about.html" class="prototype-frame"></iframe>
+            </div>
+        </div>
+        
+        <div class="mt-12 text-center text-gray-500">
+            <p>设计规范：Material Design 3 | 跨平台适配 | 现代化UI</p>
+        </div>
+    </div>
+</body>
+</html> 
