@@ -382,6 +382,35 @@ class _ChatScreenState extends State<ChatScreen> {
                   session.title,
                   isSelected: _currentSessionId == session.id,
                   onTap: () => _loadSession(session),
+                  onDelete: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text('Delete'),
+                        content: Text('Delete this chat history?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await _sessionService.deleteSession(session.id);
+                      if (_currentSessionId == session.id) {
+                        setState(() {
+                          _messages.clear();
+                          _currentSessionId = null;
+                        });
+                      }
+                      _loadChatSessions();
+                    }
+                  },
                 );
               },
             ),
@@ -405,6 +434,35 @@ class _ChatScreenState extends State<ChatScreen> {
                   session.title,
                   isSelected: _currentImageSessionId == session.id,
                   onTap: () => _loadImageSession(session),
+                  onDelete: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text('Delete'),
+                        content: Text('Delete this image session?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await _imageSessionService.deleteSession(session.id);
+                      if (_currentImageSessionId == session.id) {
+                        setState(() {
+                          _messages.clear();
+                          _currentImageSessionId = null;
+                        });
+                      }
+                      _loadImageSessions();
+                    }
+                  },
                 );
               },
             ),
@@ -447,6 +505,7 @@ class _ChatScreenState extends State<ChatScreen> {
     String text, {
     bool isSelected = false,
     VoidCallback? onTap,
+    VoidCallback? onDelete,
   }) {
     return Material(
       child: InkWell(
@@ -455,7 +514,7 @@ class _ChatScreenState extends State<ChatScreen> {
         hoverColor: const Color.fromARGB(255, 218, 222, 252),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
           margin: const EdgeInsets.symmetric(vertical: 4.0),
           decoration: BoxDecoration(
             color:
@@ -476,14 +535,23 @@ class _ChatScreenState extends State<ChatScreen> {
                 size: 20,
               ),
               const SizedBox(width: 12.0),
-              Text(
-                text,
-                style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.black87,
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              Expanded(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isSelected ? Colors.blue : Colors.black87,
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                  ),
                 ),
               ),
+              if (onDelete != null)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                  tooltip: 'Delete',
+                  onPressed: onDelete,
+                ),
             ],
           ),
         ),
