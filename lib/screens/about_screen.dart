@@ -309,28 +309,29 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildSupportedModelsSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final models = [
       {
         'name': 'OpenAI GPT-4',
-        'type': '文字对话',
+        'type': localizations.textChat,
         'color': const Color(0xFF2563EB),
         'icon': Icons.psychology,
       },
       {
         'name': 'Anthropic Claude',
-        'type': '文字对话',
+        'type': localizations.textChat,
         'color': const Color(0xFF059669),
         'icon': Icons.eco,
       },
       {
         'name': 'Google Gemini',
-        'type': '文字对话',
+        'type': localizations.textChat,
         'color': const Color(0xFFD97706),
         'icon': Icons.diamond,
       },
       {
         'name': 'DALL-E 3',
-        'type': '文生图',
+        'type': localizations.textImage,
         'color': const Color(0xFF7C3AED),
         'icon': Icons.image,
       },
@@ -344,8 +345,8 @@ class AboutScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '支持的模型',
+          Text(
+            localizations.supportModels,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -410,16 +411,16 @@ class AboutScreen extends StatelessWidget {
     final helpItems = [
       {
         'icon': Icons.help_outline,
-        'title': '使用帮助',
+        'title': localizations.usageHelp,
         'color': const Color(0xFF2563EB),
       },
-      {'icon': Icons.book, 'title': '用户手册', 'color': const Color(0xFF059669)},
+      {'icon': Icons.book, 'title': localizations.userManual, 'color': const Color(0xFF059669)},
       {
         'icon': Icons.bug_report,
-        'title': '问题反馈',
+        'title': localizations.problemFeedback,
         'color': const Color(0xFFD97706),
       },
-      {'icon': Icons.email, 'title': '联系我们', 'color': const Color(0xFF7C3AED)},
+      {'icon': Icons.email, 'title': localizations.contact, 'color': const Color(0xFF7C3AED)},
     ];
 
     return Container(
@@ -430,8 +431,8 @@ class AboutScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '帮助和支持',
+          Text(
+            localizations.helpSupport,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -460,9 +461,9 @@ class AboutScreen extends StatelessWidget {
   Widget _buildLegalSection(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final legalItems = [
-      {'icon': Icons.security, 'title': '隐私政策'},
-      {'icon': Icons.description, 'title': '服务条款'},
-      {'icon': Icons.gavel, 'title': '免责声明'},
+      {'icon': Icons.security, 'title': localizations.privacyPolicy},
+      {'icon': Icons.description, 'title': localizations.termsService},
+      {'icon': Icons.gavel, 'title': localizations.disclaimer},
     ];
 
     return Container(
@@ -473,8 +474,8 @@ class AboutScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '法律信息',
+          Text(
+            localizations.legalInfo,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -501,6 +502,7 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildDevelopmentInfoSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -508,13 +510,13 @@ class AboutScreen extends StatelessWidget {
       margin: const EdgeInsets.only(top: 1),
       child: Column(
         children: [
-          const Text(
-            '© 2025 Chibot AI. All rights reserved.',
+          Text(
+            localizations.copyright,
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Made with ❤️ for better AI experience',
+          Text(
+            localizations.vision,
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],

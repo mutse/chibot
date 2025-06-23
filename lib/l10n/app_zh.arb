@@ -51,5 +51,19 @@
   "featureImageGen": "文生图",
   "featureImageGenDesc": "将文字描述转换为精美图片。",
   "featureFlexible": "灵活配置",
-  "featureFlexibleDesc": "支持多种模型提供商和自定义配置。"
+  "featureFlexibleDesc": "支持多种模型提供商和自定义配置。",
+  "textChat": "文字对话",
+  "textImage": "文生图",
+  "supportModels": "支持的模型",
+  "usageHelp": "使用帮助",
+  "userManual": "用户手册",
+  "problemFeedback": "问题反馈",
+  "contact": "联系我们",
+  "helpSupport": "帮助支持",
+  "privacyPolicy": "隐私政策",
+  "termsService": "服务条款",
+  "disclaimer": "免责申明",
+  "legalInfo": "法律信息",
+  "copyright": "© 2025 Chibot AI. 版权所有",
+  "vision": "用 ❤️ 打造更佳 AI 体验"
 }

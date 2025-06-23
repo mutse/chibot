@@ -65,5 +65,19 @@
   "featureImageGen": "Text-to-Image",
   "featureImageGenDesc": "Generate beautiful images from text prompts.",
   "featureFlexible": "Flexible Configuration",
-  "featureFlexibleDesc": "Supports multiple model providers and custom settings."
+  "featureFlexibleDesc": "Supports multiple model providers and custom settings.",
+  "textChat": "Text chat",
+  "textImage": "Text to image",
+  "supportModels": "Support Models",
+  "usageHelp": "Usage Help",
+  "userManual": "User Manual",
+  "problemFeedback": "Problem Feedback",
+  "contact": "Contact",
+  "helpSupport": "Help & Support",
+  "privacyPolicy": "Privacy Policy",
+  "termsService": "Terms of Service",
+  "disclaimer": "Disclaimer",
+  "legalInfo": "Legal Information",
+  "copyright": "© 2025 Chibot AI. All rights reserved.",
+  "vision": "Made with ❤️ for better AI experience"
 }
