@@ -141,11 +141,14 @@ jobs:
             build/macos/$DMG_NAME \
             build/macos/Build/Products/Release/chibot.app
 
-      - name: Zip iOS Runner.app
+      - name: Build iOS IPA
         if: ${{ matrix.platform == 'ios' }}
+        shell: bash
         run: |
-          cd build/ios/iphoneos
-          zip -r chibot.app.zip Runner.app
+          flutter build ipa --release --no-codesign
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload
+          (cd build/ios/ipa && zip -r chibot.ipa Payload)
 
       - name: Show filtered build output
         shell: bash
@@ -154,7 +157,7 @@ jobs:
           if [[ "$PLATFORM" == "linux" ]]; then
             find build/linux -type f -executable -exec file {} \; | grep ELF | cut -d: -f1 | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
           else
-            find build -type f \( -iname "*.apk" -o -iname "*.dmg" -o -iname "*.exe" -o -iname "*.aab" -o -iname "*.app" \) | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
+            find build -type f \( -iname "*.apk" -o -iname "*.dmg" -o -iname "*.exe" -o -iname "*.aab" -o -iname "*.ipa" \) | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
           fi
 
       - name: Upload filtered artifacts
@@ -166,7 +169,7 @@ jobs:
             build/linux/x64/release/*.deb
             build/windows/x64/runner/Release/chibot-windows.zip
             build/app/outputs/flutter-apk/app-release.apk
-            build/ios/iphoneos/chibot.app.zip
+            build/ios/ipa/*.ipa
 
   release:
     runs-on: ubuntu-latest
@@ -195,7 +198,7 @@ jobs:
             release-artifacts/**/*.dmg
             release-artifacts/**/chibot-windows.zip
             release-artifacts/**/app-release.apk
-            release-artifacts/**/chibot.app.zip
+            release-artifacts/**/*.ipa
             release-artifacts/build-linux-x64/linux/x64/release/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
