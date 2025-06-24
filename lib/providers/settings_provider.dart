@@ -365,8 +365,7 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> removeCustomImageModel(String modelName) async {
     if (_customImageModels.remove(modelName)) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_customImageModelsKey, _customImageModels);
+      await SharedPreferences.getInstance().then((prefs) => prefs.setStringList(_customImageModelsKey, _customImageModels));
       if (_selectedImageModel == modelName) {
         _validateSelectedImageModelForProvider();
       }
@@ -379,7 +378,7 @@ class SettingsProvider with ChangeNotifier {
     if (defaultImageBaseUrls.containsKey(providerName.trim())) return;
 
     _customImageProviders[providerName.trim()] = models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    final prefs = await SharedPreferences.getInstance();
+    await SharedPreferences.getInstance();
     // await prefs.setString(_customImageProvidersKey, json.encode(_customImageProviders)); // Needs robust serialization
     notifyListeners();
   }
@@ -438,7 +437,7 @@ class SettingsProvider with ChangeNotifier {
     if (defaultBaseUrls.containsKey(providerName.trim())) return;
 
     _customProviders[providerName.trim()] = models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    final prefs = await SharedPreferences.getInstance();
+    await SharedPreferences.getInstance();
     // This needs a robust way to serialize the map, e.g., to a JSON string.
     // Placeholder for actual serialization:
     // await prefs.setString(_customProvidersKey, json.encode(_customProviders));
@@ -449,8 +448,7 @@ class SettingsProvider with ChangeNotifier {
 
   Future<void> removeCustomModel(String modelName) async {
     if (_customModels.remove(modelName)) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_customModelsKey, _customModels);
+      await SharedPreferences.getInstance().then((prefs) => prefs.setStringList(_customModelsKey, _customModels));
       // 如果移除的是当前选中的模型，则重置为当前提供商的默认模型
       if (_selectedModel == modelName) {
         _validateSelectedModelForProvider(); // This will set a default if needed

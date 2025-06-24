@@ -562,11 +562,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
-    bool isApiKeySet = settings.apiKey != null && settings.apiKey!.isNotEmpty;
     // Determine if we should show the sidebar based on screen width
     // For simplicity, we'll always show it here, but in a real app, you might hide it on smaller screens.
-    bool showSidebar =
-        MediaQuery.of(context).size.width > 600; // Example breakpoint
 
     return Scaffold(
       appBar: AppBar(
