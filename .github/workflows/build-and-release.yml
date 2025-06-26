@@ -58,6 +58,7 @@ jobs:
           echo "Setting up Flutter for $PLATFORM ($ARCH)"
           if [[ "$PLATFORM" == "linux" ]]; then
             sudo apt-get update
+            sudo apt-get install -y imagemagick
             sudo snap install flutter --classic
             export PATH="$PATH:/snap/bin"
           elif [[ "$PLATFORM" == "android" ]]; then
@@ -103,7 +104,9 @@ jobs:
         shell: bash
         run: |
           case $PLATFORM in
-            linux) ./scripts/build_deb.sh ;;
+            linux) 
+              ./scripts/build_deb.sh
+              ./scripts/package_linux_bundle.sh ;;
             macos) flutter build macos --release ;;
             ios) flutter build ios --release --no-codesign ;;
             android)
@@ -125,6 +128,12 @@ jobs:
           $releaseDir = "build/windows/x64/runner/Release"
           $zipPath = "$releaseDir/chibot-windows.zip"
           Compress-Archive -Path "$releaseDir/*" -DestinationPath $zipPath
+
+      - name: Build MSIX package
+        if: ${{ matrix.platform == 'windows' }}
+        shell: powershell
+        run: |
+          ./scripts/package_windows_msix.ps1
 
       - name: Create DMG package (macOS only)
         if: ${{ matrix.platform == 'macos' }}
@@ -167,7 +176,9 @@ jobs:
           path: |
             build/macos/*.dmg
             build/linux/x64/release/*.deb
+            build/linux/x64/release/AppImage/chibot-linux.AppImage
             build/windows/x64/runner/Release/chibot-windows.zip
+            build/windows/x64/runner/Release/*.msix
             build/app/outputs/flutter-apk/app-release.apk
             build/ios/ipa/*.ipa
 
@@ -199,6 +210,8 @@ jobs:
             release-artifacts/**/chibot-windows.zip
             release-artifacts/**/app-release.apk
             release-artifacts/**/*.ipa
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*.msix
             release-artifacts/build-linux-x64/linux/x64/release/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
