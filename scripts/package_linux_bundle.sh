@@ -18,10 +18,6 @@ mkdir -p "$APPDIR/usr/bin"
 mkdir -p "$APPDIR/usr/lib"
 mkdir -p "$APPIMAGE_DIR"
 
-while IFS= read -r sofile; do
-    cp -u "$sofile" "$LIB_DIR/"
-done < <(find "$PROJECT_ROOT" -name 'libflutter_linux_gtk.so')
-
 echo ">>> Packaging bundle (zip legacy mode)..."
 cd "$BUNDLE_DIR"
 zip -r chibot-linux.zip .
@@ -30,7 +26,7 @@ cd -
 echo ">>> Preparing AppDir structure..."
 cp -v "$BUNDLE_DIR/chibot" "$APPDIR/usr/bin/"
 cp -r "$BUNDLE_DIR/data" "$APPDIR/usr/bin/"
-cp -v "$LIB_DIR/"*.so "$APPDIR/usr/lib/"
+cp -fv "$LIB_DIR/"*.so "$APPDIR/usr/lib/"
 
 
 echo ">>> Generating icon..."
