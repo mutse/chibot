@@ -1,0 +1,6 @@
+display_name: Chibot
+publisher_display_name: Chi Team
+identity_name: Chi.Chibot
+msix_version: 1.0.0.0
+logo_path: assets/images/logo.png
+capabilities: internetClient
