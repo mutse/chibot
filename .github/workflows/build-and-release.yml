@@ -105,8 +105,7 @@ jobs:
         run: |
           case $PLATFORM in
             linux) 
-              ./scripts/build_deb.sh
-              ./scripts/package_linux_bundle.sh ;;
+              ./scripts/build_deb.sh ;;
             macos) flutter build macos --release ;;
             ios) flutter build ios --release --no-codesign ;;
             android)
@@ -166,7 +165,7 @@ jobs:
           if [[ "$PLATFORM" == "linux" ]]; then
             find build/linux -type f -executable -exec file {} \; | grep ELF | cut -d: -f1 | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
           else
-            find build -type f \( -iname "*.apk" -o -iname "*.dmg" -o -iname "*.exe" -o -iname "*.aab" -o -iname "*.ipa" \) | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
+            find build -type f \( -iname "*.apk" -o -iname "*.dmg" -o -iname "*.exe" -o -iname "*.aab" -o -iname "*.ipa" -o -iname "*.msix" \) | tee /tmp/${{ matrix.platform }}-${{ matrix.arch }}-release.log
           fi
 
       - name: Upload filtered artifacts
@@ -176,7 +175,6 @@ jobs:
           path: |
             build/macos/*.dmg
             build/linux/x64/release/*.deb
-            build/linux/x64/release/AppImage/chibot-linux.AppImage
             build/windows/x64/runner/Release/chibot-windows.zip
             build/windows/x64/runner/Release/*.msix
             build/app/outputs/flutter-apk/app-release.apk
