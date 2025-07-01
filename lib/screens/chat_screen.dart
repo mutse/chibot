@@ -18,6 +18,7 @@ import '../services/image_save_service.dart';
 import '../l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
+import '../services/web_search_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -42,6 +43,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
+  bool _enableWebSearch = false;
 
   @override
   void initState() {
@@ -117,9 +119,46 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _textController.clear();
 
-    _textController.clear();
+    String prompt = text;
+    if (_enableWebSearch) {
+      final tavilyApiKey = settings.tavilyApiKey;
+      if (tavilyApiKey == null || tavilyApiKey.isEmpty) {
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              text: AppLocalizations.of(context)!.tavilyApiKeyNotSet,
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ),
+          );
+          _isLoading = false;
+        });
+        _scrollToBottom();
+        return;
+      }
+      try {
+        final webResult = await WebSearchService(
+          apiKey: tavilyApiKey,
+        ).searchWeb(text);
+        prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+      } catch (e) {
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              text: AppLocalizations.of(context)!.webSearchFailed(e.toString()),
+              sender: MessageSender.ai,
+              timestamp: DateTime.now(),
+            ),
+          );
+          _isLoading = false;
+        });
+        _scrollToBottom();
+        return;
+      }
+    }
+
     final userMessage = ChatMessage(
-      text: text,
+      text: prompt,
       sender: MessageSender.user,
       timestamp: DateTime.now(),
     );
@@ -137,9 +176,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final newSession = ChatSession(
         id: _currentSessionId!,
         title:
-            text.length > 30
-                ? '${text.substring(0, 30)}...'
-                : text, // Use first part of message as title
+            prompt.length > 30
+                ? '${prompt.substring(0, 30)}...'
+                : prompt, // Use first part of message as title
         messages: [userMessage],
         createdAt: DateTime.now(),
       );
@@ -182,11 +221,21 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
+      final aiUserMessage = ChatMessage(
+        text: prompt,
+        sender: MessageSender.user,
+        timestamp: DateTime.now(),
+      );
+      final List<ChatMessage> aiMessages = List.from(_messages);
+      if (_enableWebSearch) {
+        aiMessages.removeLast(); // Remove the original user message
+        aiMessages.add(aiUserMessage); // Add the prompt with web search
+      }
       final stream = _openAIService.getChatResponse(
         apiKey: settings.apiKey!,
         model: settings.selectedModel,
-        messages: List.from(_messages),
-        providerBaseUrl: settings.providerUrl, // 传递 Provider URL
+        messages: aiMessages,
+        providerBaseUrl: settings.providerUrl,
       );
 
       String fullResponse = "";
@@ -255,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (lastMessageIndex >= 0 &&
               _messages[lastMessageIndex].sender == MessageSender.ai) {
             _messages[lastMessageIndex] = ChatMessage(
-              text: "Error: ${e.toString()}",
+              text: "Error: \\${e.toString()}",
               sender: MessageSender.ai,
               timestamp: _messages[lastMessageIndex].timestamp,
               isLoading: false,
@@ -264,7 +313,7 @@ class _ChatScreenState extends State<ChatScreen> {
             // If for some reason the placeholder wasn't added, add a new error message
             _messages.add(
               ChatMessage(
-                text: "Error: ${e.toString()}",
+                text: "Error: \\${e.toString()}",
                 sender: MessageSender.ai,
                 timestamp: DateTime.now(),
               ),
@@ -385,20 +434,27 @@ class _ChatScreenState extends State<ChatScreen> {
                   onDelete: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text('Delete'),
-                        content: Text('Delete this chat history?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                      builder:
+                          (ctx) => AlertDialog(
+                            title: Text('Delete'),
+                            content: Text('Delete this chat history?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: Text(
+                                  AppLocalizations.of(context)?.cancel ??
+                                      'Cancel',
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
                     );
                     if (confirm == true) {
                       await _sessionService.deleteSession(session.id);
@@ -437,20 +493,27 @@ class _ChatScreenState extends State<ChatScreen> {
                   onDelete: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text('Delete'),
-                        content: Text('Delete this image session?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                      builder:
+                          (ctx) => AlertDialog(
+                            title: Text('Delete'),
+                            content: Text('Delete this image session?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: Text(
+                                  AppLocalizations.of(context)?.cancel ??
+                                      'Cancel',
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
                     );
                     if (confirm == true) {
                       await _imageSessionService.deleteSession(session.id);
@@ -542,13 +605,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: TextStyle(
                     color: isSelected ? Colors.blue : Colors.black87,
                     fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w500 : FontWeight.normal,
                   ),
                 ),
               ),
               if (onDelete != null)
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: Colors.redAccent,
+                  ),
                   tooltip: 'Delete',
                   onPressed: onDelete,
                 ),
@@ -1016,6 +1084,36 @@ class _ChatScreenState extends State<ChatScreen> {
                         onSubmitted: (_) => _isLoading ? null : _sendMessage(),
                         maxLines: null,
                         textInputAction: TextInputAction.send,
+                      ),
+                    ),
+                    // Add web search toggle
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Consumer<SettingsProvider>(
+                        builder: (context, settings, _) {
+                          final isTextModel =
+                              settings.selectedModelType == ModelType.text;
+                          return GestureDetector(
+                            onTap:
+                                isTextModel
+                                    ? () {
+                                      setState(() {
+                                        _enableWebSearch = !_enableWebSearch;
+                                      });
+                                    }
+                                    : null,
+                            child: Icon(
+                              Icons.public,
+                              size: 24,
+                              color:
+                                  isTextModel
+                                      ? (_enableWebSearch
+                                          ? Colors.blue
+                                          : Colors.grey)
+                                      : Colors.grey.withOpacity(0.4),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
