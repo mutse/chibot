@@ -65,5 +65,8 @@
   "disclaimer": "免责申明",
   "legalInfo": "法律信息",
   "copyright": "© 2025 Chibot AI. 版权所有",
-  "vision": "用 ❤️ 打造更佳 AI 体验"
+  "vision": "用 ❤️ 打造更佳 AI 体验",
+  "tavilyApiKeyNotSet": "Tavily API Key 未设置，请前往设置页面填写后再使用 Web 搜索功能。",
+  "webSearchPrompt": "请结合以下网络搜索结果回答问题：\n{webResult}\n用户提问：{userQuestion}",
+  "webSearchFailed": "Web 搜索失败：{error}"
 }

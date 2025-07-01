@@ -79,5 +79,8 @@
   "disclaimer": "Disclaimer",
   "legalInfo": "Legal Information",
   "copyright": "© 2025 Chibot AI. All rights reserved.",
-  "vision": "Made with ❤️ for better AI experience"
+  "vision": "Made with ❤️ for better AI experience",
+  "tavilyApiKeyNotSet": "Tavily API Key is not set. Please go to the settings page to fill it in before using the Web Search feature.",
+  "webSearchPrompt": "Please answer the question using the following web search results:\n{webResult}\nUser question: {userQuestion}",
+  "webSearchFailed": "Web search failed: {error}"
 }
