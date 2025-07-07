@@ -47,14 +47,14 @@ class OpenAIService {
         model.toLowerCase().startsWith('gemini-')) {
       // providerBaseUrl for Gemini should be like 'https://generativelanguage.googleapis.com/v1beta'
       // The model name in settings might be 'google/gemini-x.x-pro' or 'gemini-x.x-pro'
-      String geminiModelName =
-          model.split('/').last; // Extracts 'gemini-x.x-pro'
+      String geminiModelName = model
+          .split('/')
+          .last; // Extracts 'gemini-x.x-pro'
 
       // Ensure providerBaseUrl does not end with a slash before appending model path
-      String cleanProviderBaseUrl =
-          providerBaseUrl.endsWith('/')
-              ? providerBaseUrl.substring(0, providerBaseUrl.length - 1)
-              : providerBaseUrl;
+      String cleanProviderBaseUrl = providerBaseUrl.endsWith('/')
+          ? providerBaseUrl.substring(0, providerBaseUrl.length - 1)
+          : providerBaseUrl;
 
       endpointUrl =
           '$cleanProviderBaseUrl/models/$geminiModelName:generateContent?key=$apiKey';
@@ -73,10 +73,9 @@ class OpenAIService {
     } else {
       // Existing OpenAI-compatible API logic
       // Ensure providerBaseUrl does not end with a slash before appending /chat/completions
-      String cleanProviderBaseUrl =
-          providerBaseUrl.endsWith('/')
-              ? providerBaseUrl.substring(0, providerBaseUrl.length - 1)
-              : providerBaseUrl;
+      String cleanProviderBaseUrl = providerBaseUrl.endsWith('/')
+          ? providerBaseUrl.substring(0, providerBaseUrl.length - 1)
+          : providerBaseUrl;
       endpointUrl = '$cleanProviderBaseUrl/chat/completions';
 
       requestHeaders = {
@@ -84,14 +83,13 @@ class OpenAIService {
         'Authorization': 'Bearer $apiKey',
       };
 
-      List<Map<String, String>> apiMessages =
-          messages
-              .map((msg) => msg.toApiJson())
-              .where((item) => item != null)
-              .cast<
-                Map<String, String>
-              >() // Cast to the correct type after filtering
-              .toList();
+      List<Map<String, String>> apiMessages = messages
+          .map((msg) => msg.toApiJson())
+          .where((item) => item != null)
+          .cast<
+            Map<String, String>
+          >() // Cast to the correct type after filtering
+          .toList();
       // For streaming, we need to add 'stream': true to the request body for OpenAI compatible APIs
       // For Gemini, the API itself is unary, so true streaming isn't directly supported in the same way.
       // We will simulate streaming for Gemini by returning the full response as a single stream event.
@@ -151,10 +149,12 @@ class OpenAIService {
               if (errorData['error'] != null &&
                   errorData['error']['message'] != null) {
                 errorMessage += '\nDetails: ${errorData['error']['message']}';
-                if (errorData['error']['code'] != null)
+                if (errorData['error']['code'] != null) {
                   errorMessage += ' (Code: ${errorData['error']['code']})';
-                if (errorData['error']['status'] != null)
+                }
+                if (errorData['error']['status'] != null) {
                   errorMessage += ' (Status: ${errorData['error']['status']})';
+                }
               } else if (errorData['detail'] != null) {
                 errorMessage += '\nDetails: ${errorData['detail']}';
               } else {
@@ -192,9 +192,10 @@ class OpenAIService {
           final streamedResponse = await request.send();
 
           if (streamedResponse.statusCode == 200) {
-            await for (var chunk in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
+            await for (var chunk
+                in streamedResponse.stream
+                    .transform(utf8.decoder)
+                    .transform(const LineSplitter())) {
               if (chunk.startsWith('data: ')) {
                 final dataString = chunk.substring(6);
                 if (dataString == '[DONE]') {
@@ -227,8 +228,9 @@ class OpenAIService {
               if (errorData['error'] != null &&
                   errorData['error']['message'] != null) {
                 errorMessage += '\nDetails: ${errorData['error']['message']}';
-                if (errorData['error']['code'] != null)
+                if (errorData['error']['code'] != null) {
                   errorMessage += ' (Code: ${errorData['error']['code']})';
+                }
               } else if (errorData['detail'] != null) {
                 errorMessage += '\nDetails: ${errorData['detail']}';
               } else {
@@ -238,8 +240,8 @@ class OpenAIService {
               errorMessage += '\nRaw Response: $responseBody';
             }
             // Check if the error response is HTML, suggesting a configuration or network issue
-            final contentType =
-                streamedResponse.headers['content-type']?.toLowerCase();
+            final contentType = streamedResponse.headers['content-type']
+                ?.toLowerCase();
             if (contentType?.contains('text/html') ?? false) {
               throw Exception(
                 'Failed to connect to API: Received HTML response (Status ${streamedResponse.statusCode}). Please check Provider URL and API key.',
