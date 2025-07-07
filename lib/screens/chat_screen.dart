@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'dart:convert'; // For base64 decoding
-import 'dart:io';
-import '../models/chat_message.dart';
-import '../models/chat_session.dart';
-import '../models/image_session.dart';
-import '../services/chat_session_service.dart';
-import '../services/image_session_service.dart';
-import '../providers/settings_provider.dart';
-import '../services/openai_service.dart';
-import '../models/image_message.dart'; // Added for image messages
-import '../services/image_generation_service.dart'; // Added for image generation
-import '../services/image_save_service.dart';
-import '../l10n/app_localizations.dart';
+import 'package:chibot/models/chat_message.dart';
+import 'package:chibot/models/chat_session.dart';
+import 'package:chibot/models/image_session.dart';
+import 'package:chibot/services/chat_session_service.dart';
+import 'package:chibot/services/image_session_service.dart';
+import 'package:chibot/providers/settings_provider.dart';
+import 'package:chibot/services/openai_service.dart';
+import 'package:chibot/models/image_message.dart'; // Added for image messages
+import 'package:chibot/services/image_generation_service.dart'; // Added for image generation
+import 'package:chibot/services/image_save_service.dart';
+import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
-import '../services/web_search_service.dart';
+import 'package:chibot/services/web_search_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -44,6 +42,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _enableWebSearch = false;
+  // Add the context menu controller
+  final ContextMenuController _contextMenuController = ContextMenuController();
 
   @override
   void initState() {
@@ -629,7 +629,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<SettingsProvider>(context);
     // Determine if we should show the sidebar based on screen width
     // For simplicity, we'll always show it here, but in a real app, you might hide it on smaller screens.
 
@@ -692,33 +691,6 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
-  }
-
-  void _showImageContextMenu(
-    Offset position,
-    String imageUrl,
-    AppLocalizations localizations,
-  ) {
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromRect(
-        position &
-            const Size(40, 40), // Smaller rectangle around the tapped position
-        Offset.zero & overlay.size, // Full screen size
-      ),
-      items: <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(
-          value: 'save',
-          child: Text(localizations.saveImage),
-        ),
-      ],
-    ).then((String? value) {
-      if (value == 'save') {
-        ImageSaveService.saveImage(imageUrl, context);
-      }
-    });
   }
 
   Widget _buildMessageBubble(ChatMessage message, int index) {
@@ -811,231 +783,110 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onSecondaryTapDown: (details) {
-          if (message.imageUrl != null) {
-            _showImageContextMenu(
-              details.globalPosition,
-              message.imageUrl!,
-              localizations,
-            );
-          }
-        },
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth:
-                MediaQuery.of(context).size.width * 0.7 -
-                _sidebarWidth *
-                    (MediaQuery.of(context).size.width > 600 ? 0.7 : 0),
-          ),
-          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-          decoration: BoxDecoration(
-            color: isUser ? const Color(0xFF2B7FFF) : Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(isUser ? 20.0 : 4.0),
-              topRight: Radius.circular(isUser ? 4.0 : 20.0),
-              bottomLeft: const Radius.circular(20.0),
-              bottomRight: const Radius.circular(20.0),
+        onTap: () {
+          showContextMenu(
+            context,
+            contextMenu: ContextMenu(
+              entries: [
+                MenuItem(
+                  label: localizations.saveImage,
+                  onSelected: () {
+                    if (message.imageUrl != null &&
+                        message.imageUrl!.isNotEmpty) {
+                      ImageSaveService.saveImage(message.imageUrl!, context);
+                    }
+                  },
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color:
-                    isUser
-                        ? const Color(0xFF2B7FFF).withOpacity(0.3)
-                        : Colors.black.withOpacity(0.05),
-                spreadRadius: 0,
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border:
-                !isUser
-                    ? Border.all(
-                      color: Colors.grey.withOpacity(0.1),
-                      width: 1.0,
-                    )
-                    : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (message.text?.isNotEmpty == true &&
-                  (isUser ||
-                      (message.isLoading != true &&
-                          message.imageUrl?.isNotEmpty == true)))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: Text(
-                    isUser ? '/imagine ${message.text}' : message.text,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color:
-                          isUser
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.8),
-                    ),
-                  ),
+          );
+        },
+        onSecondaryTapDown: (details) {
+          showContextMenu(
+            context,
+            contextMenu: ContextMenu(
+              entries: [
+                MenuItem(
+                  label: localizations.saveImage,
+                  onSelected: () {
+                    if (message.imageUrl != null &&
+                        message.imageUrl!.isNotEmpty) {
+                      ImageSaveService.saveImage(message.imageUrl!, context);
+                    }
+                  },
                 ),
-              if (message.isLoading ?? false)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  child: SpinKitThreeBounce(
-                    color:
-                        isUser
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.primary,
-                    size: 20.0,
-                  ),
-                )
-              else if (message.error?.isNotEmpty == true)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text(
-                    message.error!,
-                    style: TextStyle(
-                      color: Colors.red[700],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                )
-              else if (message.imageUrl?.isNotEmpty == true)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-                  child: GestureDetector(
-                    onLongPress: () {
-                      if ((Platform.isAndroid || Platform.isIOS) &&
-                          message.imageUrl != null) {
-                        ImageSaveService.saveImage(message.imageUrl!, context);
-                      }
+              ],
+            ),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.0),
+          child:
+              message.imageUrl?.startsWith('data:image') == true
+                  ? Image.memory(
+                    base64Decode(message.imageUrl!.split(',').last),
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 250,
+                        height: 250,
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Text(
+                            localizations.errorLoadingImage,
+                            style: TextStyle(color: Colors.red[700]),
+                          ),
+                        ),
+                      );
                     },
-                    onSecondaryTapDown: (details) {
-                      if (!kIsWeb &&
-                          (Platform.isMacOS ||
-                              Platform.isWindows ||
-                              Platform.isLinux) &&
-                          message.imageUrl != null) {
-                        _showImageContextMenu(
-                          details.globalPosition,
-                          message.imageUrl!,
-                          localizations,
-                        );
-                      }
+                  )
+                  : Image.network(
+                    message.imageUrl!,
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (
+                      BuildContext context,
+                      Widget child,
+                      ImageChunkEvent? loadingProgress,
+                    ) {
+                      if (loadingProgress == null) return child;
+                      return SizedBox(
+                        width: 250,
+                        height: 250,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                          ),
+                        ),
+                      );
                     },
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12.0),
-                        child:
-                            message.imageUrl?.startsWith('data:image') == true
-                                ? Image.memory(
-                                  base64Decode(
-                                    message.imageUrl!.split(',').last,
-                                  ),
-                                  width: 250,
-                                  height: 250,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 250,
-                                      height: 250,
-                                      color: Colors.grey[200],
-                                      child: Center(
-                                        child: Text(
-                                          localizations.errorLoadingImage,
-                                          style: TextStyle(
-                                            color: Colors.red[700],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                )
-                                : Image.network(
-                                  message.imageUrl!,
-                                  width: 250,
-                                  height: 250,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (
-                                    BuildContext context,
-                                    Widget child,
-                                    ImageChunkEvent? loadingProgress,
-                                  ) {
-                                    if (loadingProgress == null) return child;
-                                    return SizedBox(
-                                      width: 250,
-                                      height: 250,
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          value:
-                                              loadingProgress
-                                                          .expectedTotalBytes !=
-                                                      null
-                                                  ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                  : null,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 250,
-                                      height: 250,
-                                      color: Colors.grey[200],
-                                      child: Center(
-                                        child: Text(
-                                          localizations.errorLoadingImage,
-                                          style: TextStyle(
-                                            color: Colors.red[700],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                      ),
-                    ),
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 250,
+                        height: 250,
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: Text(
+                            localizations.errorLoadingImage,
+                            style: TextStyle(color: Colors.red[700]),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                )
-              else if (!isUser)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Text(
-                    localizations.noImageGenerated,
-                    style: TextStyle(
-                      color: Colors.orange[700],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.only(top: 5.0),
-                child: Text(
-                  '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color:
-                        isUser
-                            ? Colors.white70
-                            : Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
   Widget _buildInputField() {
-    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(

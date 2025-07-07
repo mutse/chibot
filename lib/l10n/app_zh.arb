@@ -42,8 +42,8 @@
   "saveImage": "保存图片",
   "appName": "Chibot AI",
   "appDesc": "智能聊天助手",
-  "version": "版本 v1.0.0",
-  "releaseDate": "2025年6月",
+  "version": "版本 v0.1.1",
+  "releaseDate": "2025年7月",
   "featuresTitle": "特性",
   "featureSmartChat": "智能聊天",
   "featureSmartDesc": "支持多种AI模型，提供自然流畅的对话体验。",
@@ -68,5 +68,7 @@
   "vision": "用 ❤️ 打造更佳 AI 体验",
   "tavilyApiKeyNotSet": "Tavily API Key 未设置，请前往设置页面填写后再使用 Web 搜索功能。",
   "webSearchPrompt": "请结合以下网络搜索结果回答问题：\n{webResult}\n用户提问：{userQuestion}",
-  "webSearchFailed": "Web 搜索失败：{error}"
+  "webSearchFailed": "Web 搜索失败：{error}",
+  "trayShowHide": "显示/隐藏",
+  "trayExit": "退出"
 }

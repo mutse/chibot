@@ -57,8 +57,8 @@
   "newImageSession": "New Image Session",
   "appName": "Chibot AI",
   "appDesc": "Smart Chat Assistant",
-  "version": "Version v1.0.0",
-  "releaseDate": "June 2025",
+  "version": "Version v0.1.1",
+  "releaseDate": "July 2025",
   "featureSmartChat": "Smart Chat",
   "featureSmartDesc": "Supports multiple AI models for natural conversations.",
   "features": "Features",
@@ -82,5 +82,7 @@
   "vision": "Made with ❤️ for better AI experience",
   "tavilyApiKeyNotSet": "Tavily API Key is not set. Please go to the settings page to fill it in before using the Web Search feature.",
   "webSearchPrompt": "Please answer the question using the following web search results:\n{webResult}\nUser question: {userQuestion}",
-  "webSearchFailed": "Web search failed: {error}"
+  "webSearchFailed": "Web search failed: {error}",
+  "trayShowHide": "Show/Hide",
+  "trayExit": "Exit"
 }

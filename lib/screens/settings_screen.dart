@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/settings_provider.dart';
-import '../l10n/app_localizations.dart';
+import 'package:chibot/providers/settings_provider.dart';
+import 'package:chibot/l10n/app_localizations.dart';
 
 enum ModelType { text, image }
 
@@ -20,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _imageProviderUrlController;
   late TextEditingController _customModelController;
   late TextEditingController _tavilyApiKeyController;
+  late TextEditingController _bingApiKeyController;
 
   @override
   void initState() {
@@ -41,6 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tavilyApiKeyController = TextEditingController(
       text: settings.tavilyApiKey ?? '',
     );
+    _bingApiKeyController = TextEditingController(
+      text: settings.bingApiKey ?? '',
+    );
   }
 
   @override
@@ -50,6 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _imageProviderUrlController.dispose();
     _customModelController.dispose();
     _tavilyApiKeyController.dispose();
+    _bingApiKeyController.dispose();
     super.dispose();
   }
 
@@ -93,8 +98,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: Text(l10n.textModel),
                     selected: settings.selectedModelType == ModelType.text,
                     onSelected: (selected) {
-                      if (selected)
+                      if (selected) {
                         settings.setSelectedModelType(ModelType.text);
+                      }
                     },
                   ),
                   const SizedBox(width: 8),
@@ -102,8 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: Text(l10n.imageModel),
                     selected: settings.selectedModelType == ModelType.image,
                     onSelected: (selected) {
-                      if (selected)
+                      if (selected) {
                         settings.setSelectedModelType(ModelType.image);
+                      }
                     },
                   ),
                 ],
@@ -192,6 +199,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   decoration: const InputDecoration(
                     hintText: '输入 Tavily API Key',
                   ),
+                ),
+                const SizedBox(height: 20),
+                Text('Bing Web 搜索 API Key', style: TextStyle(fontSize: 16)),
+                TextField(
+                  controller: _bingApiKeyController,
+                  obscureText: true,
+                  decoration: InputDecoration(hintText: '输入 Bing API Key'),
                 ),
                 const SizedBox(height: 20),
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
@@ -420,6 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settings.setTavilyApiKey(
                         _tavilyApiKeyController.text.trim(),
                       );
+                      settings.setBingApiKey(_bingApiKeyController.text.trim());
                     } else {
                       settings.setImageApiKey(_apiKeyController.text.trim());
                       settings.setImageProviderUrl(
@@ -448,11 +463,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     SettingsProvider settings,
     ModelType modelType,
   ) {
-    final TextEditingController _providerNameController =
+    final TextEditingController providerNameController =
         TextEditingController();
-    final TextEditingController _modelNameController = TextEditingController();
-    final TextEditingController _providerUrlController =
-        TextEditingController();
+    final TextEditingController modelNameController = TextEditingController();
+    final TextEditingController providerUrlController = TextEditingController();
 
     showDialog(
       context: context,
@@ -463,15 +477,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListBody(
               children: <Widget>[
                 TextField(
-                  controller: _providerNameController,
+                  controller: providerNameController,
                   decoration: InputDecoration(hintText: l10n.providerNameHint),
                 ),
                 TextField(
-                  controller: _modelNameController,
+                  controller: modelNameController,
                   decoration: InputDecoration(hintText: l10n.modelsHint),
                 ),
                 TextField(
-                  controller: _providerUrlController,
+                  controller: providerUrlController,
                   decoration: InputDecoration(
                     hintText: l10n.modelProviderURLOptional,
                   ),
@@ -489,9 +503,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             TextButton(
               child: Text(l10n.add),
               onPressed: () {
-                final String providerName = _providerNameController.text.trim();
-                final String modelName = _modelNameController.text.trim();
-                final String providerUrl = _providerUrlController.text.trim();
+                final String providerName = providerNameController.text.trim();
+                final String modelName = modelNameController.text.trim();
+                final String providerUrl = providerUrlController.text.trim();
 
                 if (providerName.isNotEmpty && modelName.isNotEmpty) {
                   if (modelType == ModelType.text) {

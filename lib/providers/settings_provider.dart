@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../screens/settings_screen.dart'; // Import ModelType enum
+import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
 
 class SettingsProvider with ChangeNotifier {
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
@@ -40,6 +40,9 @@ class SettingsProvider with ChangeNotifier {
 
   String? _tavilyApiKey;
   static const String _tavilyApiKeyKey = 'tavily_api_key';
+
+  String? _bingApiKey;
+  static const String _bingApiKeyKey = 'bing_api_key';
 
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
@@ -103,6 +106,7 @@ class SettingsProvider with ChangeNotifier {
   String get selectedProvider => _selectedProvider;
   String? get imageApiKey => _imageApiKey; // Added getter for image API key
   String? get tavilyApiKey => _tavilyApiKey;
+  String? get bingApiKey => _bingApiKey;
 
   // Getters for Image Generation Settings
   String get selectedImageProvider => _selectedImageProvider;
@@ -183,6 +187,7 @@ class SettingsProvider with ChangeNotifier {
     _apiKey = prefs.getString(_apiKeyKey);
     _imageApiKey = prefs.getString(_imageApiKeyKey); // Load image API key
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
+    _bingApiKey = prefs.getString(_bingApiKeyKey); // Load Bing API key
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
     _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
     _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
@@ -314,6 +319,18 @@ class SettingsProvider with ChangeNotifier {
         prefs.remove(_tavilyApiKeyKey);
       } else {
         prefs.setString(_tavilyApiKeyKey, key);
+      }
+    });
+    notifyListeners();
+  }
+
+  void setBingApiKey(String? key) {
+    _bingApiKey = key;
+    SharedPreferences.getInstance().then((prefs) {
+      if (key == null || key.isEmpty) {
+        prefs.remove(_bingApiKeyKey);
+      } else {
+        prefs.setString(_bingApiKeyKey, key);
       }
     });
     notifyListeners();

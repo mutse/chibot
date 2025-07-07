@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../l10n/app_localizations.dart';
+import 'package:chibot/l10n/app_localizations.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -355,52 +355,47 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          ...models
-              .map(
-                (model) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(8),
+          ...models.map(
+            (model) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: model['color'] as Color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      model['icon'] as IconData,
+                      color: Colors.white,
+                      size: 12,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: model['color'] as Color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          model['icon'] as IconData,
-                          color: Colors.white,
-                          size: 12,
-                        ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      model['name'] as String,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          model['name'] as String,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        model['type'] as String,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              )
-              .toList(),
+                  Text(
+                    model['type'] as String,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -414,13 +409,21 @@ class AboutScreen extends StatelessWidget {
         'title': localizations.usageHelp,
         'color': const Color(0xFF2563EB),
       },
-      {'icon': Icons.book, 'title': localizations.userManual, 'color': const Color(0xFF059669)},
+      {
+        'icon': Icons.book,
+        'title': localizations.userManual,
+        'color': const Color(0xFF059669),
+      },
       {
         'icon': Icons.bug_report,
         'title': localizations.problemFeedback,
         'color': const Color(0xFFD97706),
       },
-      {'icon': Icons.email, 'title': localizations.contact, 'color': const Color(0xFF7C3AED)},
+      {
+        'icon': Icons.email,
+        'title': localizations.contact,
+        'color': const Color(0xFF7C3AED),
+      },
     ];
 
     return Container(
@@ -441,18 +444,16 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          ...helpItems
-              .map(
-                (item) => _buildListTile(
-                  icon: item['icon'] as IconData,
-                  title: item['title'] as String,
-                  color: item['color'] as Color,
-                  onTap: () {
-                    // TODO: Implement navigation to help pages
-                  },
-                ),
-              )
-              .toList(),
+          ...helpItems.map(
+            (item) => _buildListTile(
+              icon: item['icon'] as IconData,
+              title: item['title'] as String,
+              color: item['color'] as Color,
+              onTap: () {
+                // TODO: Implement navigation to help pages
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -484,18 +485,16 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          ...legalItems
-              .map(
-                (item) => _buildListTile(
-                  icon: item['icon'] as IconData,
-                  title: item['title'] as String,
-                  color: Colors.grey,
-                  onTap: () {
-                    // TODO: Implement navigation to legal pages
-                  },
-                ),
-              )
-              .toList(),
+          ...legalItems.map(
+            (item) => _buildListTile(
+              icon: item['icon'] as IconData,
+              title: item['title'] as String,
+              color: Colors.grey,
+              onTap: () {
+                // TODO: Implement navigation to legal pages
+              },
+            ),
+          ),
         ],
       ),
     );

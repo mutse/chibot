@@ -1,6 +1,6 @@
- import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../models/image_session.dart';
+import 'package:chibot/models/image_session.dart';
 
 class ImageSessionService {
   static const String _sessionsKey = 'image_sessions';
@@ -8,14 +8,18 @@ class ImageSessionService {
   Future<List<ImageSession>> loadSessions() async {
     final prefs = await SharedPreferences.getInstance();
     final sessionsJson = prefs.getStringList(_sessionsKey) ?? [];
-    return sessionsJson.map((jsonString) {
-      try {
-        return ImageSession.fromJson(json.decode(jsonString));
-      } catch (e) {
-        print('Error decoding image session: $e');
-        return null;
-      }
-    }).where((session) => session != null).cast<ImageSession>().toList();
+    return sessionsJson
+        .map((jsonString) {
+          try {
+            return ImageSession.fromJson(json.decode(jsonString));
+          } catch (e) {
+            print('Error decoding image session: $e');
+            return null;
+          }
+        })
+        .where((session) => session != null)
+        .cast<ImageSession>()
+        .toList();
   }
 
   Future<void> saveSession(ImageSession session) async {

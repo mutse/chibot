@@ -2,18 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/settings_provider.dart';
-import 'screens/chat_screen.dart';
-import 'l10n/app_localizations.dart';
+import 'package:chibot/screens/chat_screen.dart';
+import 'package:chibot/l10n/app_localizations.dart';
+import 'dart:io';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await windowManager.ensureInitialized();
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(900, 700),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget with TrayListener, WindowListener {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    _initTrayAndWindow(context);
     return ChangeNotifierProvider(
       create: (context) => SettingsProvider(),
       child: MaterialApp(
@@ -91,5 +110,60 @@ class MyApp extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _initTrayAndWindow(BuildContext context) async {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.addListener(this);
+      await trayManager.setIcon('assets/images/icon.png');
+      final localizations = AppLocalizations.of(context);
+      await trayManager.setContextMenu(
+        Menu(
+          items: [
+            MenuItem(
+              key: 'show',
+              label: localizations?.trayShowHide ?? 'Show/Hide',
+            ),
+            MenuItem.separator(),
+            MenuItem(key: 'exit', label: localizations?.trayExit ?? 'Exit'),
+          ],
+        ),
+      );
+      trayManager.addListener(this);
+    }
+  }
+
+  @override
+  void onTrayIconMouseDown() async {
+    if (await windowManager.isVisible()) {
+      windowManager.hide();
+    } else {
+      windowManager.show();
+      windowManager.focus();
+    }
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) async {
+    if (menuItem.key == 'show') {
+      if (await windowManager.isVisible()) {
+        windowManager.hide();
+      } else {
+        windowManager.show();
+        windowManager.focus();
+      }
+    } else if (menuItem.key == 'exit') {
+      await trayManager.destroy();
+      windowManager.destroy();
+    }
+  }
+
+  @override
+  Future<bool> onWindowClose() async {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      windowManager.hide();
+      return false;
+    }
+    return true;
   }
 }

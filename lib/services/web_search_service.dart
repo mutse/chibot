@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 
 class WebSearchService {
   final String apiKey;
-  WebSearchService({required this.apiKey});
+  final String? bingApiKey;
+  WebSearchService({required this.apiKey, this.bingApiKey});
 
   /// Returns a summary string from Tavily web search for the given query.
   Future<String> searchWeb(String query) async {
@@ -38,6 +39,41 @@ class WebSearchService {
     } else {
       throw Exception(
         'Tavily API error: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
+  /// Returns a summary string from Bing Web Search API for the given query.
+  Future<String> searchBing(String query) async {
+    if (bingApiKey == null || bingApiKey!.isEmpty) {
+      throw Exception('Bing API Key is not set.');
+    }
+    final url = Uri.parse(
+      'https://api.bing.microsoft.com/v7.0/search?q=${Uri.encodeComponent(query)}',
+    );
+    final headers = {'Ocp-Apim-Subscription-Key': bingApiKey!};
+    final response = await http.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['webPages'] != null &&
+          data['webPages']['value'] is List &&
+          data['webPages']['value'].isNotEmpty) {
+        // Concatenate top 3 results
+        final results = (data['webPages']['value'] as List)
+            .take(3)
+            .map((item) {
+              final title = item['name'] ?? '';
+              final snippet = item['snippet'] ?? '';
+              return '$title: $snippet';
+            })
+            .join('\n');
+        return results;
+      } else {
+        return 'No relevant Bing search results found.';
+      }
+    } else {
+      throw Exception(
+        'Bing API error: \\${response.statusCode} \\${response.body}',
       );
     }
   }

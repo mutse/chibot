@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'dart:async';
+import 'package:file_selector/file_selector.dart';
 
 class ImageSaveService {
   static Future<bool> _requestPermissions() async {
@@ -44,7 +44,9 @@ class ImageSaveService {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Permission denied. Please grant storage permission to save images.'),
+              content: Text(
+                'Permission denied. Please grant storage permission to save images.',
+              ),
               duration: Duration(seconds: 3),
             ),
           );
@@ -64,29 +66,38 @@ class ImageSaveService {
         // 否则，按URL下载图片
         try {
           final client = http.Client();
-          final response = await client.get(
-            Uri.parse(imageUrl),
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-            },
-          ).timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              throw TimeoutException('The connection has timed out, Please try again!');
-            },
-          );
-          
+          final response = await client
+              .get(
+                Uri.parse(imageUrl),
+                headers: {
+                  'User-Agent':
+                      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+                },
+              )
+              .timeout(
+                const Duration(seconds: 30),
+                onTimeout: () {
+                  throw TimeoutException(
+                    'The connection has timed out, Please try again!',
+                  );
+                },
+              );
+
           if (response.statusCode != 200) {
             throw Exception('Failed to download image: ${response.statusCode}');
           }
-          
+
           imageBytes = response.bodyBytes;
           client.close();
         } catch (e) {
           if (e is TimeoutException) {
-            throw Exception('Connection timed out. Please check your internet connection and try again.');
+            throw Exception(
+              'Connection timed out. Please check your internet connection and try again.',
+            );
           } else if (e is HandshakeException) {
-            throw Exception('SSL handshake failed. Please check your network connection and try again.');
+            throw Exception(
+              'SSL handshake failed. Please check your network connection and try again.',
+            );
           } else {
             throw Exception('Failed to download image: $e');
           }
@@ -98,19 +109,20 @@ class ImageSaveService {
         throw UnsupportedError('Web platform is not supported');
       } else if (Platform.isAndroid || Platform.isIOS) {
         // 移动平台处理
-        final fileName = 'chibot_image_${DateTime.now().millisecondsSinceEpoch}.png';
-        
+        final fileName =
+            'chibot_image_${DateTime.now().millisecondsSinceEpoch}.png';
+
         // 保存到相册
         final result = await SaverGallery.saveImage(
-            Uint8List.fromList(imageBytes),
-            quality: 80,
+          Uint8List.fromList(imageBytes),
+          quality: 80,
 
-            androidRelativePath: "Pictures/chibot",
+          androidRelativePath: "Pictures/chibot",
 
-            fileName: fileName,
-            skipIfExists: true,
-          );
-        
+          fileName: fileName,
+          skipIfExists: true,
+        );
+
         if (result.isSuccess) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -125,19 +137,19 @@ class ImageSaveService {
         }
       } else {
         // 桌面平台处理
-        final directory = await getDownloadsDirectory();
-        if (directory == null) {
-          throw Exception('Could not access downloads directory');
+        final fileName =
+            'chibot_image_${DateTime.now().millisecondsSinceEpoch}.png';
+        final FileSaveLocation? result = await getSaveLocation(suggestedName: fileName);
+        if (result == null) {
+          throw Exception('Save cancelled by user');
         }
-
-        final fileName = 'chibot_image_${DateTime.now().millisecondsSinceEpoch}.png';
-        final file = File('${directory.path}/$fileName');
+        final file = File(result.path);
         await file.writeAsBytes(imageBytes);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Image saved to ${file.path}'),
+              content: Text('Image saved to $result'),
               duration: const Duration(seconds: 2),
             ),
           );
