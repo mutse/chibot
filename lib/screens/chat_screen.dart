@@ -3,6 +3,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'dart:convert'; // For base64 decoding
+import 'dart:io';
 import 'package:chibot/models/chat_message.dart';
 import 'package:chibot/models/chat_session.dart';
 import 'package:chibot/models/image_session.dart';
@@ -42,8 +43,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _enableWebSearch = false;
-  // Add the context menu controller
-  final ContextMenuController _contextMenuController = ContextMenuController();
 
   @override
   void initState() {
@@ -377,198 +376,308 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildSidebar(BuildContext context) {
-    // Placeholder for sidebar content, matching the image's style
+    final theme = Theme.of(context);
     return Container(
       width: _sidebarWidth,
-      color: Colors.white12,
-      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border:
+            Platform.isMacOS
+                ? Border(right: BorderSide(color: theme.dividerColor, width: 1))
+                : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Search bar (mimicking the image)
+          // Header section
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(
-                255,
-                227,
-                229,
-                249,
-              ), // Darker input field background
-              borderRadius: BorderRadius.circular(8.0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // App title
+                Text(
+                  'Chibot AI',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Search bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(
+                      Platform.isMacOS ? 8 : 12,
+                    ),
+                  ),
+                  child: TextField(
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.search,
+                      hintStyle: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                          0.6,
+                        ),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: TextField(
-              style: TextStyle(color: Colors.black87),
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.search,
-                hintStyle: TextStyle(color: Colors.black12),
-                icon: Icon(Icons.search, color: Colors.white54, size: 20),
-                border: InputBorder.none,
+          ),
+
+          // Navigation section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                _buildSidebarItem(
+                  context,
+                  Icons.chat_bubble_outline,
+                  'Chi Chat',
+                  isSelected: true,
+                ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
+                  context,
+                  Icons.add_comment_outlined,
+                  AppLocalizations.of(context)!.newChat,
+                  onTap: _startNewChat,
+                ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
+                  context,
+                  Icons.add_photo_alternate_outlined,
+                  AppLocalizations.of(context)!.newImageSession,
+                  onTap: _startNewImageSession,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Chat sessions section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_chatSessions.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Recent Chats',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _chatSessions.length,
+                      itemBuilder: (context, index) {
+                        final session = _chatSessions[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildSidebarItem(
+                            context,
+                            Icons.chat_outlined,
+                            session.title,
+                            isSelected: _currentSessionId == session.id,
+                            onTap: () => _loadSession(session),
+                            onDelete: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (ctx) => AlertDialog(
+                                      title: const Text('Delete'),
+                                      content: const Text(
+                                        'Delete this chat history?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.of(ctx).pop(false),
+                                          child: Text(
+                                            AppLocalizations.of(
+                                                  context,
+                                                )?.cancel ??
+                                                'Cancel',
+                                          ),
+                                        ),
+                                        FilledButton(
+                                          onPressed:
+                                              () => Navigator.of(ctx).pop(true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                theme.colorScheme.error,
+                                            foregroundColor:
+                                                theme.colorScheme.onError,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                              );
+                              if (confirm == true) {
+                                await _sessionService.deleteSession(session.id);
+                                if (_currentSessionId == session.id) {
+                                  setState(() {
+                                    _messages.clear();
+                                    _currentSessionId = null;
+                                  });
+                                }
+                                _loadChatSessions();
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+
+                // Image sessions section
+                if (_imageSessions.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Image Sessions',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _imageSessions.length,
+                      itemBuilder: (context, index) {
+                        final session = _imageSessions[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildSidebarItem(
+                            context,
+                            Icons.image_outlined,
+                            session.title,
+                            isSelected: _currentImageSessionId == session.id,
+                            onTap: () => _loadImageSession(session),
+                            onDelete: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (ctx) => AlertDialog(
+                                      title: const Text('Delete'),
+                                      content: const Text(
+                                        'Delete this image session?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.of(ctx).pop(false),
+                                          child: Text(
+                                            AppLocalizations.of(
+                                                  context,
+                                                )?.cancel ??
+                                                'Cancel',
+                                          ),
+                                        ),
+                                        FilledButton(
+                                          onPressed:
+                                              () => Navigator.of(ctx).pop(true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                theme.colorScheme.error,
+                                            foregroundColor:
+                                                theme.colorScheme.onError,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                              );
+                              if (confirm == true) {
+                                await _imageSessionService.deleteSession(
+                                  session.id,
+                                );
+                                if (_currentImageSessionId == session.id) {
+                                  setState(() {
+                                    _messages.clear();
+                                    _currentImageSessionId = null;
+                                  });
+                                }
+                                _loadImageSessions();
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Bottom section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: theme.dividerColor, width: 1),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          // List of chats (example items)
-          _buildSidebarItem(
-            context,
-            Icons.chat_bubble_outline,
-            'Chi Chat',
-            isSelected: true,
-          ), // Keep 'ChatGPT' as it's a model name
-          // _buildSidebarItem(
-          //   context,
-          //   Icons.search,
-          //   'Chi Search',
-          // ), // Keep 'GTP search' as it's a model name
-          // _buildSidebarItem(
-          //   context,
-          //   Icons.code,
-          //   'Chi Code',
-          // ), // Keep 'SwiftUI GPT' as it's a model name
-          const SizedBox(height: 20),
-          _buildSidebarItem(
-            context,
-            Icons.add_comment_outlined,
-            AppLocalizations.of(context)!.newChat,
-            onTap: _startNewChat,
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _chatSessions.length,
-              itemBuilder: (context, index) {
-                final session = _chatSessions[index];
-                return _buildSidebarItem(
+            child: Column(
+              children: [
+                _buildSidebarItem(
                   context,
-                  Icons.history,
-                  session.title,
-                  isSelected: _currentSessionId == session.id,
-                  onTap: () => _loadSession(session),
-                  onDelete: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (ctx) => AlertDialog(
-                            title: Text('Delete'),
-                            content: Text('Delete this chat history?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(false),
-                                child: Text(
-                                  AppLocalizations.of(context)?.cancel ??
-                                      'Cancel',
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(true),
-                                child: const Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
+                  Icons.info_outline,
+                  AppLocalizations.of(context)!.about,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AboutScreen(),
+                      ),
                     );
-                    if (confirm == true) {
-                      await _sessionService.deleteSession(session.id);
-                      if (_currentSessionId == session.id) {
-                        setState(() {
-                          _messages.clear();
-                          _currentSessionId = null;
-                        });
-                      }
-                      _loadChatSessions();
-                    }
                   },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildSidebarItem(
-            context,
-            Icons.add_photo_alternate_outlined,
-            AppLocalizations.of(context)!.newImageSession,
-            onTap: _startNewImageSession,
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _imageSessions.length,
-              itemBuilder: (context, index) {
-                final session = _imageSessions[index];
-                return _buildSidebarItem(
+                ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
                   context,
-                  Icons.image,
-                  session.title,
-                  isSelected: _currentImageSessionId == session.id,
-                  onTap: () => _loadImageSession(session),
-                  onDelete: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (ctx) => AlertDialog(
-                            title: Text('Delete'),
-                            content: Text('Delete this image session?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(false),
-                                child: Text(
-                                  AppLocalizations.of(context)?.cancel ??
-                                      'Cancel',
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(true),
-                                child: const Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
+                  Icons.settings_outlined,
+                  AppLocalizations.of(context)!.settings,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
                     );
-                    if (confirm == true) {
-                      await _imageSessionService.deleteSession(session.id);
-                      if (_currentImageSessionId == session.id) {
-                        setState(() {
-                          _messages.clear();
-                          _currentImageSessionId = null;
-                        });
-                      }
-                      _loadImageSessions();
-                    }
                   },
-                );
-              },
+                ),
+              ],
             ),
-          ),
-          // Add more items or a ListView for scrollable content
-          const Spacer(), // Pushes settings to the bottom
-
-          _buildSidebarItem(
-            context,
-            Icons.info_outlined,
-            AppLocalizations.of(context)!.about,
-            onTap: () {
-              // Use l10n here
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AboutScreen()),
-              );
-            },
-          ),
-          _buildSidebarItem(
-            context,
-            Icons.settings_outlined,
-            AppLocalizations.of(context)!.settings,
-            onTap: () {
-              // Use l10n here
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
           ),
         ],
       ),
@@ -583,31 +692,36 @@ class _ChatScreenState extends State<ChatScreen> {
     VoidCallback? onTap,
     VoidCallback? onDelete,
   }) {
+    final theme = Theme.of(context);
     return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap ?? () {},
-        borderRadius: BorderRadius.circular(12.0),
-        hoverColor: const Color.fromARGB(255, 218, 222, 252),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-          margin: const EdgeInsets.symmetric(vertical: 4.0),
+        borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? const Color.fromARGB(255, 250, 245, 245)
+                    ? theme.colorScheme.primaryContainer.withOpacity(0.8)
                     : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(
-              color: isSelected ? Colors.blue.withOpacity(0.5) : Colors.white10,
-              width: 1.0,
-            ),
+            borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 12),
+            border:
+                isSelected
+                    ? Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      width: 1,
+                    )
+                    : null,
           ),
           child: Row(
             children: <Widget>[
               Icon(
                 icon,
-                color: isSelected ? Colors.blue : Colors.black87,
+                color:
+                    isSelected
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurfaceVariant,
                 size: 20,
               ),
               const SizedBox(width: 12.0),
@@ -615,9 +729,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Text(
                   text,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isSelected ? Colors.blue : Colors.black87,
-                    fontSize: 14,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color:
+                        isSelected
+                            ? theme.colorScheme.onPrimaryContainer
+                            : theme.colorScheme.onSurfaceVariant,
                     fontWeight:
                         isSelected ? FontWeight.w500 : FontWeight.normal,
                   ),
@@ -625,13 +741,55 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (onDelete != null)
                 IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
+                  icon: Icon(
+                    Icons.more_horiz,
                     size: 18,
-                    color: Colors.redAccent,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  tooltip: 'Delete',
-                  onPressed: onDelete,
+                  tooltip: 'More options',
+                  onPressed: () async {
+                    // Show context menu for delete option
+                    final RenderBox renderBox =
+                        context.findRenderObject() as RenderBox;
+                    final Offset position = renderBox.localToGlobal(
+                      Offset.zero,
+                    );
+
+                    await showMenu(
+                      context: context,
+                      position: RelativeRect.fromLTRB(
+                        position.dx,
+                        position.dy + renderBox.size.height,
+                        position.dx + renderBox.size.width,
+                        position.dy + renderBox.size.height + 100,
+                      ),
+                      items: [
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: theme.colorScheme.error,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ).then((value) {
+                      if (value == 'delete') {
+                        onDelete();
+                      }
+                    });
+                  },
                 ),
             ],
           ),
@@ -741,8 +899,8 @@ class _ChatScreenState extends State<ChatScreen> {
         style: theme.textTheme.bodyLarge?.copyWith(
           color:
               isUserMessage
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onSurface,
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant,
         ),
       );
     }
@@ -756,33 +914,28 @@ class _ChatScreenState extends State<ChatScreen> {
               _sidebarWidth *
                   (MediaQuery.of(context).size.width > 600 ? 0.7 : 0),
         ),
-        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: isUserMessage ? const Color(0xFF2B7FFF) : Colors.white,
+        margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
+        child: Material(
+          elevation: Platform.isMacOS ? 1 : 2,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isUserMessage ? 20.0 : 4.0),
-            topRight: Radius.circular(isUserMessage ? 4.0 : 20.0),
+            topLeft: Radius.circular(isUserMessage ? 20.0 : 8.0),
+            topRight: Radius.circular(isUserMessage ? 8.0 : 20.0),
             bottomLeft: const Radius.circular(20.0),
             bottomRight: const Radius.circular(20.0),
           ),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  isUserMessage
-                      ? const Color(0xFF2B7FFF).withOpacity(0.3)
-                      : Colors.black.withOpacity(0.05),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+          surfaceTintColor: theme.colorScheme.surfaceTint,
+          color:
+              isUserMessage
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceVariant,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              vertical: 12.0,
+              horizontal: 16.0,
             ),
-          ],
-          border:
-              !isUserMessage
-                  ? Border.all(color: Colors.grey.withOpacity(0.1), width: 1.0)
-                  : null,
+            child: messageContent,
+          ),
         ),
-        child: messageContent,
       ),
     );
   }
@@ -796,41 +949,45 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onTap: () {
-          showContextMenu(
-            context,
-            contextMenu: ContextMenu(
-              entries: [
-                MenuItem(
-                  label: localizations.saveImage,
-                  onSelected: () {
-                    if (message.imageUrl != null &&
-                        message.imageUrl!.isNotEmpty) {
-                      ImageSaveService.saveImage(message.imageUrl!, context);
-                    }
-                  },
-                ),
-              ],
-            ),
-          );
+        // Long press for mobile platforms (iOS/Android)
+        onLongPress: () {
+          if (Platform.isIOS || Platform.isAndroid) {
+            _showImageOptionsBottomSheet(message, localizations);
+          }
         },
+        // Right-click context menu for desktop platforms
         onSecondaryTapDown: (details) {
-          showContextMenu(
-            context,
-            contextMenu: ContextMenu(
-              entries: [
-                MenuItem(
-                  label: localizations.saveImage,
-                  onSelected: () {
-                    if (message.imageUrl != null &&
-                        message.imageUrl!.isNotEmpty) {
-                      ImageSaveService.saveImage(message.imageUrl!, context);
-                    }
-                  },
-                ),
-              ],
-            ),
-          );
+          if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+            showContextMenu(
+              context,
+              contextMenu: ContextMenu(
+                entries: [
+                  MenuItem(
+                    label: localizations.saveImage,
+                    onSelected: () {
+                      if (message.imageUrl != null &&
+                          message.imageUrl!.isNotEmpty) {
+                        ImageSaveService.saveImage(message.imageUrl!, context);
+                      }
+                    },
+                  ),
+                  MenuItem(
+                    label: localizations.saveToDirectory,
+                    onSelected: () {
+                      if (message.imageUrl != null &&
+                          message.imageUrl!.isNotEmpty) {
+                        ImageSaveService.saveImageToDirectory(
+                          message.imageUrl!,
+                          context,
+                        );
+                      }
+                    },
+                  ),
+                ],
+                position: details.globalPosition,
+              ),
+            );
+          }
         },
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12.0),
@@ -900,18 +1057,26 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputField() {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            spreadRadius: 0,
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        color: theme.colorScheme.surface,
+        border:
+            Platform.isMacOS
+                ? Border(top: BorderSide(color: theme.dividerColor, width: 1))
+                : null,
+        boxShadow:
+            Platform.isMacOS
+                ? null
+                : [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(0.1),
+                    spreadRadius: 0,
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
       ),
       child: SafeArea(
         child: Row(
@@ -919,10 +1084,12 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(24.0),
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(
+                    Platform.isMacOS ? 8 : 24,
+                  ),
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withOpacity(0.2),
                     width: 1.0,
                   ),
                 ),
@@ -931,18 +1098,20 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: TextField(
                         controller: _textController,
-                        style: const TextStyle(fontSize: 15, height: 1.4),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                        ),
                         decoration: InputDecoration(
                           hintText:
                               AppLocalizations.of(context)!.askAnyQuestion,
                           hintStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 15,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withOpacity(0.7),
                           ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
+                          contentPadding: EdgeInsets.symmetric(
                             horizontal: 20.0,
-                            vertical: 14.0,
+                            vertical: Platform.isMacOS ? 12.0 : 16.0,
                           ),
                         ),
                         onSubmitted: (_) => _isLoading ? null : _sendMessage(),
@@ -952,29 +1121,41 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     // Add web search toggle
                     Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
+                      padding: const EdgeInsets.only(right: 12.0),
                       child: Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
                           final isTextModel =
                               settings.selectedModelType == ModelType.text;
-                          return GestureDetector(
-                            onTap:
-                                isTextModel
-                                    ? () {
-                                      setState(() {
-                                        _enableWebSearch = !_enableWebSearch;
-                                      });
-                                    }
-                                    : null,
-                            child: Icon(
-                              Icons.public,
-                              size: 24,
+                          final isActive = isTextModel && _enableWebSearch;
+                          return Ink(
+                            decoration: BoxDecoration(
                               color:
+                                  isActive
+                                      ? theme.colorScheme.primary
+                                      : Colors.blueGrey,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed:
                                   isTextModel
-                                      ? (_enableWebSearch
-                                          ? Colors.blue
-                                          : Colors.grey)
-                                      : Colors.grey.withOpacity(0.4),
+                                      ? () {
+                                        setState(() {
+                                          _enableWebSearch = !_enableWebSearch;
+                                        });
+                                      }
+                                      : null,
+                              icon: Icon(
+                                Icons.public,
+                                size: 20,
+                                color:
+                                    isActive
+                                        ? Colors.blue
+                                        : isTextModel
+                                        ? theme.colorScheme.onSurfaceVariant
+                                        : theme.colorScheme.onSurfaceVariant
+                                            .withOpacity(0.4),
+                              ),
+                              tooltip: 'Web Search',
                             ),
                           );
                         },
@@ -989,33 +1170,76 @@ class _ChatScreenState extends State<ChatScreen> {
               valueListenable: _textController,
               builder: (context, value, child) {
                 final bool isEmpty = value.text.isEmpty;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: Material(
-                    color:
+                return FilledButton(
+                  onPressed: _isLoading || isEmpty ? null : _sendMessage,
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
                         _isLoading || isEmpty
-                            ? Colors.grey[300]
-                            : const Color(0xFF2B7FFF),
-                    borderRadius: BorderRadius.circular(20.0),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20.0),
-                      onTap: _isLoading || isEmpty ? null : _sendMessage,
-                      child: Container(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Icon(
-                          Icons.arrow_upward_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                            ? theme.colorScheme.surfaceVariant
+                            : theme.colorScheme.primary,
+                    foregroundColor:
+                        _isLoading || isEmpty
+                            ? theme.colorScheme.onSurfaceVariant
+                            : theme.colorScheme.onPrimary,
+                    padding: const EdgeInsets.all(12.0),
+                    minimumSize: const Size(48, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        Platform.isMacOS ? 6 : 24,
                       ),
                     ),
                   ),
+                  child: Icon(Icons.arrow_upward_rounded, size: 20),
                 );
               },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showImageOptionsBottomSheet(
+    ImageMessage message,
+    AppLocalizations localizations,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: Text(localizations.saveImage),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (message.imageUrl != null &&
+                      message.imageUrl!.isNotEmpty) {
+                    ImageSaveService.saveImage(message.imageUrl!, context);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.folder),
+                title: Text(localizations.saveToDirectory),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (message.imageUrl != null &&
+                      message.imageUrl!.isNotEmpty) {
+                    ImageSaveService.saveImageToDirectory(
+                      message.imageUrl!,
+                      context,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

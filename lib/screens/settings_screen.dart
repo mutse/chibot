@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (settings.selectedModelType == ModelType.image) {
       return settings.imageApiKey ?? '';
     }
-    
+
     switch (settings.selectedProvider) {
       case 'OpenAI':
         return settings.apiKey ?? '';
@@ -65,7 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (settings.selectedModelType == ModelType.image) {
       return l10n.apiKey(settings.selectedImageProvider);
     }
-    
+
     switch (settings.selectedProvider) {
       case 'OpenAI':
         return 'OpenAI API Key';
@@ -82,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (settings.selectedModelType == ModelType.image) {
       return l10n.enterYourAPIKey;
     }
-    
+
     switch (settings.selectedProvider) {
       case 'OpenAI':
         return 'Enter your OpenAI API Key';
@@ -211,14 +211,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isExpanded: true,
                   items:
                       settings.allProviderNames.map((String provider) {
+                        final isCustom =
+                            !SettingsProvider.defaultBaseUrls.keys.contains(
+                              provider,
+                            );
                         return DropdownMenuItem<String>(
                           value: provider,
-                          child: Text(provider),
+                          child: Text(
+                            isCustom
+                                ? ' $provider (OpenAI Compatible)'
+                                : provider,
+                          ),
                         );
                       }).toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       settings.setSelectedProvider(newValue);
+                      // Pre-fill for custom providers
+                      final isCustom =
+                          !SettingsProvider.defaultBaseUrls.keys.contains(
+                            newValue,
+                          );
+                      if (isCustom) {
+                        if (_providerUrlController.text.isEmpty) {
+                          setState(() {
+                            _providerUrlController.text =
+                                'http://localhost:8000/v1';
+                          });
+                        }
+                        if (settings.availableModels.isEmpty) {
+                          // Add a default model if none exists
+                          settings.addCustomModel('gpt-3.5-turbo');
+                          settings.setSelectedModel('gpt-3.5-turbo');
+                        }
+                      }
                     }
                   },
                 ),
@@ -491,11 +517,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     final apiKeyText = _apiKeyController.text.trim();
-                    
+
                     if (settings.selectedModelType == ModelType.text) {
                       // Save API key to the correct provider
                       _saveProviderApiKey(settings, apiKeyText);
-                      
+
                       settings.setProviderUrl(
                         _providerUrlController.text.trim(),
                       );
@@ -509,7 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _imageProviderUrlController.text.trim(),
                       );
                     }
-                    
+
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));

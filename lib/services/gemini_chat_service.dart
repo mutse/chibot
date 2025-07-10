@@ -31,9 +31,7 @@ class GeminiService extends BaseApiService implements ChatService {
 
   @override
   Map<String, String> getHeaders() {
-    return {
-      'Content-Type': 'application/json',
-    };
+    return {'Content-Type': 'application/json'};
   }
 
   @override
@@ -46,7 +44,7 @@ class GeminiService extends BaseApiService implements ChatService {
   @override
   Future<void> validateConfiguration() async {
     validateApiKey();
-    
+
     try {
       final response = await get('/models', queryParams: {'key': apiKey});
       if (response.statusCode != 200) {
@@ -84,7 +82,7 @@ class GeminiService extends BaseApiService implements ChatService {
     Map<String, dynamic>? parameters,
   }) async* {
     validateApiKey();
-    
+
     if (!supportedModels.contains(model)) {
       throw ValidationException(
         'Model $model is not supported by Gemini',
@@ -96,23 +94,25 @@ class GeminiService extends BaseApiService implements ChatService {
     try {
       final contents = _buildContents(context, prompt);
       final requestBody = _buildGenerateRequest(contents, parameters);
-      
+
       logInfo('Generating response with Gemini model: $model');
-      
+
       final cleanModel = model.startsWith('gemini-') ? model : 'gemini-$model';
       final response = await post(
         '/models/$cleanModel:generateContent',
         queryParams: {'key': apiKey},
         body: requestBody,
       );
-      
+
       final json = jsonDecode(response.body);
-      
+
       if (json['candidates'] != null && json['candidates'].isNotEmpty) {
         final candidate = json['candidates'][0];
         final content = candidate['content'];
-        
-        if (content != null && content['parts'] != null && content['parts'].isNotEmpty) {
+
+        if (content != null &&
+            content['parts'] != null &&
+            content['parts'].isNotEmpty) {
           final text = content['parts'][0]['text'] as String?;
           if (text != null) {
             // Gemini doesn't support streaming, so we yield the complete response
@@ -120,7 +120,6 @@ class GeminiService extends BaseApiService implements ChatService {
           }
         }
       }
-      
     } catch (e) {
       logError('Failed to generate response with Gemini', error: e);
       if (e is AppException) {
@@ -138,46 +137,52 @@ class GeminiService extends BaseApiService implements ChatService {
   @override
   Future<String> generateTitle(List<ChatMessage> messages) async {
     validateApiKey();
-    
+
     if (messages.isEmpty) {
       return 'New Chat';
     }
 
     try {
       final firstMessage = messages.first;
-      final prompt = 'Generate a short, descriptive title (max 5 words) for this conversation: \"${firstMessage.text}\"';
-      
+      final prompt =
+          'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
+
       final contents = [
         {
           'role': 'user',
-          'parts': [{'text': prompt}],
-        }
+          'parts': [
+            {'text': prompt},
+          ],
+        },
       ];
-      
-      final requestBody = _buildGenerateRequest(contents, {'maxOutputTokens': 20});
-      
+
+      final requestBody = _buildGenerateRequest(contents, {
+        'maxOutputTokens': 20,
+      });
+
       final response = await post(
         '/models/gemini-1.5-flash:generateContent',
         queryParams: {'key': apiKey},
         body: requestBody,
       );
-      
+
       final json = jsonDecode(response.body);
-      
+
       if (json['candidates'] != null && json['candidates'].isNotEmpty) {
         final candidate = json['candidates'][0];
         final content = candidate['content'];
-        
-        if (content != null && content['parts'] != null && content['parts'].isNotEmpty) {
+
+        if (content != null &&
+            content['parts'] != null &&
+            content['parts'].isNotEmpty) {
           final text = content['parts'][0]['text'] as String?;
           if (text != null) {
             return text.trim().replaceAll(RegExp(r'^"|"$'), '');
           }
         }
       }
-      
+
       return 'New Chat';
-      
     } catch (e) {
       logWarning('Failed to generate title with Gemini', error: e);
       return 'New Chat';
@@ -185,33 +190,43 @@ class GeminiService extends BaseApiService implements ChatService {
   }
 
   // Helper methods
-  List<Map<String, dynamic>> _buildContents(List<ChatMessage> context, String prompt) {
+  List<Map<String, dynamic>> _buildContents(
+    List<ChatMessage> context,
+    String prompt,
+  ) {
     final contents = <Map<String, dynamic>>[];
-    
+
     // Add context messages
     for (final message in context) {
       contents.add({
         'role': message.sender == MessageSender.user ? 'user' : 'model',
-        'parts': [{'text': message.text}],
+        'parts': [
+          {'text': message.text},
+        ],
       });
     }
-    
+
     // Add current prompt
     contents.add({
       'role': 'user',
-      'parts': [{'text': prompt}],
+      'parts': [
+        {'text': prompt},
+      ],
     });
-    
+
     // Limit context length
     if (contents.length > AppConstants.maxMessagesInContext) {
       final startIndex = contents.length - AppConstants.maxMessagesInContext;
       return contents.sublist(startIndex);
     }
-    
+
     return contents;
   }
 
-  String _buildGenerateRequest(List<Map<String, dynamic>> contents, Map<String, dynamic>? parameters) {
+  String _buildGenerateRequest(
+    List<Map<String, dynamic>> contents,
+    Map<String, dynamic>? parameters,
+  ) {
     final request = {
       'contents': contents,
       'generationConfig': {
@@ -220,7 +235,7 @@ class GeminiService extends BaseApiService implements ChatService {
         ...?parameters,
       },
     };
-    
+
     return jsonEncode(request);
   }
 
@@ -228,20 +243,19 @@ class GeminiService extends BaseApiService implements ChatService {
     String errorMessage = 'Gemini API request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;
-    
+
     try {
       responseData = jsonDecode(responseBody) as Map<String, dynamic>;
-      
+
       if (responseData['error'] != null) {
         final error = responseData['error'] as Map<String, dynamic>;
         errorMessage = error['message'] ?? errorMessage;
         errorCode = error['code']?.toString();
       }
-      
     } catch (e) {
       logWarning('Failed to parse Gemini error response', error: e);
     }
-    
+
     throw ApiException(
       errorMessage,
       statusCode,

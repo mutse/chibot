@@ -70,5 +70,6 @@
   "webSearchPrompt": "请结合以下网络搜索结果回答问题：\n{webResult}\n用户提问：{userQuestion}",
   "webSearchFailed": "Web 搜索失败：{error}",
   "trayShowHide": "显示/隐藏",
-  "trayExit": "退出"
+  "trayExit": "退出",
+  "saveToDirectory": "保存至目录"
 }

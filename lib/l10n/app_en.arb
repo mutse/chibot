@@ -84,5 +84,6 @@
   "webSearchPrompt": "Please answer the question using the following web search results:\n{webResult}\nUser question: {userQuestion}",
   "webSearchFailed": "Web search failed: {error}",
   "trayShowHide": "Show/Hide",
-  "trayExit": "Exit"
+  "trayExit": "Exit",
+  "saveToDirectory": "Save to directory"
 }

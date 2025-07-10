@@ -46,7 +46,7 @@ class OpenAIService extends BaseApiService implements ChatService {
   @override
   Future<void> validateConfiguration() async {
     validateApiKey();
-    
+
     try {
       final response = await get('/models');
       if (response.statusCode != 200) {
@@ -84,7 +84,7 @@ class OpenAIService extends BaseApiService implements ChatService {
     Map<String, dynamic>? parameters,
   }) async* {
     validateApiKey();
-    
+
     if (!supportedModels.contains(model)) {
       throw ValidationException(
         'Model $model is not supported by OpenAI',
@@ -96,29 +96,29 @@ class OpenAIService extends BaseApiService implements ChatService {
     try {
       final messages = _buildMessages(context, prompt);
       final requestBody = _buildChatRequest(model, messages, parameters);
-      
+
       logInfo('Generating response with model: $model');
-      
+
       final response = await postStream('/chat/completions', body: requestBody);
-      
+
       await for (final chunk in response.stream.transform(utf8.decoder)) {
         final lines = chunk.split('\n');
-        
+
         for (final line in lines) {
           if (line.startsWith('data: ')) {
             final data = line.substring(6);
             if (data.trim() == '[DONE]') {
               return;
             }
-            
+
             try {
               final json = jsonDecode(data);
               final choices = json['choices'] as List?;
-              
+
               if (choices != null && choices.isNotEmpty) {
                 final delta = choices[0]['delta'] as Map<String, dynamic>?;
                 final content = delta?['content'] as String?;
-                
+
                 if (content != null) {
                   yield content;
                 }
@@ -130,7 +130,6 @@ class OpenAIService extends BaseApiService implements ChatService {
           }
         }
       }
-      
     } catch (e) {
       logError('Failed to generate response', error: e);
       if (e is AppException) {
@@ -148,36 +147,38 @@ class OpenAIService extends BaseApiService implements ChatService {
   @override
   Future<String> generateTitle(List<ChatMessage> messages) async {
     validateApiKey();
-    
+
     if (messages.isEmpty) {
       return 'New Chat';
     }
 
     try {
       final firstMessage = messages.first;
-      final prompt = 'Generate a short, descriptive title (max 5 words) for this conversation: \"${firstMessage.text}\"';
-      
+      final prompt =
+          'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
+
       final requestBody = _buildChatRequest(
         'gpt-3.5-turbo',
-        [{'role': 'user', 'content': prompt}],
+        [
+          {'role': 'user', 'content': prompt},
+        ],
         {'max_tokens': 20, 'temperature': 0.7},
       );
-      
+
       final response = await post('/chat/completions', body: requestBody);
       final json = jsonDecode(response.body);
-      
+
       final choices = json['choices'] as List?;
       if (choices != null && choices.isNotEmpty) {
         final message = choices[0]['message'] as Map<String, dynamic>?;
         final content = message?['content'] as String?;
-        
+
         if (content != null) {
           return content.trim().replaceAll(RegExp(r'^"|"$'), '');
         }
       }
-      
+
       return 'New Chat';
-      
     } catch (e) {
       logWarning('Failed to generate title', error: e);
       return 'New Chat';
@@ -185,9 +186,12 @@ class OpenAIService extends BaseApiService implements ChatService {
   }
 
   // Helper methods
-  List<Map<String, String>> _buildMessages(List<ChatMessage> context, String prompt) {
+  List<Map<String, String>> _buildMessages(
+    List<ChatMessage> context,
+    String prompt,
+  ) {
     final messages = <Map<String, String>>[];
-    
+
     // Add context messages
     for (final message in context) {
       final apiMessage = message.toApiJson();
@@ -195,20 +199,24 @@ class OpenAIService extends BaseApiService implements ChatService {
         messages.add(apiMessage);
       }
     }
-    
+
     // Add current prompt
     messages.add({'role': 'user', 'content': prompt});
-    
+
     // Limit context length
     if (messages.length > AppConstants.maxMessagesInContext) {
       final startIndex = messages.length - AppConstants.maxMessagesInContext;
       return messages.sublist(startIndex);
     }
-    
+
     return messages;
   }
 
-  String _buildChatRequest(String model, List<Map<String, String>> messages, Map<String, dynamic>? parameters) {
+  String _buildChatRequest(
+    String model,
+    List<Map<String, String>> messages,
+    Map<String, dynamic>? parameters,
+  ) {
     final request = {
       'model': model,
       'messages': messages,
@@ -217,7 +225,7 @@ class OpenAIService extends BaseApiService implements ChatService {
       'max_tokens': 4096,
       ...?parameters,
     };
-    
+
     return jsonEncode(request);
   }
 
@@ -225,20 +233,19 @@ class OpenAIService extends BaseApiService implements ChatService {
     String errorMessage = 'OpenAI API request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;
-    
+
     try {
       responseData = jsonDecode(responseBody) as Map<String, dynamic>;
-      
+
       if (responseData['error'] != null) {
         final error = responseData['error'] as Map<String, dynamic>;
         errorMessage = error['message'] ?? errorMessage;
         errorCode = error['code']?.toString();
       }
-      
     } catch (e) {
       logWarning('Failed to parse OpenAI error response', error: e);
     }
-    
+
     throw ApiException(
       errorMessage,
       statusCode,
