@@ -126,6 +126,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add(
             ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
               text: AppLocalizations.of(context)!.tavilyApiKeyNotSet,
               sender: MessageSender.ai,
               timestamp: DateTime.now(),
@@ -145,6 +146,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add(
             ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
               text: AppLocalizations.of(context)!.webSearchFailed(e.toString()),
               sender: MessageSender.ai,
               timestamp: DateTime.now(),
@@ -158,6 +160,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final userMessage = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: prompt,
       sender: MessageSender.user,
       timestamp: DateTime.now(),
@@ -181,6 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 : prompt, // Use first part of message as title
         messages: [userMessage],
         createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
       await _sessionService.saveSession(newSession);
       _loadChatSessions(); // Reload sessions to update sidebar
@@ -193,6 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add(
             ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
               text: AppLocalizations.of(context)!.apiKeyNotSetError,
               sender: MessageSender.ai,
               timestamp: DateTime.now(),
@@ -207,6 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Create a placeholder for the AI's message
     final aiMessage = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: "", // Start with empty text
       sender: MessageSender.ai,
       timestamp: DateTime.now(),
@@ -222,6 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final aiUserMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         text: prompt,
         sender: MessageSender.user,
         timestamp: DateTime.now(),
@@ -248,6 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
             if (lastMessageIndex >= 0 &&
                 _messages[lastMessageIndex].sender == MessageSender.ai) {
               _messages[lastMessageIndex] = ChatMessage(
+                id: _messages[lastMessageIndex].id,
                 text: fullResponse,
                 sender: MessageSender.ai,
                 timestamp:
@@ -268,6 +276,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (lastMessageIndex >= 0 &&
               _messages[lastMessageIndex].sender == MessageSender.ai) {
             _messages[lastMessageIndex] = ChatMessage(
+              id: _messages[lastMessageIndex].id,
               text:
                   fullResponse.isEmpty
                       ? AppLocalizations.of(context)!.noResponseFromAI
@@ -289,6 +298,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     _chatSessions
                         .firstWhere((s) => s.id == _currentSessionId!)
                         .createdAt,
+                updatedAt: DateTime.now(),
               );
               _sessionService.saveSession(updatedSession);
             }
@@ -304,6 +314,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (lastMessageIndex >= 0 &&
               _messages[lastMessageIndex].sender == MessageSender.ai) {
             _messages[lastMessageIndex] = ChatMessage(
+              id: _messages[lastMessageIndex].id,
               text: "Error: \\${e.toString()}",
               sender: MessageSender.ai,
               timestamp: _messages[lastMessageIndex].timestamp,
@@ -313,6 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
             // If for some reason the placeholder wasn't added, add a new error message
             _messages.add(
               ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
                 text: "Error: \\${e.toString()}",
                 sender: MessageSender.ai,
                 timestamp: DateTime.now(),
@@ -345,6 +357,7 @@ class _ChatScreenState extends State<ChatScreen> {
             _chatSessions
                 .firstWhere((s) => s.id == _currentSessionId!)
                 .createdAt,
+        updatedAt: DateTime.now(),
       );
       await _sessionService.saveSession(currentSession);
       _loadChatSessions(); // Reload sessions to update sidebar
@@ -1012,6 +1025,7 @@ class _ChatScreenState extends State<ChatScreen> {
         // Add user's /imagine message first
         _messages.add(
           ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
             text: '/imagine $prompt',
             sender: MessageSender.user,
             timestamp: DateTime.now(),
@@ -1020,6 +1034,7 @@ class _ChatScreenState extends State<ChatScreen> {
         // Then add the AI's placeholder message for the image
         _messages.add(
           ImageMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
             text: prompt, // Assign prompt to text
             imageUrl: '',
             sender: MessageSender.ai,
@@ -1053,6 +1068,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           if (imageMessageIndex != -1) {
             _messages[imageMessageIndex] = ImageMessage(
+              id: (_messages[imageMessageIndex] as ImageMessage).id,
               text: prompt, // Assign prompt to text
               imageUrl: '',
               sender: MessageSender.ai,
@@ -1067,6 +1083,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             _messages.add(
               ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
                 text: AppLocalizations.of(context)!.apiKeyNotSetError,
                 sender: MessageSender.ai,
                 timestamp: DateTime.now(),
@@ -1103,6 +1120,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           if (imageMessageIndex != -1) {
             _messages[imageMessageIndex] = ImageMessage(
+              id: (_messages[imageMessageIndex] as ImageMessage).id,
               text: prompt, // Assign prompt to text
               imageUrl: imageUrl ?? '',
               sender: MessageSender.ai,
@@ -1127,6 +1145,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         : prompt,
                 messages: _messages.whereType<ImageMessage>().toList(),
                 createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
                 model: settings.selectedImageModel,
               );
               _imageSessionService.saveSession(newSession);
@@ -1161,6 +1180,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 createdAt:
                     existingSession?.createdAt ??
                     DateTime.now(), // Keep original creation time or use now
+                updatedAt: DateTime.now(),
                 model: settings.selectedImageModel,
               );
               _imageSessionService.saveSession(updatedSession);
@@ -1184,6 +1204,7 @@ class _ChatScreenState extends State<ChatScreen> {
           }
           if (imageMessageIndex != -1) {
             _messages[imageMessageIndex] = ImageMessage(
+              id: (_messages[imageMessageIndex] as ImageMessage).id,
               text: prompt,
               imageUrl: '',
               sender: MessageSender.ai,
@@ -1197,6 +1218,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             _messages.add(
               ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
                 text: AppLocalizations.of(
                   context,
                 )!.errorGeneratingImage(e.toString()),

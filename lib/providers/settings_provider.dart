@@ -6,6 +6,7 @@ class SettingsProvider with ChangeNotifier {
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
   String? _apiKey;
   String? _imageApiKey; // Added for image API key
+  String? _claudeApiKey; // Added for Claude API key
   String _selectedModel = 'gpt-4o'; // 默认模型
   String? _providerUrl; // 新增：模型 Provider URL
   List<String> _customModels = []; // 新增：自定义模型列表
@@ -22,8 +23,8 @@ class SettingsProvider with ChangeNotifier {
   ModelType _selectedModelType = ModelType.text; // Default to text model type
 
   static const String _apiKeyKey = 'openai_api_key';
-  static const String _imageApiKeyKey =
-      'image_api_key'; // Added for image API key
+  static const String _imageApiKeyKey = 'image_api_key'; // Added for image API key
+  static const String _claudeApiKeyKey = 'claude_api_key'; // Added for Claude API key
   static const String _selectedModelKey = 'openai_selected_model';
   static const String _providerUrlKey = 'openai_provider_url';
   static const String _customModelsKey = 'custom_models_list';
@@ -47,8 +48,8 @@ class SettingsProvider with ChangeNotifier {
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
     'OpenAI': 'https://api.openai.com/v1',
-    'Google':
-        'https://generativelanguage.googleapis.com/v1beta', // Gemini API 基础 URL
+    'Google': 'https://generativelanguage.googleapis.com/v1beta', // Gemini API 基础 URL
+    'Anthropic': 'https://api.anthropic.com/v1', // Claude API 基础 URL
   };
 
   // Default base URLs for image generation providers
@@ -75,6 +76,13 @@ class SettingsProvider with ChangeNotifier {
       'gemini-2.0-flash',
       'gemini-2.5-pro-preview-06-05',
       'gemini-2.5-flash-preview-05-20',
+    ],
+    'Anthropic': [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
     ],
   };
 
@@ -105,6 +113,7 @@ class SettingsProvider with ChangeNotifier {
   String get selectedModel => _selectedModel;
   String get selectedProvider => _selectedProvider;
   String? get imageApiKey => _imageApiKey; // Added getter for image API key
+  String? get claudeApiKey => _claudeApiKey; // Added getter for Claude API key
   String? get tavilyApiKey => _tavilyApiKey;
   String? get bingApiKey => _bingApiKey;
 
@@ -151,6 +160,8 @@ class SettingsProvider with ChangeNotifier {
       modelsToShow.addAll(_categorizedPresetModels['OpenAI'] ?? []);
     } else if (_selectedProvider == 'Google') {
       modelsToShow.addAll(_categorizedPresetModels['Google'] ?? []);
+    } else if (_selectedProvider == 'Anthropic') {
+      modelsToShow.addAll(_categorizedPresetModels['Anthropic'] ?? []);
     } else if (_customProviders.containsKey(_selectedProvider)) {
       // Handle custom provider
       modelsToShow.addAll(_customProviders[_selectedProvider] ?? []);
@@ -186,6 +197,7 @@ class SettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _apiKey = prefs.getString(_apiKeyKey);
     _imageApiKey = prefs.getString(_imageApiKeyKey); // Load image API key
+    _claudeApiKey = prefs.getString(_claudeApiKeyKey); // Load Claude API key
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
     _bingApiKey = prefs.getString(_bingApiKeyKey); // Load Bing API key
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
@@ -308,6 +320,17 @@ class SettingsProvider with ChangeNotifier {
       await prefs.remove(_imageApiKeyKey);
     } else {
       await prefs.setString(_imageApiKeyKey, apiKey);
+    }
+    notifyListeners();
+  }
+
+  Future<void> setClaudeApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    _claudeApiKey = apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_claudeApiKeyKey);
+    } else {
+      await prefs.setString(_claudeApiKeyKey, apiKey);
     }
     notifyListeners();
   }

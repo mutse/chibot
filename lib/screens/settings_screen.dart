@@ -27,10 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     _apiKeyController = TextEditingController(
-      text:
-          settings.selectedModelType == ModelType.text
-              ? settings.apiKey
-              : settings.imageApiKey,
+      text: _getProviderApiKey(settings),
     );
     _providerUrlController = TextEditingController(
       text: settings.rawProviderUrl,
@@ -45,6 +42,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _bingApiKeyController = TextEditingController(
       text: settings.bingApiKey ?? '',
     );
+  }
+
+  String _getProviderApiKey(SettingsProvider settings) {
+    if (settings.selectedModelType == ModelType.image) {
+      return settings.imageApiKey ?? '';
+    }
+    
+    switch (settings.selectedProvider) {
+      case 'OpenAI':
+        return settings.apiKey ?? '';
+      case 'Anthropic':
+        return settings.claudeApiKey ?? '';
+      case 'Google':
+        return settings.apiKey ?? ''; // Using OpenAI key for Google for now
+      default:
+        return settings.apiKey ?? '';
+    }
+  }
+
+  String _getApiKeyLabel(SettingsProvider settings) {
+    if (settings.selectedModelType == ModelType.image) {
+      return l10n.apiKey(settings.selectedImageProvider);
+    }
+    
+    switch (settings.selectedProvider) {
+      case 'OpenAI':
+        return 'OpenAI API Key';
+      case 'Anthropic':
+        return 'Claude API Key (Anthropic)';
+      case 'Google':
+        return 'Google API Key';
+      default:
+        return l10n.apiKey(settings.selectedProvider);
+    }
+  }
+
+  String _getApiKeyHint(SettingsProvider settings) {
+    if (settings.selectedModelType == ModelType.image) {
+      return l10n.enterYourAPIKey;
+    }
+    
+    switch (settings.selectedProvider) {
+      case 'OpenAI':
+        return 'Enter your OpenAI API Key';
+      case 'Anthropic':
+        return 'Enter your Claude API Key';
+      case 'Google':
+        return 'Enter your Google API Key';
+      default:
+        return l10n.enterYourAPIKey;
+    }
+  }
+
+  void _saveProviderApiKey(SettingsProvider settings, String apiKey) {
+    switch (settings.selectedProvider) {
+      case 'OpenAI':
+        settings.setApiKey(apiKey);
+        break;
+      case 'Anthropic':
+        settings.setClaudeApiKey(apiKey);
+        break;
+      case 'Google':
+        settings.setApiKey(apiKey); // Using OpenAI key for Google for now
+        break;
+      default:
+        settings.setApiKey(apiKey);
+        break;
+    }
   }
 
   @override
@@ -70,13 +135,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
 
-    // 动态切换 API Key Controller 内容
-    if (settings.selectedModelType == ModelType.text &&
-        _apiKeyController.text != (settings.apiKey ?? '')) {
-      _apiKeyController.text = settings.apiKey ?? '';
-    } else if (settings.selectedModelType == ModelType.image &&
-        _apiKeyController.text != (settings.imageApiKey ?? '')) {
-      _apiKeyController.text = settings.imageApiKey ?? '';
+    // 动态切换 API Key Controller 内容 - now provider-aware
+    final expectedApiKey = _getProviderApiKey(settings);
+    if (_apiKeyController.text != expectedApiKey) {
+      _apiKeyController.text = expectedApiKey;
     }
 
     return Scaffold(
@@ -180,13 +242,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  l10n.apiKey(settings.selectedProvider),
+                  _getApiKeyLabel(settings),
                   style: const TextStyle(fontSize: 16),
                 ),
                 TextField(
                   controller: _apiKeyController,
                   obscureText: true,
-                  decoration: InputDecoration(hintText: l10n.enterYourAPIKey),
+                  decoration: InputDecoration(
+                    hintText: _getApiKeyHint(settings),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -426,8 +490,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
+                    final apiKeyText = _apiKeyController.text.trim();
+                    
                     if (settings.selectedModelType == ModelType.text) {
-                      settings.setApiKey(_apiKeyController.text.trim());
+                      // Save API key to the correct provider
+                      _saveProviderApiKey(settings, apiKeyText);
+                      
                       settings.setProviderUrl(
                         _providerUrlController.text.trim(),
                       );
@@ -436,11 +504,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                       settings.setBingApiKey(_bingApiKeyController.text.trim());
                     } else {
-                      settings.setImageApiKey(_apiKeyController.text.trim());
+                      settings.setImageApiKey(apiKeyText);
                       settings.setImageProviderUrl(
                         _imageProviderUrlController.text.trim(),
                       );
                     }
+                    
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
