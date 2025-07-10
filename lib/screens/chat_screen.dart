@@ -740,56 +740,63 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               if (onDelete != null)
-                IconButton(
-                  icon: Icon(
-                    Icons.more_horiz,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'More options',
-                  onPressed: () async {
-                    // Show context menu for delete option
-                    final RenderBox renderBox =
-                        context.findRenderObject() as RenderBox;
-                    final Offset position = renderBox.localToGlobal(
-                      Offset.zero,
-                    );
-
-                    await showMenu(
-                      context: context,
-                      position: RelativeRect.fromLTRB(
-                        position.dx,
-                        position.dy + renderBox.size.height,
-                        position.dx + renderBox.size.width,
-                        position.dy + renderBox.size.height + 100,
-                      ),
-                      items: [
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: theme.colorScheme.error,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Delete',
-                                style: TextStyle(
-                                  color: theme.colorScheme.error,
-                                ),
-                              ),
-                            ],
-                          ),
+                Builder(
+                  builder:
+                      (itemContext) => IconButton(
+                        icon: Icon(
+                          Icons.more_horiz,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                      ],
-                    ).then((value) {
-                      if (value == 'delete') {
-                        onDelete();
-                      }
-                    });
-                  },
+                        tooltip: 'More options',
+                        onPressed: () async {
+                          // Show context menu for delete option
+                          final renderObject = itemContext.findRenderObject();
+                          if (renderObject is RenderBox) {
+                            final RenderBox renderBox = renderObject;
+                            final Offset position = renderBox.localToGlobal(
+                              Offset.zero,
+                            );
+
+                            await showMenu(
+                              context: itemContext,
+                              position: RelativeRect.fromLTRB(
+                                position.dx,
+                                position.dy + renderBox.size.height,
+                                position.dx + renderBox.size.width,
+                                position.dy + renderBox.size.height + 100,
+                              ),
+                              items: [
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: theme.colorScheme.error,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.error,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ).then((value) {
+                              if (value == 'delete') {
+                                onDelete?.call();
+                              }
+                            });
+                          } else {
+                            // 不是 RenderBox，无法显示菜单，可选：弹出提示或忽略
+                          }
+                        },
+                      ),
                 ),
             ],
           ),

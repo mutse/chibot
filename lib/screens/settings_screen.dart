@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/settings_provider.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'dart:io';
 
 enum ModelType { text, image }
 
@@ -512,38 +516,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
               ],
+              const SizedBox(height: 30),
+              // Export/Import Settings Section
+              const Divider(),
               const SizedBox(height: 20),
               Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    final apiKeyText = _apiKeyController.text.trim();
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _exportSettings(context, settings),
+                      icon: const Icon(Icons.file_upload),
+                      label: const Text('导出配置'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _importSettings(context, settings),
+                      icon: const Icon(Icons.file_download),
+                      label: const Text('导入配置'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        final apiKeyText = _apiKeyController.text.trim();
 
-                    if (settings.selectedModelType == ModelType.text) {
-                      // Save API key to the correct provider
-                      _saveProviderApiKey(settings, apiKeyText);
+                        if (settings.selectedModelType == ModelType.text) {
+                          // Save API key to the correct provider
+                          _saveProviderApiKey(settings, apiKeyText);
 
-                      settings.setProviderUrl(
-                        _providerUrlController.text.trim(),
-                      );
-                      settings.setTavilyApiKey(
-                        _tavilyApiKeyController.text.trim(),
-                      );
-                      settings.setBingApiKey(_bingApiKeyController.text.trim());
-                    } else {
-                      settings.setImageApiKey(apiKeyText);
-                      settings.setImageProviderUrl(
-                        _imageProviderUrlController.text.trim(),
-                      );
-                    }
+                          settings.setProviderUrl(
+                            _providerUrlController.text.trim(),
+                          );
+                          settings.setTavilyApiKey(
+                            _tavilyApiKeyController.text.trim(),
+                          );
+                          settings.setBingApiKey(
+                            _bingApiKeyController.text.trim(),
+                          );
+                        } else {
+                          settings.setImageApiKey(apiKeyText);
+                          settings.setImageProviderUrl(
+                            _imageProviderUrlController.text.trim(),
+                          );
+                        }
 
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(l10n.saveSettings),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.settingsSaved)),
+                        );
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Text(l10n.saveSettings),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -639,5 +674,303 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _exportSettings(
+    BuildContext context,
+    SettingsProvider settings,
+  ) async {
+    try {
+      print('Starting export process...');
+      final xmlContent = await settings.exportSettingsToXml();
+      print('XML content generated: ${xmlContent.length} characters');
+
+      // Generate a filename with timestamp
+      final timestamp =
+          DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final fileName = 'chibot_settings_$timestamp.xml';
+
+      print('Requesting save location...');
+      
+      // Get a good initial directory for saving
+      String? initialDirectory;
+      try {
+        if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+          final documentsDir = await getApplicationDocumentsDirectory();
+          initialDirectory = documentsDir.path;
+        }
+      } catch (e) {
+        print('Could not get documents directory: $e');
+      }
+      
+      final result = await getSaveLocation(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'XML Configuration Files', extensions: ['xml']),
+        ],
+        suggestedName: fileName,
+        initialDirectory: initialDirectory,
+      );
+        
+      print('Save location result: ${result?.path}');
+
+      if (result != null) {
+        final file = File(result.path);
+        await file.writeAsString(xmlContent);
+        print('File written successfully');
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('✅ 配置导出成功！'),
+                  const SizedBox(height: 4),
+                  Text(
+                    '文件: ${path.basename(result.path)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  Text(
+                    '位置: ${path.dirname(result.path)}',
+                    style: const TextStyle(fontSize: 11, color: Colors.white70),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        print('No file selected');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('导出已取消'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Export error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('导出失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _importSettings(
+    BuildContext context,
+    SettingsProvider settings,
+  ) async {
+    try {
+      print('Starting import process...');
+      
+      // Get a good initial directory for browsing
+      String? initialDirectory;
+      try {
+        if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+          final documentsDir = await getApplicationDocumentsDirectory();
+          initialDirectory = documentsDir.path;
+        }
+      } catch (e) {
+        print('Could not get documents directory: $e');
+      }
+      
+      final result = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'XML Configuration Files', extensions: ['xml']),
+        ],
+        initialDirectory: initialDirectory,
+      );
+        
+      print('File selected: ${result?.path}');
+
+      if (result != null) {
+        final file = File(result.path);
+        
+        // Check if file exists and is readable
+        if (!await file.exists()) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('所选文件不存在'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+        
+        final xmlContent = await file.readAsString();
+        print('XML content read: ${xmlContent.length} characters');
+        
+        // Validate XML content
+        if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('无效的配置文件格式'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Show confirmation dialog with file info
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('导入配置'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('即将导入配置文件，这将覆盖您当前的所有设置。'),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.description, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                path.basename(result.path),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          path.dirname(result.path),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '文件大小: ${(xmlContent.length / 1024).toStringAsFixed(1)} KB',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '确定要继续吗？此操作无法撤销。',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('导入'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirmed == true) {
+          print('User confirmed import');
+          await settings.importSettingsFromXml(xmlContent);
+          print('Settings imported successfully');
+
+          // Update controllers with new values
+          _apiKeyController.text = _getProviderApiKey(settings);
+          _providerUrlController.text = settings.rawProviderUrl ?? '';
+          _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
+          _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
+          _bingApiKeyController.text = settings.bingApiKey ?? '';
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('✅ 配置导入成功！'),
+                    const SizedBox(height: 4),
+                    Text(
+                      '来源: ${path.basename(result.path)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          print('User cancelled import');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('导入已取消'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      } else {
+        print('No file selected');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('未选择文件'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Import error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('导入失败: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
+import 'package:chibot/utils/settings_xml_handler.dart';
+import 'dart:convert';
 
 class SettingsProvider with ChangeNotifier {
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
@@ -227,7 +229,7 @@ class SettingsProvider with ChangeNotifier {
     // Load Image Generation Settings
     _selectedImageProvider =
         prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
-    _selectedImageModel = prefs.getString(_selectedModelKey) ?? 'dall-e-3';
+    _selectedImageModel = prefs.getString(_selectedImageModelKey) ?? 'dall-e-3';
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
     final String? customImageProvidersString = prefs.getString(
@@ -559,5 +561,181 @@ class SettingsProvider with ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  // Export settings to XML
+  Future<String> exportSettingsToXml() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final settingsMap = <String, dynamic>{};
+      
+      // Get all settings from SharedPreferences
+      settingsMap[_apiKeyKey] = prefs.getString(_apiKeyKey);
+      settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
+      settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
+      settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
+      settingsMap[_bingApiKeyKey] = prefs.getString(_bingApiKeyKey);
+      settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
+      settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
+      settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
+      settingsMap[_selectedProviderKey] = prefs.getString(_selectedProviderKey);
+      settingsMap[_customProvidersKey] = prefs.getString(_customProvidersKey);
+      settingsMap[_selectedModelTypeKey] = prefs.getInt(_selectedModelTypeKey);
+      settingsMap[_selectedImageProviderKey] = prefs.getString(_selectedImageProviderKey);
+      settingsMap[_selectedImageModelKey] = prefs.getString(_selectedImageModelKey);
+      settingsMap[_imageProviderUrlKey] = prefs.getString(_imageProviderUrlKey);
+      settingsMap[_customImageModelsKey] = prefs.getStringList(_customImageModelsKey);
+      settingsMap[_customImageProvidersKey] = prefs.getString(_customImageProvidersKey);
+      
+      if (kDebugMode) {
+        print('Settings map for export: $settingsMap');
+      }
+      
+      return SettingsXmlHandler.exportToXml(settingsMap);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in exportSettingsToXml: $e');
+      }
+      throw Exception('Failed to export settings: $e');
+    }
+  }
+
+  // Import settings from XML
+  Future<void> importSettingsFromXml(String xmlContent) async {
+    try {
+      final settingsMap = SettingsXmlHandler.importFromXml(xmlContent);
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Clear existing settings first (optional, depends on requirements)
+      // await _clearAllSettings(prefs);
+      
+      // Import API keys
+      if (settingsMap[_apiKeyKey] != null) {
+        await prefs.setString(_apiKeyKey, settingsMap[_apiKeyKey]);
+        _apiKey = settingsMap[_apiKeyKey];
+      }
+      
+      if (settingsMap[_imageApiKeyKey] != null) {
+        await prefs.setString(_imageApiKeyKey, settingsMap[_imageApiKeyKey]);
+        _imageApiKey = settingsMap[_imageApiKeyKey];
+      }
+      
+      if (settingsMap[_claudeApiKeyKey] != null) {
+        await prefs.setString(_claudeApiKeyKey, settingsMap[_claudeApiKeyKey]);
+        _claudeApiKey = settingsMap[_claudeApiKeyKey];
+      }
+      
+      if (settingsMap[_tavilyApiKeyKey] != null) {
+        await prefs.setString(_tavilyApiKeyKey, settingsMap[_tavilyApiKeyKey]);
+        _tavilyApiKey = settingsMap[_tavilyApiKeyKey];
+      }
+      
+      if (settingsMap[_bingApiKeyKey] != null) {
+        await prefs.setString(_bingApiKeyKey, settingsMap[_bingApiKeyKey]);
+        _bingApiKey = settingsMap[_bingApiKeyKey];
+      }
+      
+      // Import model settings
+      if (settingsMap[_selectedModelKey] != null) {
+        await prefs.setString(_selectedModelKey, settingsMap[_selectedModelKey]);
+        _selectedModel = settingsMap[_selectedModelKey];
+      }
+      
+      if (settingsMap[_providerUrlKey] != null) {
+        await prefs.setString(_providerUrlKey, settingsMap[_providerUrlKey]);
+        _providerUrl = settingsMap[_providerUrlKey];
+      }
+      
+      if (settingsMap[_customModelsKey] != null) {
+        await prefs.setStringList(_customModelsKey, settingsMap[_customModelsKey]);
+        _customModels = settingsMap[_customModelsKey];
+      }
+      
+      if (settingsMap[_selectedProviderKey] != null) {
+        await prefs.setString(_selectedProviderKey, settingsMap[_selectedProviderKey]);
+        _selectedProvider = settingsMap[_selectedProviderKey];
+      }
+      
+      if (settingsMap[_customProvidersKey] != null) {
+        await prefs.setString(_customProvidersKey, settingsMap[_customProvidersKey]);
+        try {
+          _customProviders = Map<String, List<String>>.from(json.decode(settingsMap[_customProvidersKey]));
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error parsing custom providers: $e');
+          }
+          _customProviders = {};
+        }
+      }
+      
+      if (settingsMap[_selectedModelTypeKey] != null) {
+        await prefs.setInt(_selectedModelTypeKey, settingsMap[_selectedModelTypeKey]);
+        _selectedModelType = ModelType.values[settingsMap[_selectedModelTypeKey]];
+      }
+      
+      // Import image settings
+      if (settingsMap[_selectedImageProviderKey] != null) {
+        await prefs.setString(_selectedImageProviderKey, settingsMap[_selectedImageProviderKey]);
+        _selectedImageProvider = settingsMap[_selectedImageProviderKey];
+      }
+      
+      if (settingsMap[_selectedImageModelKey] != null) {
+        await prefs.setString(_selectedImageModelKey, settingsMap[_selectedImageModelKey]);
+        _selectedImageModel = settingsMap[_selectedImageModelKey];
+      }
+      
+      if (settingsMap[_imageProviderUrlKey] != null) {
+        await prefs.setString(_imageProviderUrlKey, settingsMap[_imageProviderUrlKey]);
+        _imageProviderUrl = settingsMap[_imageProviderUrlKey];
+      }
+      
+      if (settingsMap[_customImageModelsKey] != null) {
+        await prefs.setStringList(_customImageModelsKey, settingsMap[_customImageModelsKey]);
+        _customImageModels = settingsMap[_customImageModelsKey];
+      }
+      
+      if (settingsMap[_customImageProvidersKey] != null) {
+        await prefs.setString(_customImageProvidersKey, settingsMap[_customImageProvidersKey]);
+        try {
+          _customImageProviders = Map<String, List<String>>.from(json.decode(settingsMap[_customImageProvidersKey]));
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error parsing custom image providers: $e');
+          }
+          _customImageProviders = {};
+        }
+      }
+      
+      // Validate settings after import
+      _validateSelectedModelForProvider();
+      _validateSelectedImageModelForProvider();
+      
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error importing settings from XML: $e');
+      }
+      throw Exception('Failed to import settings: $e');
+    }
+  }
+
+  // Helper method to clear all settings (optional)
+  Future<void> _clearAllSettings(SharedPreferences prefs) async {
+    await prefs.remove(_apiKeyKey);
+    await prefs.remove(_imageApiKeyKey);
+    await prefs.remove(_claudeApiKeyKey);
+    await prefs.remove(_tavilyApiKeyKey);
+    await prefs.remove(_bingApiKeyKey);
+    await prefs.remove(_selectedModelKey);
+    await prefs.remove(_providerUrlKey);
+    await prefs.remove(_customModelsKey);
+    await prefs.remove(_selectedProviderKey);
+    await prefs.remove(_customProvidersKey);
+    await prefs.remove(_selectedModelTypeKey);
+    await prefs.remove(_selectedImageProviderKey);
+    await prefs.remove(_selectedImageModelKey);
+    await prefs.remove(_imageProviderUrlKey);
+    await prefs.remove(_customImageModelsKey);
+    await prefs.remove(_customImageProvidersKey);
   }
 }
