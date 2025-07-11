@@ -85,5 +85,7 @@
   "webSearchFailed": "Web search failed: {error}",
   "trayShowHide": "Show/Hide",
   "trayExit": "Exit",
-  "saveToDirectory": "Save to directory"
+  "saveToDirectory": "Save to directory",
+  "exportConfig": "Export",
+  "importConfig": "Import"
 }

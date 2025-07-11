@@ -528,7 +528,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ElevatedButton.icon(
                       onPressed: () => _exportSettings(context, settings),
                       icon: const Icon(Icons.file_upload),
-                      label: const Text('导出配置'),
+                      label: Text(l10n.exportConfig),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
@@ -538,7 +538,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ElevatedButton.icon(
                       onPressed: () => _importSettings(context, settings),
                       icon: const Icon(Icons.file_download),
-                      label: const Text('导入配置'),
+                      label: Text(l10n.importConfig),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,

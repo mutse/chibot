@@ -71,5 +71,7 @@
   "webSearchFailed": "Web 搜索失败：{error}",
   "trayShowHide": "显示/隐藏",
   "trayExit": "退出",
-  "saveToDirectory": "保存至目录"
+  "saveToDirectory": "保存至目录",
+  "exportConfig": "导出",
+  "importConfig": "导入"
 }
