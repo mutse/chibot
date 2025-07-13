@@ -70,6 +70,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewChat() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    settings.setSelectedModelType(ModelType.text);
     setState(() {
       _messages.clear();
       _currentSessionId = null;
@@ -88,6 +90,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewImageSession() {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    settings.setSelectedModelType(ModelType.image);
     setState(() {
       _messages.clear();
       _currentImageSessionId = null;
