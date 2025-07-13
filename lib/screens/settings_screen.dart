@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/settings_provider.dart';
 import 'package:chibot/l10n/app_localizations.dart';
-// import 'package:file_selector/file_selector.dart'; // No longer needed
+import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
@@ -536,7 +536,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _importSettings(context, settings),
+                      onPressed: () => _showImportOptions(context, settings),
                       icon: const Icon(Icons.file_download),
                       label: Text(l10n.importConfig),
                       style: ElevatedButton.styleFrom(
@@ -781,6 +781,308 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  void _showImportOptions(BuildContext context, SettingsProvider settings) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.file_download, color: Colors.green),
+              SizedBox(width: 8),
+              Text('导入配置选项'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('请选择导入配置的方式：'),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.folder, color: Colors.blue),
+                title: const Text('从平台目录导入'),
+                subtitle: Text(_getPlatformDirectory()),
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  _importSettings(context, settings);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.file_open, color: Colors.orange),
+                title: const Text('手动选择文件'),
+                subtitle: const Text('浏览文件系统选择配置文件'),
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  _importSettingsFromFilePicker(context, settings);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getPlatformDirectory() {
+    if (Platform.isMacOS) {
+      return '~/Documents/Chibot (macOS)';
+    } else if (Platform.isWindows) {
+      return '%USERPROFILE%/Documents/Chibot (Windows)';
+    } else if (Platform.isLinux) {
+      return '~/Documents/Chibot (Linux)';
+    } else if (Platform.isAndroid) {
+      return '/storage/emulated/0/Download/Chibot (Android)';
+    } else if (Platform.isIOS) {
+      return 'App Documents/Chibot (iOS)';
+    } else {
+      return '~/Documents/Chibot';
+    }
+  }
+
+  Future<void> _importSettingsFromFilePicker(
+    BuildContext context,
+    SettingsProvider settings,
+  ) async {
+    try {
+      print('Starting file picker import...');
+      
+      // Use file picker to select XML config file
+      const XTypeGroup typeGroup = XTypeGroup(
+        label: 'Chibot配置文件',
+        extensions: <String>['xml'],
+        mimeTypes: <String>['text/xml', 'application/xml'],
+      );
+      
+      final XFile? file = await openFile(
+        acceptedTypeGroups: <XTypeGroup>[typeGroup],
+        initialDirectory: await _getInitialDirectory(),
+      );
+      
+      if (file == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('未选择文件'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Validate file name pattern
+      final fileName = path.basename(file.path);
+      if (!fileName.contains('chibot_config_') || !fileName.endsWith('.xml')) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('文件名格式不正确。期望: chibot_config_*.xml，实际: $fileName'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Read and validate the file content
+      final xmlContent = await file.readAsString();
+      print('XML content read: ${xmlContent.length} characters from $fileName');
+      
+      if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('无效的配置文件格式'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Show confirmation dialog
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('导入配置'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('即将导入配置文件，这将覆盖您当前的所有设置。'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.description, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              fileName,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        path.dirname(file.path),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '文件大小: ${(xmlContent.length / 1024).toStringAsFixed(1)} KB',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const Text(
+                        '来源: 文件选择器',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '确定要继续吗？此操作无法撤销。',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('导入'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed == true) {
+        print('User confirmed file picker import');
+        await settings.importSettingsFromXml(xmlContent);
+        print('Settings imported successfully from file picker');
+
+        // Update controllers with new values
+        _apiKeyController.text = _getProviderApiKey(settings);
+        _providerUrlController.text = settings.rawProviderUrl ?? '';
+        _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
+        _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
+        _bingApiKeyController.text = settings.bingApiKey ?? '';
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('✅ 配置导入成功！'),
+                  const SizedBox(height: 4),
+                  Text(
+                    '来源: $fileName',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const Text(
+                    '方式: 文件选择器',
+                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } else {
+        print('User cancelled file picker import');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('导入已取消'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('File picker import error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('导入失败: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<String?> _getInitialDirectory() async {
+    try {
+      if (Platform.isMacOS || Platform.isLinux) {
+        final documentsDir = await getApplicationDocumentsDirectory();
+        final chibotDir = Directory('${documentsDir.path}/Chibot');
+        if (await chibotDir.exists()) {
+          return chibotDir.path;
+        }
+        return documentsDir.path;
+      } else if (Platform.isWindows) {
+        final documentsDir = await getApplicationDocumentsDirectory();
+        final chibotDir = Directory('${documentsDir.path}/Chibot');
+        if (await chibotDir.exists()) {
+          return chibotDir.path;
+        }
+        return documentsDir.path;
+      } else if (Platform.isAndroid) {
+        final downloadsDir = Directory('/storage/emulated/0/Download');
+        final chibotDir = Directory('${downloadsDir.path}/Chibot');
+        if (await chibotDir.exists()) {
+          return chibotDir.path;
+        }
+        return downloadsDir.path;
+      }
+    } catch (e) {
+      print('Error getting initial directory: $e');
+    }
+    return null;
   }
 
   Future<void> _importSettings(
