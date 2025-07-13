@@ -302,3 +302,300 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get exportFailed => '导出失败';
 }
+
+/// The translations for Chinese, as used in Taiwan (`zh_TW`).
+class AppLocalizationsZhTw extends AppLocalizationsZh {
+  AppLocalizationsZhTw() : super('zh_TW');
+
+  @override
+  String get settings => '設定';
+
+  @override
+  String get selectModelProvider => '選擇模型提供者：';
+
+  @override
+  String get add => '新增';
+
+  @override
+  String get modelProviderURLOptional => '模型提供者網址（可選）：';
+
+  @override
+  String defaultUrl(Object url) {
+    return '預設：$url';
+  }
+
+  @override
+  String apiKey(Object provider) {
+    return '$provider API 金鑰：';
+  }
+
+  @override
+  String get enterYourAPIKey => '請輸入您的 API 金鑰';
+
+  @override
+  String get selectModel => '選擇模型：';
+
+  @override
+  String get noModelsAvailable => '此提供者沒有可用模型';
+
+  @override
+  String get customModels => '自訂模型：';
+
+  @override
+  String get enterCustomModelName => '輸入自訂模型名稱';
+
+  @override
+  String get yourCustomModels => '您的自訂模型：';
+
+  @override
+  String get saveSettings => '儲存設定';
+
+  @override
+  String get settingsSaved => '設定已儲存！';
+
+  @override
+  String get selectModelType => '選擇模型類型：';
+
+  @override
+  String get textModel => '文字模型';
+
+  @override
+  String get imageModel => '圖像模型';
+
+  @override
+  String get addNewModelConfiguration => '新增模型配置';
+
+  @override
+  String get modelProvider => '模型提供者';
+
+  @override
+  String get enterProviderName => '輸入提供者名稱';
+
+  @override
+  String get enterModelNames => '輸入模型名稱（以逗號分隔）';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get chatWithAI => '與 AI 對話';
+
+  @override
+  String get typeYourMessage => '輸入您的訊息...';
+
+  @override
+  String get custom => '自訂';
+
+  @override
+  String get apiKeyNotSetError => '未設定 API 金鑰。請在設定中進行設定。';
+
+  @override
+  String get search => '搜尋';
+
+  @override
+  String get about => '關於';
+
+  @override
+  String get chatGPTTitle => 'Chibot 標題';
+
+  @override
+  String get aiIsThinking => 'AI 正在思考';
+
+  @override
+  String get askAnyQuestion => '詢問任何問題';
+
+  @override
+  String get addModelProvider => '新增模型提供者';
+
+  @override
+  String get providerNameHint => '提供者名稱提示';
+
+  @override
+  String get modelsHint => '模型提示';
+
+  @override
+  String get appTitle => 'Chi AI 聊天機器人';
+
+  @override
+  String get noResponseFromAI => 'AI 沒有回應。';
+
+  @override
+  String get pleaseEnterPromptAfterImagine => '請在 /imagine 後輸入提示詞。';
+
+  @override
+  String get failedToGenerateImageNoUrl => '圖像生成失敗：未返回圖像網址。';
+
+  @override
+  String get errorLoadingImage => '圖像載入錯誤。';
+
+  @override
+  String get noImageGenerated => '未生成圖像。';
+
+  @override
+  String errorGeneratingImage(Object error) {
+    return '圖像生成錯誤：$error';
+  }
+
+  @override
+  String get saveImage => '儲存圖像';
+
+  @override
+  String get imageGenerationSettings => '圖像生成設定';
+
+  @override
+  String get selectImageProvider => '選擇圖像提供者：';
+
+  @override
+  String get imageProviderURLOptional => '圖像提供者網址（可選）：';
+
+  @override
+  String get enterImageProviderURL => '輸入圖像提供者網址';
+
+  @override
+  String get selectImageModel => '選擇圖像模型：';
+
+  @override
+  String get customImageModels => '自訂圖像模型：';
+
+  @override
+  String get enterCustomImageModelName => '輸入自訂圖像模型名稱';
+
+  @override
+  String get providerAndModelAdded => '提供者和模型已新增！';
+
+  @override
+  String get providerAndModelNameCannotBeEmpty => '提供者名稱和模型名稱不能為空。';
+
+  @override
+  String get newChat => '新聊天';
+
+  @override
+  String get imageGeneratedSuccessfully => '圖像生成成功！';
+
+  @override
+  String get newImageSession => '新圖像工作階段';
+
+  @override
+  String get appName => 'Chibot AI';
+
+  @override
+  String get appDesc => '智能聊天助手';
+
+  @override
+  String get version => '版本 v0.1.3';
+
+  @override
+  String get releaseDate => '2025年7月';
+
+  @override
+  String get featureSmartChat => '智能對話';
+
+  @override
+  String get featureSmartDesc => '支援多種 AI 模型進行自然對話。';
+
+  @override
+  String get features => '功能';
+
+  @override
+  String get featureImageGen => '文字轉圖像';
+
+  @override
+  String get featureImageGenDesc => '從文字提示生成美麗的圖像。';
+
+  @override
+  String get featureFlexible => '彈性配置';
+
+  @override
+  String get featureFlexibleDesc => '支援多種模型提供者和自訂設定。';
+
+  @override
+  String get textChat => '文字聊天';
+
+  @override
+  String get textImage => '文字轉圖像';
+
+  @override
+  String get supportModels => '支援模型';
+
+  @override
+  String get usageHelp => '使用說明';
+
+  @override
+  String get userManual => '使用手冊';
+
+  @override
+  String get problemFeedback => '問題回饋';
+
+  @override
+  String get contact => '聯絡我們';
+
+  @override
+  String get helpSupport => '說明與支援';
+
+  @override
+  String get privacyPolicy => '隱私政策';
+
+  @override
+  String get termsService => '服務條款';
+
+  @override
+  String get disclaimer => '免責聲明';
+
+  @override
+  String get legalInfo => '法律資訊';
+
+  @override
+  String get copyright => '© 2025 Chibot AI. 版權所有。';
+
+  @override
+  String get vision => '用 ❤️ 打造更好的 AI 體驗';
+
+  @override
+  String get tavilyApiKeyNotSet => 'Tavily API 金鑰未設定。請前往設定頁面填寫後再使用網路搜尋功能。';
+
+  @override
+  String webSearchPrompt(Object userQuestion, Object webResult) {
+    return '請使用以下網路搜尋結果回答問題：\n$webResult\n使用者問題：$userQuestion';
+  }
+
+  @override
+  String webSearchFailed(Object error) {
+    return '網路搜尋失敗：$error';
+  }
+
+  @override
+  String get trayShowHide => '顯示/隱藏';
+
+  @override
+  String get trayExit => '退出';
+
+  @override
+  String get saveToDirectory => '儲存到目錄';
+
+  @override
+  String get exportConfig => '匯出';
+
+  @override
+  String get importConfig => '匯入';
+
+  @override
+  String get exportToMarkdown => '匯出為 Markdown';
+
+  @override
+  String get exportAllChats => '匯出所有聊天';
+
+  @override
+  String get exportSingleChat => '匯出聊天';
+
+  @override
+  String get noChatSessionsToExport => '沒有聊天工作階段可匯出';
+
+  @override
+  String get chatExportedSuccessfully => '聊天匯出成功';
+
+  @override
+  String get exportCancelled => '匯出已取消';
+
+  @override
+  String get exportFailed => '匯出失敗';
+}
