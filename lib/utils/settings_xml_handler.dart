@@ -1,3 +1,5 @@
+import 'encryption_utils.dart';
+
 class SettingsXmlHandler {
   static String exportToXml(Map<String, dynamic> settings) {
     final buffer = StringBuffer();
@@ -44,11 +46,11 @@ class SettingsXmlHandler {
 
   static void _writeApiKeys(StringBuffer buffer, Map<String, dynamic> settings) {
     buffer.writeln('  <api_keys>');
-    _writeXmlTag(buffer, 'openai_api_key', settings['openai_api_key'], 4);
-    _writeXmlTag(buffer, 'claude_api_key', settings['claude_api_key'], 4);
-    _writeXmlTag(buffer, 'image_api_key', settings['image_api_key'], 4);
-    _writeXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
-    _writeXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'openai_api_key', settings['openai_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'claude_api_key', settings['claude_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'image_api_key', settings['image_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
     buffer.writeln('  </api_keys>');
   }
 
@@ -116,8 +118,8 @@ class SettingsXmlHandler {
 
   static void _writeWebSearchSettings(StringBuffer buffer, Map<String, dynamic> settings) {
     buffer.writeln('  <web_search_settings>');
-    _writeXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
-    _writeXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
+    _writeEncryptedXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
     buffer.writeln('  </web_search_settings>');
   }
 
@@ -126,6 +128,15 @@ class SettingsXmlHandler {
     
     final spaces = ' ' * indent;
     final escapedValue = _escapeXml(value.toString());
+    buffer.writeln('$spaces<$tag>$escapedValue</$tag>');
+  }
+
+  static void _writeEncryptedXmlTag(StringBuffer buffer, String tag, dynamic value, int indent) {
+    if (value == null || value.toString().isEmpty) return;
+    
+    final spaces = ' ' * indent;
+    final encryptedValue = EncryptionUtils.simpleEncrypt(value.toString());
+    final escapedValue = _escapeXml(encryptedValue);
     buffer.writeln('$spaces<$tag>$escapedValue</$tag>');
   }
 
@@ -153,11 +164,11 @@ class SettingsXmlHandler {
     
     if (apiKeysMatch != null) {
       final apiKeysContent = apiKeysMatch.group(1)!;
-      settings['openai_api_key'] = _extractTagValue(apiKeysContent, 'openai_api_key');
-      settings['claude_api_key'] = _extractTagValue(apiKeysContent, 'claude_api_key');
-      settings['image_api_key'] = _extractTagValue(apiKeysContent, 'image_api_key');
-      settings['tavily_api_key'] = _extractTagValue(apiKeysContent, 'tavily_api_key');
-      settings['bing_api_key'] = _extractTagValue(apiKeysContent, 'bing_api_key');
+      settings['openai_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'openai_api_key');
+      settings['claude_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'claude_api_key');
+      settings['image_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'image_api_key');
+      settings['tavily_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'tavily_api_key');
+      settings['bing_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'bing_api_key');
     }
     
     return settings;
@@ -250,8 +261,8 @@ class SettingsXmlHandler {
     
     if (webSearchMatch != null) {
       final webSearchContent = webSearchMatch.group(1)!;
-      settings['tavily_api_key'] = _extractTagValue(webSearchContent, 'tavily_api_key');
-      settings['bing_api_key'] = _extractTagValue(webSearchContent, 'bing_api_key');
+      settings['tavily_api_key'] = _extractEncryptedTagValue(webSearchContent, 'tavily_api_key');
+      settings['bing_api_key'] = _extractEncryptedTagValue(webSearchContent, 'bing_api_key');
     }
     
     return settings;
@@ -262,6 +273,19 @@ class SettingsXmlHandler {
     if (match != null) {
       final value = _unescapeXml(match.group(1)!.trim());
       return value.isEmpty ? null : value;
+    }
+    return null;
+  }
+
+  static String? _extractEncryptedTagValue(String content, String tag) {
+    final match = RegExp('<$tag>(.*?)</$tag>').firstMatch(content);
+    if (match != null) {
+      final encryptedValue = _unescapeXml(match.group(1)!.trim());
+      if (encryptedValue.isEmpty) return null;
+      
+      // 尝试解密
+      final decryptedValue = EncryptionUtils.simpleDecrypt(encryptedValue);
+      return decryptedValue;
     }
     return null;
   }
