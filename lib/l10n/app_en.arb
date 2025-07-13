@@ -87,5 +87,12 @@
   "trayExit": "Exit",
   "saveToDirectory": "Save to directory",
   "exportConfig": "Export",
-  "importConfig": "Import"
+  "importConfig": "Import",
+  "exportToMarkdown": "Export to Markdown",
+  "exportAllChats": "Export All Chats",
+  "exportSingleChat": "Export Chat",
+  "noChatSessionsToExport": "No chat sessions to export",
+  "chatExportedSuccessfully": "Chat exported successfully",
+  "exportCancelled": "Export cancelled",
+  "exportFailed": "Export failed"
 }

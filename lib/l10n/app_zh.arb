@@ -73,5 +73,12 @@
   "trayExit": "退出",
   "saveToDirectory": "保存至目录",
   "exportConfig": "导出",
-  "importConfig": "导入"
+  "importConfig": "导入",
+  "exportToMarkdown": "导出为 Markdown",
+  "exportAllChats": "导出所有聊天记录",
+  "exportSingleChat": "导出聊天记录",
+  "noChatSessionsToExport": "没有聊天记录可导出",
+  "chatExportedSuccessfully": "聊天记录导出成功",
+  "exportCancelled": "取消导出",
+  "exportFailed": "导出失败"
 }

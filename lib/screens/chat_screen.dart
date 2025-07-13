@@ -14,6 +14,7 @@ import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
 import 'package:chibot/services/image_generation_service.dart' as image_service; // Added for image generation
 import 'package:chibot/services/image_save_service.dart';
+import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
@@ -459,6 +460,24 @@ class _ChatScreenState extends State<ChatScreen> {
                   AppLocalizations.of(context)!.newImageSession,
                   onTap: _startNewImageSession,
                 ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
+                  context,
+                  Icons.download_outlined,
+                  AppLocalizations.of(context)!.exportAllChats,
+                  onTap: () async {
+                    if (_chatSessions.isNotEmpty) {
+                      await MarkdownExportService.exportMultipleToMarkdown(_chatSessions, context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!.noChatSessionsToExport),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -498,6 +517,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             session.title,
                             isSelected: _currentSessionId == session.id,
                             onTap: () => _loadSession(session),
+                            onExport: () async {
+                              await MarkdownExportService.exportToMarkdown(session, context);
+                            },
                             onDelete: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
@@ -690,6 +712,7 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isSelected = false,
     VoidCallback? onTap,
     VoidCallback? onDelete,
+    VoidCallback? onExport,
   }) {
     final theme = Theme.of(context);
     return Material(
@@ -766,6 +789,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                 position.dy + renderBox.size.height + 100,
                               ),
                               items: [
+                                if (onExport != null)
+                                  PopupMenuItem<String>(
+                                    value: 'export',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.download_outlined,
+                                          size: 18,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(AppLocalizations.of(context)!.exportToMarkdown),
+                                      ],
+                                    ),
+                                  ),
                                 PopupMenuItem<String>(
                                   value: 'delete',
                                   child: Row(
@@ -789,6 +827,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             ).then((value) {
                               if (value == 'delete') {
                                 onDelete?.call();
+                              } else if (value == 'export') {
+                                onExport?.call();
                               }
                             });
                           } else {
