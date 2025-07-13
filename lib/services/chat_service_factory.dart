@@ -1,4 +1,3 @@
-import '../core/exceptions.dart';
 import '../repositories/interfaces.dart';
 import 'openai_chat_service.dart';
 import 'gemini_chat_service.dart';

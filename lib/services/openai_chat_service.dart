@@ -85,7 +85,9 @@ class OpenAIService extends BaseApiService implements ChatService {
   }) async* {
     validateApiKey();
 
-    if (!supportedModels.contains(model)) {
+    // Only validate supported models for official OpenAI API
+    // Allow any model for custom base URLs (OpenAI-compatible providers)
+    if (baseUrl == AppConstants.openAIBaseUrl && !supportedModels.contains(model)) {
       throw ValidationException(
         'Model $model is not supported by OpenAI',
         'model',

@@ -1,5 +1,5 @@
 import '../repositories/interfaces.dart';
-import '../providers/settings_provider_refactored.dart';
+import '../providers/settings_provider.dart';
 import 'chat_service_factory.dart';
 
 class ServiceManager {

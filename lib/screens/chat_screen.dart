@@ -10,14 +10,14 @@ import 'package:chibot/models/image_session.dart';
 import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/image_session_service.dart';
 import 'package:chibot/providers/settings_provider.dart';
-import 'package:chibot/services/openai_service.dart';
+import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
-import 'package:chibot/services/image_generation_service.dart'; // Added for image generation
+import 'package:chibot/services/image_generation_service.dart' as image_service; // Added for image generation
 import 'package:chibot/services/image_save_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
-import 'package:chibot/services/web_search_service.dart';
+import 'package:chibot/services/web_search_service.dart' as web_service;
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -37,9 +37,8 @@ class _ChatScreenState extends State<ChatScreen> {
   List<ImageSession> _imageSessions = [];
   String? _currentImageSessionId;
   final TextEditingController _textController = TextEditingController();
-  final OpenAIService _openAIService = OpenAIService();
-  final ImageGenerationService _imageGenerationService =
-      ImageGenerationService(); // Added
+  final image_service.ImageGenerationService _imageGenerationService =
+      image_service.ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _enableWebSearch = false;
@@ -137,7 +136,7 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       try {
-        final webResult = await WebSearchService(
+        final webResult = await web_service.WebSearchService(
           apiKey: tavilyApiKey,
         ).searchWeb(text);
         prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
@@ -237,11 +236,11 @@ class _ChatScreenState extends State<ChatScreen> {
         aiMessages.removeLast(); // Remove the original user message
         aiMessages.add(aiUserMessage); // Add the prompt with web search
       }
-      final stream = _openAIService.getChatResponse(
-        apiKey: settings.apiKey!,
+      final chatService = ServiceManager.createChatService(settings);
+      final stream = chatService.generateResponse(
+        prompt: prompt,
+        context: aiMessages.where((msg) => msg.sender != MessageSender.user).toList(),
         model: settings.selectedModel,
-        messages: aiMessages,
-        providerBaseUrl: settings.providerUrl,
       );
 
       String fullResponse = "";

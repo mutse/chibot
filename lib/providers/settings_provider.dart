@@ -289,6 +289,9 @@ class SettingsProvider with ChangeNotifier {
       } else if (_selectedProvider == 'Google' &&
           (_categorizedPresetModels['Google']?.isNotEmpty ?? false)) {
         _selectedModel = _categorizedPresetModels['Google']!.first;
+      } else if (_selectedProvider == 'Anthropic' &&
+          (_categorizedPresetModels['Anthropic']?.isNotEmpty ?? false)) {
+        _selectedModel = _categorizedPresetModels['Anthropic']!.first;
       } else if (_customProviders.containsKey(_selectedProvider) &&
           (_customProviders[_selectedProvider]?.isNotEmpty ?? false)) {
         _selectedModel = _customProviders[_selectedProvider]!.first;
@@ -737,5 +740,31 @@ class SettingsProvider with ChangeNotifier {
     await prefs.remove(_imageProviderUrlKey);
     await prefs.remove(_customImageModelsKey);
     await prefs.remove(_customImageProvidersKey);
+  }
+
+  // Get the appropriate API key for the current provider
+  String? getApiKeyForProvider(String provider) {
+    switch (provider) {
+      case 'OpenAI':
+        return _apiKey;
+      case 'Google':
+        return _apiKey; // Using OpenAI key for now
+      case 'Anthropic':
+        return _claudeApiKey;
+      default:
+        return _apiKey;
+    }
+  }
+
+  // Get effective provider URL (removing trailing slashes)
+  String get effectiveProviderUrl {
+    String baseUrl =
+        _providerUrl?.trim() ??
+        defaultBaseUrls[_selectedProvider] ??
+        defaultBaseUrls['OpenAI']!;
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+    return baseUrl;
   }
 }
