@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../models/chat_session.dart';
 import '../models/chat_message.dart';
 import '../core/logger.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MarkdownExportService {
   static String _formatTimestamp(DateTime timestamp) {
@@ -38,52 +40,54 @@ class MarkdownExportService {
 
   static String generateMarkdown(ChatSession session) {
     final buffer = StringBuffer();
-    
+
     // Header
     buffer.writeln('# ${session.title}');
     buffer.writeln();
-    
+
     // Session metadata
     buffer.writeln('**Session Information:**');
     buffer.writeln('- **Session ID:** ${session.id}');
     buffer.writeln('- **Created:** ${_formatTimestamp(session.createdAt)}');
-    buffer.writeln('- **Last Updated:** ${_formatTimestamp(session.updatedAt)}');
-    
+    buffer.writeln(
+      '- **Last Updated:** ${_formatTimestamp(session.updatedAt)}',
+    );
+
     if (session.providerUsed != null) {
       buffer.writeln('- **Provider:** ${session.providerUsed}');
     }
-    
+
     if (session.modelUsed != null) {
       buffer.writeln('- **Model:** ${session.modelUsed}');
     }
-    
+
     buffer.writeln('- **Messages:** ${session.messageCount}');
     buffer.writeln();
     buffer.writeln('---');
     buffer.writeln();
-    
+
     // Messages
     buffer.writeln('## Conversation');
     buffer.writeln();
-    
+
     for (final message in session.messages) {
       // Skip loading messages and error messages without content
       if (message.isLoading || (message.hasError && message.text.isEmpty)) {
         continue;
       }
-      
+
       // Message header with sender and timestamp
       buffer.writeln('### ${_formatMessageSender(message.sender)}');
       buffer.writeln('*${_formatTimestamp(message.timestamp)}*');
       buffer.writeln();
-      
+
       // Message content
       if (message.hasError) {
         buffer.writeln('**Error:** ${message.error}');
       } else if (message.text.isNotEmpty) {
         // Check if the message looks like it already contains markdown
-        if (message.text.contains('```') || 
-            message.text.contains('**') || 
+        if (message.text.contains('```') ||
+            message.text.contains('**') ||
             message.text.contains('*') && !message.text.contains('\\*')) {
           // Likely already markdown formatted, use as-is
           buffer.writeln(message.text);
@@ -92,39 +96,68 @@ class MarkdownExportService {
           buffer.writeln(_escapeMarkdown(message.text));
         }
       }
-      
+
       buffer.writeln();
       buffer.writeln('---');
       buffer.writeln();
     }
-    
+
     // Footer
-    buffer.writeln('*Exported from Chibot on ${_formatTimestamp(DateTime.now())}*');
-    
+    buffer.writeln(
+      '*Exported from Chibot on ${_formatTimestamp(DateTime.now())}*',
+    );
+
     return buffer.toString();
   }
 
-  static Future<void> exportToMarkdown(ChatSession session, BuildContext context) async {
+  static Future<void> exportToMarkdown(
+    ChatSession session,
+    BuildContext context,
+  ) async {
     try {
       final markdownContent = generateMarkdown(session);
-      
       if (kIsWeb) {
         throw UnsupportedError('Web platform export is not supported yet');
-      } else {
-        // Desktop and mobile platforms
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // 移动端：保存到文档目录
+        final directory = await getApplicationDocumentsDirectory();
         final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-        final suggestedName = '${session.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_$timestamp.md';
-        
+        final safeTitle = session.title.replaceAll(
+          RegExp(r'[<>:"/\\|?*]'),
+          '_',
+        );
+        final fileName = '${safeTitle}_$timestamp.md';
+        final filePath = '${directory.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsString(markdownContent, encoding: utf8);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Chat exported to $filePath'),
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Share',
+                onPressed: () {
+                  Share.shareXFiles([
+                    XFile(filePath),
+                  ], text: 'Exported chat from Chibot');
+                },
+              ),
+            ),
+          );
+        }
+        AppLogger.info('Chat session exported to markdown: $filePath');
+      } else {
+        // 桌面端
+        final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+        final suggestedName =
+            '${session.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')}_$timestamp.md';
         final FileSaveLocation? result = await getSaveLocation(
           suggestedName: suggestedName,
           acceptedTypeGroups: [
-            const XTypeGroup(
-              label: 'Markdown files',
-              extensions: ['md'],
-            ),
+            const XTypeGroup(label: 'Markdown files', extensions: ['.md']),
           ],
         );
-        
         if (result == null) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -136,10 +169,8 @@ class MarkdownExportService {
           }
           return;
         }
-        
         final file = File(result.path);
         await file.writeAsString(markdownContent, encoding: utf8);
-        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -148,13 +179,14 @@ class MarkdownExportService {
             ),
           );
         }
-        
         AppLogger.info('Chat session exported to markdown: ${result.path}');
       }
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to export chat session to markdown', 
-        error: e, stackTrace: stackTrace);
-      
+      AppLogger.error(
+        'Failed to export chat session to markdown',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -166,7 +198,10 @@ class MarkdownExportService {
     }
   }
 
-  static Future<void> exportMultipleToMarkdown(List<ChatSession> sessions, BuildContext context) async {
+  static Future<void> exportMultipleToMarkdown(
+    List<ChatSession> sessions,
+    BuildContext context,
+  ) async {
     try {
       if (sessions.isEmpty) {
         if (context.mounted) {
@@ -179,23 +214,105 @@ class MarkdownExportService {
         }
         return;
       }
-
       if (kIsWeb) {
         throw UnsupportedError('Web platform export is not supported yet');
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // 移动端：保存到文档目录
+        final directory = await getApplicationDocumentsDirectory();
+        final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+        final fileName = 'chibot_chat_export_$timestamp.md';
+        final filePath = '${directory.path}/$fileName';
+        final buffer = StringBuffer();
+        buffer.writeln('# Chibot Chat Export');
+        buffer.writeln();
+        buffer.writeln('**Export Information:**');
+        buffer.writeln(
+          '- **Exported on:** ${_formatTimestamp(DateTime.now())}',
+        );
+        buffer.writeln('- **Number of sessions:** ${sessions.length}');
+        buffer.writeln();
+        buffer.writeln('---');
+        buffer.writeln();
+        for (int i = 0; i < sessions.length; i++) {
+          final session = sessions[i];
+          buffer.writeln('## Session ${i + 1}: ${session.title}');
+          buffer.writeln();
+          buffer.writeln('**Session Information:**');
+          buffer.writeln('- **Session ID:** ${session.id}');
+          buffer.writeln(
+            '- **Created:** ${_formatTimestamp(session.createdAt)}',
+          );
+          buffer.writeln(
+            '- **Last Updated:** ${_formatTimestamp(session.updatedAt)}',
+          );
+          if (session.providerUsed != null) {
+            buffer.writeln('- **Provider:** ${session.providerUsed}');
+          }
+          if (session.modelUsed != null) {
+            buffer.writeln('- **Model:** ${session.modelUsed}');
+          }
+          buffer.writeln('- **Messages:** ${session.messageCount}');
+          buffer.writeln();
+          for (final message in session.messages) {
+            if (message.isLoading ||
+                (message.hasError && message.text.isEmpty)) {
+              continue;
+            }
+            buffer.writeln('### ${_formatMessageSender(message.sender)}');
+            buffer.writeln('*${_formatTimestamp(message.timestamp)}*');
+            buffer.writeln();
+            if (message.hasError) {
+              buffer.writeln('**Error:** ${message.error}');
+            } else if (message.text.isNotEmpty) {
+              if (message.text.contains('```') ||
+                  message.text.contains('**') ||
+                  message.text.contains('*') && !message.text.contains('\\*')) {
+                buffer.writeln(message.text);
+              } else {
+                buffer.writeln(_escapeMarkdown(message.text));
+              }
+            }
+            buffer.writeln();
+          }
+          buffer.writeln('---');
+          buffer.writeln();
+        }
+        buffer.writeln(
+          '*Exported from Chibot on ${_formatTimestamp(DateTime.now())}*',
+        );
+        final file = File(filePath);
+        await file.writeAsString(buffer.toString(), encoding: utf8);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${sessions.length} chat sessions exported to $filePath',
+              ),
+              duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: 'Share',
+                onPressed: () {
+                  Share.shareXFiles([
+                    XFile(filePath),
+                  ], text: 'Exported chats from Chibot');
+                },
+              ),
+            ),
+          );
+        }
+        AppLogger.info(
+          '${sessions.length} chat sessions exported to markdown: $filePath',
+        );
       } else {
+        // 桌面端
         final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
         final suggestedName = 'chibot_chat_export_$timestamp.md';
-        
         final FileSaveLocation? result = await getSaveLocation(
           suggestedName: suggestedName,
           acceptedTypeGroups: [
-            const XTypeGroup(
-              label: 'Markdown files',
-              extensions: ['md'],
-            ),
+            const XTypeGroup(label: 'Markdown files', extensions: ['md']),
           ],
         );
-        
         if (result == null) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -207,91 +324,86 @@ class MarkdownExportService {
           }
           return;
         }
-        
         final buffer = StringBuffer();
         buffer.writeln('# Chibot Chat Export');
         buffer.writeln();
         buffer.writeln('**Export Information:**');
-        buffer.writeln('- **Exported on:** ${_formatTimestamp(DateTime.now())}');
+        buffer.writeln(
+          '- **Exported on:** ${_formatTimestamp(DateTime.now())}',
+        );
         buffer.writeln('- **Number of sessions:** ${sessions.length}');
         buffer.writeln();
         buffer.writeln('---');
         buffer.writeln();
-        
         for (int i = 0; i < sessions.length; i++) {
           final session = sessions[i];
           buffer.writeln('## Session ${i + 1}: ${session.title}');
           buffer.writeln();
-          
-          // Session metadata
           buffer.writeln('**Session Information:**');
           buffer.writeln('- **Session ID:** ${session.id}');
-          buffer.writeln('- **Created:** ${_formatTimestamp(session.createdAt)}');
-          buffer.writeln('- **Last Updated:** ${_formatTimestamp(session.updatedAt)}');
-          
+          buffer.writeln(
+            '- **Created:** ${_formatTimestamp(session.createdAt)}',
+          );
+          buffer.writeln(
+            '- **Last Updated:** ${_formatTimestamp(session.updatedAt)}',
+          );
           if (session.providerUsed != null) {
             buffer.writeln('- **Provider:** ${session.providerUsed}');
           }
-          
           if (session.modelUsed != null) {
             buffer.writeln('- **Model:** ${session.modelUsed}');
           }
-          
           buffer.writeln('- **Messages:** ${session.messageCount}');
           buffer.writeln();
-          
-          // Messages
           for (final message in session.messages) {
-            // Skip loading messages and error messages without content
-            if (message.isLoading || (message.hasError && message.text.isEmpty)) {
+            if (message.isLoading ||
+                (message.hasError && message.text.isEmpty)) {
               continue;
             }
-            
-            // Message header with sender and timestamp
             buffer.writeln('### ${_formatMessageSender(message.sender)}');
             buffer.writeln('*${_formatTimestamp(message.timestamp)}*');
             buffer.writeln();
-            
-            // Message content
             if (message.hasError) {
               buffer.writeln('**Error:** ${message.error}');
             } else if (message.text.isNotEmpty) {
-              if (message.text.contains('```') || 
-                  message.text.contains('**') || 
+              if (message.text.contains('```') ||
+                  message.text.contains('**') ||
                   message.text.contains('*') && !message.text.contains('\\*')) {
                 buffer.writeln(message.text);
               } else {
                 buffer.writeln(_escapeMarkdown(message.text));
               }
             }
-            
             buffer.writeln();
           }
-          
           buffer.writeln('---');
           buffer.writeln();
         }
-        
-        buffer.writeln('*Exported from Chibot on ${_formatTimestamp(DateTime.now())}*');
-        
+        buffer.writeln(
+          '*Exported from Chibot on ${_formatTimestamp(DateTime.now())}*',
+        );
         final file = File(result.path);
         await file.writeAsString(buffer.toString(), encoding: utf8);
-        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${sessions.length} chat sessions exported to ${result.path}'),
+              content: Text(
+                '${sessions.length} chat sessions exported to ${result.path}',
+              ),
               duration: const Duration(seconds: 3),
             ),
           );
         }
-        
-        AppLogger.info('${sessions.length} chat sessions exported to markdown: ${result.path}');
+        AppLogger.info(
+          '${sessions.length} chat sessions exported to markdown: ${result.path}',
+        );
       }
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to export multiple chat sessions to markdown', 
-        error: e, stackTrace: stackTrace);
-      
+      AppLogger.error(
+        'Failed to export multiple chat sessions to markdown',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
