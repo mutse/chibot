@@ -346,6 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final modelName = _customModelController.text.trim();
                         if (modelName.isNotEmpty) {
                           settings.addCustomModel(modelName);
+                          settings.setSelectedModel(modelName); // 新增：自动选中
                           _customModelController.clear();
                         }
                       },
@@ -480,6 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final modelName = _customModelController.text.trim();
                         if (modelName.isNotEmpty) {
                           settings.addCustomImageModel(modelName);
+                          settings.setSelectedImageModel(modelName); // 新增：自动选中
                           _customModelController.clear();
                         }
                       },
@@ -642,6 +644,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     settings.addCustomProviderWithModels(providerName, [
                       modelName,
                     ]);
+                    settings.setSelectedProvider(
+                      providerName,
+                    ); // 新增：自动选中Provider
+                    settings.setSelectedModel(modelName); // 新增：自动选中模型
                     if (providerUrl.isNotEmpty) {
                       if (settings.selectedProvider == providerName) {
                         settings.setProviderUrl(providerUrl);
@@ -651,6 +657,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     settings.addCustomImageProviderWithModels(providerName, [
                       modelName,
                     ]);
+                    settings.setSelectedImageProvider(
+                      providerName,
+                    ); // 新增：自动选中Provider
+                    settings.setSelectedImageModel(modelName); // 新增：自动选中模型
                     if (providerUrl.isNotEmpty) {
                       if (settings.selectedImageProvider == providerName) {
                         settings.setImageProviderUrl(providerUrl);
@@ -688,7 +698,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Get the appropriate directory based on platform
       Directory exportDir;
       String platformName;
-      
+
       if (Platform.isMacOS) {
         // macOS: ~/Documents/Chibot
         final documentsDir = await getApplicationDocumentsDirectory();
@@ -728,12 +738,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       // Generate filename with timestamp
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final timestamp =
+          DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
       final fileName = 'chibot_config_$timestamp.xml';
       final filePath = '${exportDir.path}/$fileName';
 
       print('Saving to: $filePath');
-      
+
       // Write the file
       final file = File(filePath);
       await file.writeAsString(xmlContent);
@@ -748,10 +759,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Text('✅ 配置导出成功！'),
                 const SizedBox(height: 4),
-                Text(
-                  '文件: $fileName',
-                  style: const TextStyle(fontSize: 12),
-                ),
+                Text('文件: $fileName', style: const TextStyle(fontSize: 12)),
                 Text(
                   '位置: ${exportDir.path}',
                   style: const TextStyle(fontSize: 11, color: Colors.white70),
@@ -854,19 +862,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     try {
       print('Starting file picker import...');
-      
+
       // Use file picker to select XML config file
       const XTypeGroup typeGroup = XTypeGroup(
         label: 'Chibot配置文件',
         extensions: <String>['xml'],
         mimeTypes: <String>['text/xml', 'application/xml'],
       );
-      
+
       final XFile? file = await openFile(
         acceptedTypeGroups: <XTypeGroup>[typeGroup],
         initialDirectory: await _getInitialDirectory(),
       );
-      
+
       if (file == null) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -897,7 +905,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Read and validate the file content
       final xmlContent = await file.readAsString();
       print('XML content read: ${xmlContent.length} characters from $fileName');
-      
+
       if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -945,7 +953,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Expanded(
                             child: Text(
                               fileName,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -953,14 +963,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         path.dirname(file.path),
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '文件大小: ${(xmlContent.length / 1024).toStringAsFixed(1)} KB',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                       const Text(
                         '来源: 文件选择器',
@@ -1015,10 +1031,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   const Text('✅ 配置导入成功！'),
                   const SizedBox(height: 4),
-                  Text(
-                    '来源: $fileName',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  Text('来源: $fileName', style: const TextStyle(fontSize: 12)),
                   const Text(
                     '方式: 文件选择器',
                     style: TextStyle(fontSize: 11, color: Colors.white70),
@@ -1091,11 +1104,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     try {
       print('Starting import process...');
-      
+
       // Get the appropriate directory based on platform
       Directory importDir;
       String platformName;
-      
+
       if (Platform.isMacOS) {
         // macOS: ~/Documents/Chibot
         final documentsDir = await getApplicationDocumentsDirectory();
@@ -1145,17 +1158,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Find all chibot_config_*.xml files
       final List<FileSystemEntity> files = await importDir.list().toList();
       final List<File> configFiles = [];
-      
+
       for (final entity in files) {
-        if (entity is File && 
-            entity.path.contains('chibot_config_') && 
+        if (entity is File &&
+            entity.path.contains('chibot_config_') &&
             entity.path.endsWith('.xml')) {
           configFiles.add(entity);
         }
       }
 
       // Sort files by modification time (newest first)
-      configFiles.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      configFiles.sort(
+        (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+      );
 
       if (configFiles.isEmpty) {
         if (context.mounted) {
@@ -1200,12 +1215,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final index = entry.key;
                       final file = entry.value;
                       final fileName = path.basename(file.path);
-                      final fileSize = (file.lengthSync() / 1024).toStringAsFixed(1);
+                      final fileSize = (file.lengthSync() / 1024)
+                          .toStringAsFixed(1);
                       final modifiedTime = DateTime.fromMillisecondsSinceEpoch(
                         file.lastModifiedSync().millisecondsSinceEpoch,
                       );
-                      final timeString = '${modifiedTime.year}-${modifiedTime.month.toString().padLeft(2, '0')}-${modifiedTime.day.toString().padLeft(2, '0')} ${modifiedTime.hour.toString().padLeft(2, '0')}:${modifiedTime.minute.toString().padLeft(2, '0')}';
-                      
+                      final timeString =
+                          '${modifiedTime.year}-${modifiedTime.month.toString().padLeft(2, '0')}-${modifiedTime.day.toString().padLeft(2, '0')} ${modifiedTime.hour.toString().padLeft(2, '0')}:${modifiedTime.minute.toString().padLeft(2, '0')}';
+
                       return ListTile(
                         leading: const Icon(Icons.description),
                         title: Text(fileName),
@@ -1242,8 +1259,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Read and validate the selected file
       final xmlContent = await selectedFile.readAsString();
-      print('XML content read: ${xmlContent.length} characters from ${path.basename(selectedFile.path)}');
-      
+      print(
+        'XML content read: ${xmlContent.length} characters from ${path.basename(selectedFile.path)}',
+      );
+
       // Validate XML content
       if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
         if (context.mounted) {
@@ -1292,7 +1311,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Expanded(
                             child: Text(
                               path.basename(selectedFile.path),
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -1300,18 +1321,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         path.dirname(selectedFile.path),
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '文件大小: ${(xmlContent.length / 1024).toStringAsFixed(1)} KB',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                       Text(
                         '平台: $platformName',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
