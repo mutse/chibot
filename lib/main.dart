@@ -48,7 +48,10 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           AppLocalizations.delegate,
         ],
         supportedLocales: const [
+          Locale('de', ''),
           Locale('en', ''), // English, no country code
+          Locale('fr', ''),
+          Locale('ja', ''),
           Locale('zh', ''), // Chinese, no country code
         ],
       ),
@@ -66,7 +69,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       useMaterial3: true,
       colorScheme: colorScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      
+
       // Typography
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -97,9 +100,10 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       ),
 
       appBarTheme: AppBarTheme(
-        backgroundColor: Platform.isMacOS 
-          ? colorScheme.surface.withValues(alpha: 0.8)
-          : colorScheme.surface,
+        backgroundColor:
+            Platform.isMacOS
+                ? colorScheme.surface.withValues(alpha: 0.8)
+                : colorScheme.surface,
         elevation: Platform.isMacOS ? 0 : 1,
         surfaceTintColor: colorScheme.surfaceTint,
         iconTheme: IconThemeData(color: colorScheme.onSurface),
@@ -108,9 +112,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           fontSize: 22,
           fontWeight: FontWeight.w500,
         ),
-        systemOverlayStyle: Platform.isMacOS
-          ? SystemUiOverlayStyle.dark
-          : null,
+        systemOverlayStyle: Platform.isMacOS ? SystemUiOverlayStyle.dark : null,
       ),
 
       // Cards and Surfaces
@@ -144,10 +146,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
 
@@ -201,14 +200,15 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         backgroundColor: colorScheme.surface,
         surfaceTintColor: colorScheme.surfaceTint,
         elevation: Platform.isMacOS ? 1 : 16,
-        shape: Platform.isMacOS 
-          ? null 
-          : const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topRight: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
+        shape:
+            Platform.isMacOS
+                ? null
+                : const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
       ),
 
       // Snackbar

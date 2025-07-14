@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:chibot/constants/app_constants.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -118,7 +119,7 @@ class AboutScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                localizations.version,
+                'v${AppConstants.appVersion}',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(width: 16),
