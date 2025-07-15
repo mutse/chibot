@@ -135,7 +135,7 @@ class SettingsXmlHandler {
     if (value == null || value.toString().isEmpty) return;
     
     final spaces = ' ' * indent;
-    final encryptedValue = EncryptionUtils.simpleEncrypt(value.toString());
+    final encryptedValue = EncryptionUtils.aesEncrypt(value.toString());
     final escapedValue = _escapeXml(encryptedValue);
     buffer.writeln('$spaces<$tag>$escapedValue</$tag>');
   }
@@ -283,8 +283,8 @@ class SettingsXmlHandler {
       final encryptedValue = _unescapeXml(match.group(1)!.trim());
       if (encryptedValue.isEmpty) return null;
       
-      // 尝试解密
-      final decryptedValue = EncryptionUtils.simpleDecrypt(encryptedValue);
+      // 尝试AES解密，如果失败则尝试简单解密（向后兼容）
+      final decryptedValue = EncryptionUtils.aesDecrypt(encryptedValue);
       return decryptedValue;
     }
     return null;
