@@ -93,5 +93,6 @@
   "noChatSessionsToExport": "Aucune session de chat à exporter",
   "chatExportedSuccessfully": "Chat exporté avec succès",
   "exportCancelled": "Exportation annulée",
-  "exportFailed": "Échec de l'exportation"
+  "exportFailed": "Échec de l'exportation",
+  "exportToImg": "Exporter en image"
 }

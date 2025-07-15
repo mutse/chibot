@@ -93,5 +93,6 @@
   "noChatSessionsToExport": "エクスポートするチャットセッションがありません",
   "chatExportedSuccessfully": "チャットが正常にエクスポートされました",
   "exportCancelled": "エクスポートがキャンセルされました",
-  "exportFailed": "エクスポートに失敗しました"
+  "exportFailed": "エクスポートに失敗しました",
+  "exportToImg": "画像としてエクスポート"
 }
