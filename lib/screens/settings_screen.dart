@@ -18,7 +18,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late AppLocalizations l10n;
-  String? _selectedProviderValue;
   late TextEditingController _apiKeyController;
   late TextEditingController _providerUrlController;
   late TextEditingController _imageProviderUrlController;
@@ -130,8 +129,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _selectedProviderValue =
-        Provider.of<SettingsProvider>(context, listen: false).selectedProvider;
     l10n = AppLocalizations.of(context)!;
   }
 
@@ -1016,11 +1013,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print('Settings imported successfully from file picker');
 
         // Update controllers with new values
-        _apiKeyController.text = _getProviderApiKey(settings);
-        _providerUrlController.text = settings.rawProviderUrl ?? '';
-        _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
-        _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-        _bingApiKeyController.text = settings.bingApiKey ?? '';
+        setState(() {
+          _apiKeyController.text = _getProviderApiKey(settings);
+          _providerUrlController.text = settings.rawProviderUrl ?? '';
+          _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
+          _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
+          _bingApiKeyController.text = settings.bingApiKey ?? '';
+        });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1377,11 +1376,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print('Settings imported successfully');
 
         // Update controllers with new values
-        _apiKeyController.text = _getProviderApiKey(settings);
-        _providerUrlController.text = settings.rawProviderUrl ?? '';
-        _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
-        _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-        _bingApiKeyController.text = settings.bingApiKey ?? '';
+        setState(() {
+          _apiKeyController.text = _getProviderApiKey(settings);
+          _providerUrlController.text = settings.rawProviderUrl ?? '';
+          _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
+          _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
+          _bingApiKeyController.text = settings.bingApiKey ?? '';
+        });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

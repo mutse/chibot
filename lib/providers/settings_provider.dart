@@ -208,11 +208,12 @@ class SettingsProvider with ChangeNotifier {
     final String? customProvidersString = prefs.getString(_customProvidersKey);
     if (customProvidersString != null) {
       try {
-        // Assuming customProvidersString is a JSON string like '{"providerName":["model1","model2"]}'
-        // This part needs careful implementation for deserialization, e.g., using dart:convert
-        // For simplicity, this example might need a more robust JSON parsing strategy.
-        // Placeholder for actual deserialization:
-        // _customProviders = Map<String, List<String>>.from(json.decode(customProvidersString));
+        // Deserialize custom providers from JSON
+        _customProviders = Map<String, List<String>>.from(
+          json.decode(customProvidersString).map(
+            (key, value) => MapEntry(key, List<String>.from(value)),
+          ),
+        );
       } catch (e) {
         if (kDebugMode) {
           print('Error loading custom providers: $e');
@@ -237,7 +238,11 @@ class SettingsProvider with ChangeNotifier {
     );
     if (customImageProvidersString != null) {
       try {
-        // _customImageProviders = Map<String, List<String>>.from(json.decode(customImageProvidersString));
+        _customImageProviders = Map<String, List<String>>.from(
+          json.decode(customImageProvidersString).map(
+            (key, value) => MapEntry(key, List<String>.from(value)),
+          ),
+        );
       } catch (e) {
         if (kDebugMode) {
           print('Error loading custom image providers: $e');
@@ -299,6 +304,9 @@ class SettingsProvider with ChangeNotifier {
         _selectedModel = currentAvailableModels.first;
       } else {
         _selectedModel = ''; // No models available
+      }
+      if (kDebugMode) {
+        print('Model validation changed selectedModel to: $_selectedModel');
       }
       // 异步保存更改后的 selectedModel
       SharedPreferences.getInstance().then((prefs) {
@@ -477,8 +485,8 @@ class SettingsProvider with ChangeNotifier {
 
     _customImageProviders[providerName.trim()] =
         models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    await SharedPreferences.getInstance();
-    // await prefs.setString(_customImageProvidersKey, json.encode(_customImageProviders)); // Needs robust serialization
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_customImageProvidersKey, json.encode(_customImageProviders));
     notifyListeners();
   }
 
@@ -544,10 +552,9 @@ class SettingsProvider with ChangeNotifier {
 
     _customProviders[providerName.trim()] =
         models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    await SharedPreferences.getInstance();
-    // This needs a robust way to serialize the map, e.g., to a JSON string.
-    // Placeholder for actual serialization:
-    // await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+    final prefs = await SharedPreferences.getInstance();
+    // Serialize the custom providers map to JSON
+    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
     notifyListeners();
     // Optionally, switch to the new provider and select its first model
     // setSelectedProvider(providerName.trim());
@@ -642,6 +649,9 @@ class SettingsProvider with ChangeNotifier {
       if (settingsMap[_selectedModelKey] != null) {
         await prefs.setString(_selectedModelKey, settingsMap[_selectedModelKey]);
         _selectedModel = settingsMap[_selectedModelKey];
+        if (kDebugMode) {
+          print('Imported selectedModel: $_selectedModel');
+        }
       }
       
       if (settingsMap[_providerUrlKey] != null) {
@@ -657,8 +667,12 @@ class SettingsProvider with ChangeNotifier {
       if (settingsMap[_selectedProviderKey] != null) {
         await prefs.setString(_selectedProviderKey, settingsMap[_selectedProviderKey]);
         _selectedProvider = settingsMap[_selectedProviderKey];
+        if (kDebugMode) {
+          print('Imported selectedProvider: $_selectedProvider');
+        }
       }
       
+      // Load custom providers first before validating models
       if (settingsMap[_customProvidersKey] != null) {
         await prefs.setString(_customProvidersKey, settingsMap[_customProvidersKey]);
         try {
@@ -668,6 +682,19 @@ class SettingsProvider with ChangeNotifier {
             print('Error parsing custom providers: $e');
           }
           _customProviders = {};
+        }
+      }
+      
+      // Special handling: If selected provider is custom but not in _customProviders, add it with the selected model
+      if (!defaultBaseUrls.containsKey(_selectedProvider) && 
+          !_customProviders.containsKey(_selectedProvider) &&
+          _selectedModel.isNotEmpty) {
+        // Create a custom provider with the selected model
+        _customProviders[_selectedProvider] = [_selectedModel];
+        // Save to preferences
+        await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+        if (kDebugMode) {
+          print('Created custom provider $_selectedProvider with model $_selectedModel');
         }
       }
       
@@ -709,10 +736,14 @@ class SettingsProvider with ChangeNotifier {
         }
       }
       
-      // Validate settings after import
+      // Now validate settings after all data is loaded
       _validateSelectedModelForProvider();
       _validateSelectedImageModelForProvider();
       
+      notifyListeners();
+      
+      // Add a small delay to ensure UI updates properly
+      await Future.delayed(const Duration(milliseconds: 100));
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
