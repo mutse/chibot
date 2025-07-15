@@ -94,5 +94,6 @@
   "noChatSessionsToExport": "No chat sessions to export",
   "chatExportedSuccessfully": "Chat exported successfully",
   "exportCancelled": "Export cancelled",
-  "exportFailed": "Export failed"
+  "exportFailed": "Export failed",
+  "exportToImg": "Export to Image"
 }

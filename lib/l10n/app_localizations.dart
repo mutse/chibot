@@ -668,6 +668,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export failed'**
   String get exportFailed;
+
+  /// No description provided for @exportToImg.
+  ///
+  /// In en, this message translates to:
+  /// **'Export to Image'**
+  String get exportToImg;
 }
 
 class _AppLocalizationsDelegate

@@ -80,5 +80,6 @@
   "noChatSessionsToExport": "没有聊天记录可导出",
   "chatExportedSuccessfully": "聊天记录导出成功",
   "exportCancelled": "取消导出",
-  "exportFailed": "导出失败"
+  "exportFailed": "导出失败",
+  "exportToImg": "导出图片"
 }

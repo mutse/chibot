@@ -301,6 +301,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exportFailed => '导出失败';
+
+  @override
+  String get exportToImg => '导出图片';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

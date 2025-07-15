@@ -312,4 +312,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get exportFailed => 'Échec de l\'exportation';
+
+  @override
+  String get exportToImg => 'Export to Image';
 }

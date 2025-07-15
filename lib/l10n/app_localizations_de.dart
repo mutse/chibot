@@ -308,4 +308,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get exportFailed => 'Export fehlgeschlagen';
+
+  @override
+  String get exportToImg => 'Export to Image';
 }

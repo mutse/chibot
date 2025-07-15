@@ -300,4 +300,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exportFailed => 'エクスポートに失敗しました';
+
+  @override
+  String get exportToImg => 'Export to Image';
 }

@@ -12,7 +12,8 @@ import 'package:chibot/services/image_session_service.dart';
 import 'package:chibot/providers/settings_provider.dart';
 import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
-import 'package:chibot/services/image_generation_service.dart' as image_service; // Added for image generation
+import 'package:chibot/services/image_generation_service.dart'
+    as image_service; // Added for image generation
 import 'package:chibot/services/image_save_service.dart';
 import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
@@ -244,7 +245,10 @@ class _ChatScreenState extends State<ChatScreen> {
       final chatService = ServiceManager.createChatService(settings);
       final stream = chatService.generateResponse(
         prompt: prompt,
-        context: aiMessages.where((msg) => msg.sender != MessageSender.user).toList(),
+        context:
+            aiMessages
+                .where((msg) => msg.sender != MessageSender.user)
+                .toList(),
         model: settings.selectedModel,
       );
 
@@ -471,11 +475,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   AppLocalizations.of(context)!.exportAllChats,
                   onTap: () async {
                     if (_chatSessions.isNotEmpty) {
-                      await MarkdownExportService.exportMultipleToMarkdown(_chatSessions, context);
+                      await MarkdownExportService.exportMultipleToMarkdown(
+                        _chatSessions,
+                        context,
+                      );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(AppLocalizations.of(context)!.noChatSessionsToExport),
+                          content: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.noChatSessionsToExport,
+                          ),
                           duration: Duration(seconds: 2),
                         ),
                       );
@@ -522,7 +533,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             isSelected: _currentSessionId == session.id,
                             onTap: () => _loadSession(session),
                             onExport: () async {
-                              await MarkdownExportService.exportToMarkdown(session, context);
+                              await MarkdownExportService.exportToMarkdown(
+                                session,
+                                context,
+                              );
                             },
                             onDelete: () async {
                               final confirm = await showDialog<bool>(
@@ -606,6 +620,12 @@ class _ChatScreenState extends State<ChatScreen> {
                             session.title,
                             isSelected: _currentImageSessionId == session.id,
                             onTap: () => _loadImageSession(session),
+                            onExport: () async {
+                              await ImageSaveService.exportImageHistory(
+                                session,
+                                context,
+                              );
+                            },
                             onDelete: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
@@ -804,7 +824,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                           color: theme.colorScheme.primary,
                                         ),
                                         const SizedBox(width: 12),
-                                        Text(AppLocalizations.of(context)!.exportToMarkdown),
+                                        Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.exportToImg,
+                                        ),
                                       ],
                                     ),
                                   ),
