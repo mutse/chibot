@@ -304,6 +304,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exportToImg => '导出图片';
+
+  @override
+  String updateFound(Object version) {
+    return '发现新版本 $version';
+  }
+
+  @override
+  String get updateNow => '立即更新';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

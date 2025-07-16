@@ -94,5 +94,7 @@
   "chatExportedSuccessfully": "Chat exporté avec succès",
   "exportCancelled": "Exportation annulée",
   "exportFailed": "Échec de l'exportation",
-  "exportToImg": "Exporter en image"
+  "exportToImg": "Exporter en image",
+  "updateFound": "Nouvelle version {version} trouvée",
+  "updateNow": "Mettre à jour maintenant"
 }

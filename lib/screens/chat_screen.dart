@@ -20,6 +20,8 @@ import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'package:chibot/services/web_search_service.dart' as web_service;
+import 'update_dialog.dart';
+import '../services/update_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -718,6 +720,41 @@ class _ChatScreenState extends State<ChatScreen> {
                       MaterialPageRoute(
                         builder: (context) => const SettingsScreen(),
                       ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
+                  context,
+                  Icons.system_update,
+                  '检查更新',
+                  onTap: () async {
+                    final release = await UpdateService.fetchLatestRelease();
+                    if (release == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('检查更新失败，请稍后重试')),
+                      );
+                      return;
+                    }
+                    final latestVersion = release['tag_name'] ?? '';
+                    final downloadUrl = UpdateService.getDownloadUrl(release);
+                    if (downloadUrl == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('未找到适用于当前平台的安装包')),
+                      );
+                      return;
+                    }
+                    final fileName = downloadUrl.split('/').last;
+                    final releaseNotes = release['body'] ?? '';
+                    showDialog(
+                      context: context,
+                      builder:
+                          (_) => UpdateDialog(
+                            latestVersion: latestVersion,
+                            releaseNotes: releaseNotes,
+                            downloadUrl: downloadUrl,
+                            fileName: fileName,
+                          ),
                     );
                   },
                 ),

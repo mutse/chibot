@@ -302,5 +302,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exportFailed => 'エクスポートに失敗しました';
 
   @override
-  String get exportToImg => 'Export to Image';
+  String get exportToImg => '画像としてエクスポート';
+
+  @override
+  String updateFound(Object version) {
+    return '新しいバージョン $version が見つかりました';
+  }
+
+  @override
+  String get updateNow => '今すぐ更新';
 }

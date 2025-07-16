@@ -674,6 +674,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export to Image'**
   String get exportToImg;
+
+  /// No description provided for @updateFound.
+  ///
+  /// In en, this message translates to:
+  /// **'New version {version} found'**
+  String updateFound(Object version);
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get updateNow;
 }
 
 class _AppLocalizationsDelegate

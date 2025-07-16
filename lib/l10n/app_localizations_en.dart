@@ -309,4 +309,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportToImg => 'Export to Image';
+
+  @override
+  String updateFound(Object version) {
+    return 'New version $version found';
+  }
+
+  @override
+  String get updateNow => 'Update Now';
 }

@@ -94,5 +94,7 @@
   "chatExportedSuccessfully": "チャットが正常にエクスポートされました",
   "exportCancelled": "エクスポートがキャンセルされました",
   "exportFailed": "エクスポートに失敗しました",
-  "exportToImg": "画像としてエクスポート"
+  "exportToImg": "画像としてエクスポート",
+  "updateFound": "新しいバージョン {version} が見つかりました",
+  "updateNow": "今すぐ更新"
 }

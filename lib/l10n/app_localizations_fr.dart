@@ -314,5 +314,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get exportFailed => 'Échec de l\'exportation';
 
   @override
-  String get exportToImg => 'Export to Image';
+  String get exportToImg => 'Exporter en image';
+
+  @override
+  String updateFound(Object version) {
+    return 'Nouvelle version $version trouvée';
+  }
+
+  @override
+  String get updateNow => 'Mettre à jour maintenant';
 }
