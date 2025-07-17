@@ -586,6 +586,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 _loadChatSessions();
                               }
                             },
+                            exportLabel: AppLocalizations.of(context)!.exportToMarkdown,
                           ),
                         );
                       },
@@ -676,6 +677,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 _loadImageSessions();
                               }
                             },
+                            exportLabel: AppLocalizations.of(context)!.exportToImg,
                           ),
                         );
                       },
@@ -774,6 +776,7 @@ class _ChatScreenState extends State<ChatScreen> {
     VoidCallback? onTap,
     VoidCallback? onDelete,
     VoidCallback? onExport,
+    String? exportLabel, // 新增参数
   }) {
     final theme = Theme.of(context);
     return Material(
@@ -862,7 +865,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                         ),
                                         const SizedBox(width: 12),
                                         Text(
-                                          AppLocalizations.of(
+                                          exportLabel ?? AppLocalizations.of(
                                             context,
                                           )!.exportToImg,
                                         ),
