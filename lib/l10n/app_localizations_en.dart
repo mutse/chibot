@@ -317,4 +317,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateNow => 'Update Now';
+
+  @override
+  String get promptCopied => 'Copy Prompt';
+
+  @override
+  String get savePrompt => 'Save Prompt';
 }

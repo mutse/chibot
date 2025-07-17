@@ -96,5 +96,7 @@
   "exportFailed": "エクスポートに失敗しました",
   "exportToImg": "画像としてエクスポート",
   "updateFound": "新しいバージョン {version} が見つかりました",
-  "updateNow": "今すぐ更新"
+  "updateNow": "今すぐ更新",
+  "promptCopied": "プロンプトをコピーしました",
+  "savePrompt": "プロンプトを保存"
 }

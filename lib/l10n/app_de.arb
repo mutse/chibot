@@ -96,5 +96,7 @@
   "exportFailed": "Export fehlgeschlagen",
   "exportToImg": "Als Bild exportieren",
   "updateFound": "Neue Version {version} gefunden",
-  "updateNow": "Jetzt aktualisieren"
+  "updateNow": "Jetzt aktualisieren",
+  "promptCopied": "Prompt kopiert",
+  "savePrompt": "Prompt speichern"
 }

@@ -1,0 +1,322 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Flutter Chatbot App - Cursor Rules
+
+You are an expert Flutter developer specializing in creating cross-platform chatbot applications. Follow these rules to ensure high-quality, maintainable, and performant code.
+
+## Core Principles
+
+- **Cross-platform first**: Write code that works seamlessly on iOS, Android, MacOS, Linux and Windows Desktop
+- **Material Design 3**: Use the latest Material Design guidelines and Flutter's Material 3 components
+- **Performance optimization**: Prioritize smooth animations, efficient memory usage, and fast loading times
+- **Accessibility**: Ensure the app is accessible to users with disabilities
+- **Clean Architecture**: Follow SOLID principles and clean architecture patterns
+
+## Project Structure
+
+```
+lib/
+├── l10n/
+├── models/
+├── providers/
+├── screens/
+├── services/
+└── main.dart
+```
+
+## Code Standards
+
+### 1. State Management
+- Use **BLoC pattern** or **Riverpod** for state management
+- Implement proper error handling and loading states
+- Use freezed for immutable data classes
+
+```dart
+// Example BLoC state
+@freezed
+class ChatState with _$ChatState {
+  const factory ChatState.initial() = _Initial;
+  const factory ChatState.loading() = _Loading;
+  const factory ChatState.loaded(List<Message> messages) = _Loaded;
+  const factory ChatState.error(String message) = _Error;
+}
+```
+
+### 2. UI Components
+- Create reusable widgets for chat bubbles, input fields, and loading indicators
+- Use `AnimatedList` or `ListView.builder` for chat message lists
+- Implement smooth animations with `AnimationController`
+- Use `Hero` widgets for smooth transitions
+
+```dart
+// Example chat bubble widget
+class ChatBubble extends StatelessWidget {
+  final Message message;
+  final bool isUser;
+  
+  const ChatBubble({
+    Key? key,
+    required this.message,
+    required this.isUser,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isUser 
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          message.content,
+          style: TextStyle(
+            color: isUser 
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### 3. Data Models
+- Use freezed for immutable data classes
+- Implement proper JSON serialization with json_annotation
+- Include proper validation
+
+```dart
+@freezed
+class Message with _$Message {
+  const factory Message({
+    required String id,
+    required String content,
+    required MessageType type,
+    required DateTime timestamp,
+    String? imageUrl,
+    @Default(false) bool isRead,
+  }) = _Message;
+  
+  factory Message.fromJson(Map<String, dynamic> json) => _$MessageFromJson(json);
+}
+
+enum MessageType { text, image, file }
+```
+
+### 4. Network Layer
+- Use Dio for HTTP requests with proper interceptors
+- Implement retry logic and error handling
+- Support for WebSocket connections for real-time chat
+
+```dart
+class ChatApiService {
+  final Dio _dio;
+  
+  ChatApiService(this._dio);
+  
+  Future<ApiResponse<List<Message>>> getMessages({
+    required String conversationId,
+    int limit = 50,
+    String? cursor,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/conversations/$conversationId/messages',
+        queryParameters: {
+          'limit': limit,
+          if (cursor != null) 'cursor': cursor,
+        },
+      );
+      
+      return ApiResponse.success(
+        data: (response.data['messages'] as List)
+            .map((json) => Message.fromJson(json))
+            .toList(),
+      );
+    } on DioException catch (e) {
+      return ApiResponse.failure(NetworkException.fromDioError(e));
+    }
+  }
+}
+```
+
+## Chatbot-Specific Features
+
+### 1. Message Types
+- Support text, images, files, video, and rich media
+- Implement typing indicators
+- Add message status (sent, delivered, read)
+- Support for quick replies and suggested actions
+
+### 2. Chat Input
+- Rich text editor with emoji support
+- Voice input integration
+- Image/file picker
+- Auto-resize text field
+
+```dart
+class ChatInput extends StatefulWidget {
+  final Function(String) onSendMessage;
+  final Function(File) onSendImage;
+  
+  const ChatInput({
+    Key? key,
+    required this.onSendMessage,
+    required this.onSendImage,
+  }) : super(key: key);
+
+  @override
+  State<ChatInput> createState() => _ChatInputState();
+}
+```
+
+### 3. AI Integration
+- Support for multiple AI providers (OpenAI, Claude, Gemini, etc.)
+- Stream responses for real-time typing effect
+- Context management for conversations
+- Rate limiting and error handling
+
+### 4. Offline Support
+- Cache messages locally with Hive or SQLite
+- Sync when connection is restored
+- Offline indicators
+
+## Performance Optimization
+
+### 1. List Optimization
+- Use `ListView.builder` with proper `itemExtent` when possible
+- Implement pagination for long chat histories
+- Use `AutomaticKeepAliveClientMixin` for complex list items
+
+### 2. Image Handling
+- Use `cached_network_image` for efficient image loading
+- Implement proper image compression
+- Support for image thumbnails
+
+### 3. Memory Management
+- Dispose controllers and streams properly
+- Use weak references where appropriate
+- Monitor memory usage in long conversations
+
+## Testing Strategy
+
+### 1. Unit Tests
+- Test all business logic and data models
+- Mock network calls and external dependencies
+- Test state management logic
+
+### 2. Widget Tests
+- Test individual chat components
+- Verify proper rendering of different message types
+- Test user interactions
+
+### 3. Integration Tests
+- Test complete chat flows
+- Verify offline/online behavior
+- Test performance with large message lists
+
+## Accessibility
+
+- Add proper semantic labels for screen readers
+- Ensure sufficient color contrast
+- Support for larger text sizes
+- Keyboard navigation support
+
+## Platform-Specific Considerations
+
+### Mobile (iOS/Android)
+- Handle keyboard visibility changes
+- Implement proper safe area handling
+- Support for system sharing
+- Background/foreground state management
+
+### Desktop (Linux/Windows/MacOS)
+- Window management and resizing
+- Keyboard shortcuts
+- Native context menus
+
+## Dependencies
+
+Essential packages for Flutter Chatbot App:
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  # or
+  flutter_riverpod: ^2.4.9
+  
+  # Data Classes
+  freezed: ^2.4.7
+  json_annotation: ^4.8.1
+  
+  # Network
+  dio: ^5.4.0
+  web_socket_channel: ^2.4.0
+  
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # UI
+  cached_network_image: ^3.3.1
+  image_picker: ^1.0.5
+  emoji_picker_flutter: ^1.6.3
+  
+  # Utils
+  uuid: ^4.2.1
+  intl: ^0.19.0
+  
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.7
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  mockito: ^5.4.4
+  bloc_test: ^9.1.5
+```
+
+## Error Handling
+
+- Implement global error handling with proper user feedback
+- Log errors for debugging without exposing sensitive data
+- Graceful degradation for network issues
+- User-friendly error messages
+
+## Security
+
+- Validate all user inputs
+- Implement proper authentication flow
+- Secure API key storage
+- Rate limiting for API calls
+- Content filtering for inappropriate messages
+
+## Deployment
+
+- Support for multiple build flavors (dev, staging, prod)
+- Proper environment configuration
+- CI/CD pipeline setup
+- App store guidelines compliance
+
+Remember to:
+- Write self-documenting code with clear variable names
+- Add comments for complex business logic
+- Follow Flutter's official style guide
+- Regularly update dependencies
+- Monitor app performance and user feedback
+
+- Implement proper logging for debugging

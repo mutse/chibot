@@ -312,6 +312,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get updateNow => '立即更新';
+
+  @override
+  String get promptCopied => '复制提示词';
+
+  @override
+  String get savePrompt => '保存提示词';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -609,4 +615,21 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get exportFailed => '匯出失敗';
+
+  @override
+  String get exportToImg => '匯出為圖片';
+
+  @override
+  String updateFound(Object version) {
+    return '發現新版本 $version';
+  }
+
+  @override
+  String get updateNow => '立即更新';
+
+  @override
+  String get promptCopied => '已複製提示詞';
+
+  @override
+  String get savePrompt => '儲存提示詞';
 }
