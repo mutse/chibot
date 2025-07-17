@@ -24,6 +24,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _customModelController;
   late TextEditingController _tavilyApiKeyController;
   late TextEditingController _bingApiKeyController;
+  late TextEditingController _googleSearchApiKeyController;
+  late TextEditingController _googleSearchEngineIdController;
 
   @override
   void initState() {
@@ -44,6 +46,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     _bingApiKeyController = TextEditingController(
       text: settings.bingApiKey ?? '',
+    );
+    _googleSearchApiKeyController = TextEditingController(
+      text: settings.googleSearchApiKey ?? '',
+    );
+    _googleSearchEngineIdController = TextEditingController(
+      text: settings.googleSearchEngineId ?? '',
     );
   }
 
@@ -123,6 +131,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _customModelController.dispose();
     _tavilyApiKeyController.dispose();
     _bingApiKeyController.dispose();
+    _googleSearchApiKeyController.dispose();
+    _googleSearchEngineIdController.dispose();
     super.dispose();
   }
 
@@ -280,24 +290,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  'Tavily Web 搜索 API Key',
-                  style: const TextStyle(fontSize: 16),
+                // Tavily Web Search Settings
+                Row(
+                  children: [
+                    Text('Tavily Web 搜索功能', style: TextStyle(fontSize: 16)),
+                    Spacer(),
+                    Switch(
+                      value: settings.tavilySearchEnabled,
+                      onChanged: (value) {
+                        settings.setTavilySearchEnabled(value);
+                      },
+                    ),
+                  ],
                 ),
-                TextField(
-                  controller: _tavilyApiKeyController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: '输入 Tavily API Key',
+                if (settings.tavilySearchEnabled) ...[
+                  Text(
+                    'Tavily Web 搜索 API Key',
+                    style: const TextStyle(fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  TextField(
+                    controller: _tavilyApiKeyController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      hintText: '输入 Tavily API Key',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 Text('Bing Web 搜索 API Key', style: TextStyle(fontSize: 16)),
                 TextField(
                   controller: _bingApiKeyController,
                   obscureText: true,
                   decoration: InputDecoration(hintText: '输入 Bing API Key'),
                 ),
+                const SizedBox(height: 20),
+                // Google Search Settings
+                Row(
+                  children: [
+                    Text('Google 搜索功能', style: TextStyle(fontSize: 16)),
+                    Spacer(),
+                    Switch(
+                      value: settings.googleSearchEnabled,
+                      onChanged: (value) {
+                        settings.setGoogleSearchEnabled(value);
+                      },
+                    ),
+                  ],
+                ),
+                if (settings.googleSearchEnabled) ...[
+                  Text('Google Search API Key', style: TextStyle(fontSize: 14)),
+                  TextField(
+                    controller: _googleSearchApiKeyController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: '输入 Google Custom Search API Key',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text('Google Search Engine ID', style: TextStyle(fontSize: 14)),
+                  TextField(
+                    controller: _googleSearchEngineIdController,
+                    decoration: InputDecoration(
+                      hintText: '输入 Custom Search Engine ID',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text('搜索结果数量', style: TextStyle(fontSize: 14)),
+                  Slider(
+                    value: settings.googleSearchResultCount.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: settings.googleSearchResultCount.toString(),
+                    onChanged: (value) {
+                      settings.setGoogleSearchResultCount(value.toInt());
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Text('搜索提供商', style: TextStyle(fontSize: 14)),
+                  DropdownButton<String>(
+                    value: settings.googleSearchProvider,
+                    isExpanded: true,
+                    items: [
+                      DropdownMenuItem(
+                        value: 'googleCustomSearch',
+                        child: Text('Google Custom Search API'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'programmableSearch',
+                        child: Text('Programmable Search Engine'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        settings.setGoogleSearchProvider(value);
+                      }
+                    },
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
                 DropdownButton<String>(
@@ -555,11 +645,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           settings.setProviderUrl(
                             _providerUrlController.text.trim(),
                           );
-                          settings.setTavilyApiKey(
-                            _tavilyApiKeyController.text.trim(),
-                          );
+                          if (settings.tavilySearchEnabled) {
+                            settings.setTavilyApiKey(
+                              _tavilyApiKeyController.text.trim(),
+                            );
+                          } else {
+                            settings.setTavilyApiKey('');
+                          }
                           settings.setBingApiKey(
                             _bingApiKeyController.text.trim(),
+                          );
+                          settings.setGoogleSearchApiKey(
+                            _googleSearchApiKeyController.text.trim(),
+                          );
+                          settings.setGoogleSearchEngineId(
+                            _googleSearchEngineIdController.text.trim(),
                           );
                         } else {
                           settings.setImageApiKey(apiKeyText);
@@ -1019,6 +1119,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
           _bingApiKeyController.text = settings.bingApiKey ?? '';
+          _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
+          _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
         });
 
         if (context.mounted) {
@@ -1382,6 +1484,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
           _bingApiKeyController.text = settings.bingApiKey ?? '';
+          _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
+          _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
         });
 
         if (context.mounted) {

@@ -47,6 +47,22 @@ class SettingsProvider with ChangeNotifier {
   String? _bingApiKey;
   static const String _bingApiKeyKey = 'bing_api_key';
 
+  // Google Search Settings
+  String? _googleSearchApiKey;
+  String? _googleSearchEngineId;
+  bool _googleSearchEnabled = false;
+  int _googleSearchResultCount = 10;
+  String _googleSearchProvider = 'googleCustomSearch';
+
+  static const String _googleSearchApiKeyKey = 'google_search_api_key';
+  static const String _googleSearchEngineIdKey = 'google_search_engine_id';
+  static const String _googleSearchEnabledKey = 'google_search_enabled';
+  static const String _googleSearchResultCountKey = 'google_search_result_count';
+  static const String _googleSearchProviderKey = 'google_search_provider';
+
+  bool _tavilySearchEnabled = false;
+  static const String _tavilySearchEnabledKey = 'tavily_search_enabled';
+
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
     'OpenAI': 'https://api.openai.com/v1',
@@ -118,6 +134,12 @@ class SettingsProvider with ChangeNotifier {
   String? get claudeApiKey => _claudeApiKey; // Added getter for Claude API key
   String? get tavilyApiKey => _tavilyApiKey;
   String? get bingApiKey => _bingApiKey;
+  String? get googleSearchApiKey => _googleSearchApiKey;
+  String? get googleSearchEngineId => _googleSearchEngineId;
+  bool get googleSearchEnabled => _googleSearchEnabled;
+  int get googleSearchResultCount => _googleSearchResultCount;
+  String get googleSearchProvider => _googleSearchProvider;
+  bool get tavilySearchEnabled => _tavilySearchEnabled;
 
   // Getters for Image Generation Settings
   String get selectedImageProvider => _selectedImageProvider;
@@ -202,6 +224,11 @@ class SettingsProvider with ChangeNotifier {
     _claudeApiKey = prefs.getString(_claudeApiKeyKey); // Load Claude API key
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
     _bingApiKey = prefs.getString(_bingApiKeyKey); // Load Bing API key
+    _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
+    _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
+    _googleSearchEnabled = prefs.getBool(_googleSearchEnabledKey) ?? false;
+    _googleSearchResultCount = prefs.getInt(_googleSearchResultCountKey) ?? 10;
+    _googleSearchProvider = prefs.getString(_googleSearchProviderKey) ?? 'googleCustomSearch';
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
     _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
     _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
@@ -250,6 +277,8 @@ class SettingsProvider with ChangeNotifier {
         _customImageProviders = {};
       }
     }
+
+    _tavilySearchEnabled = prefs.getBool(_tavilySearchEnabledKey) ?? false;
 
     notifyListeners();
     // Ensure the selected model is valid for the loaded provider
@@ -369,6 +398,13 @@ class SettingsProvider with ChangeNotifier {
         prefs.setString(_bingApiKeyKey, key);
       }
     });
+    notifyListeners();
+  }
+
+  Future<void> setTavilySearchEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    _tavilySearchEnabled = enabled;
+    await prefs.setBool(_tavilySearchEnabledKey, enabled);
     notifyListeners();
   }
 
@@ -573,6 +609,50 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
+  // Google Search Settings Methods
+  Future<void> setGoogleSearchApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    _googleSearchApiKey = apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_googleSearchApiKeyKey);
+    } else {
+      await prefs.setString(_googleSearchApiKeyKey, apiKey);
+    }
+    notifyListeners();
+  }
+
+  Future<void> setGoogleSearchEngineId(String? engineId) async {
+    final prefs = await SharedPreferences.getInstance();
+    _googleSearchEngineId = engineId;
+    if (engineId == null || engineId.isEmpty) {
+      await prefs.remove(_googleSearchEngineIdKey);
+    } else {
+      await prefs.setString(_googleSearchEngineIdKey, engineId);
+    }
+    notifyListeners();
+  }
+
+  Future<void> setGoogleSearchEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    _googleSearchEnabled = enabled;
+    await prefs.setBool(_googleSearchEnabledKey, enabled);
+    notifyListeners();
+  }
+
+  Future<void> setGoogleSearchResultCount(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    _googleSearchResultCount = count.clamp(1, 20);
+    await prefs.setInt(_googleSearchResultCountKey, _googleSearchResultCount);
+    notifyListeners();
+  }
+
+  Future<void> setGoogleSearchProvider(String provider) async {
+    final prefs = await SharedPreferences.getInstance();
+    _googleSearchProvider = provider;
+    await prefs.setString(_googleSearchProviderKey, provider);
+    notifyListeners();
+  }
+
   // Export settings to XML
   Future<String> exportSettingsToXml() async {
     try {
@@ -585,6 +665,12 @@ class SettingsProvider with ChangeNotifier {
       settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
       settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
       settingsMap[_bingApiKeyKey] = prefs.getString(_bingApiKeyKey);
+      settingsMap[_googleSearchApiKeyKey] = prefs.getString(_googleSearchApiKeyKey); // Google Search API Key
+      settingsMap[_googleSearchEngineIdKey] = prefs.getString(_googleSearchEngineIdKey); // Google Search Engine ID
+      settingsMap[_googleSearchEnabledKey] = prefs.getBool(_googleSearchEnabledKey);
+      settingsMap[_googleSearchResultCountKey] = prefs.getInt(_googleSearchResultCountKey);
+      settingsMap[_googleSearchProviderKey] = prefs.getString(_googleSearchProviderKey);
+      settingsMap[_tavilySearchEnabledKey] = prefs.getBool(_tavilySearchEnabledKey);
       settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
       settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
       settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
@@ -643,6 +729,36 @@ class SettingsProvider with ChangeNotifier {
       if (settingsMap[_bingApiKeyKey] != null) {
         await prefs.setString(_bingApiKeyKey, settingsMap[_bingApiKeyKey]);
         _bingApiKey = settingsMap[_bingApiKeyKey];
+      }
+      // Google Search API Key（解密后存储）
+      if (settingsMap[_googleSearchApiKeyKey] != null) {
+        await prefs.setString(_googleSearchApiKeyKey, settingsMap[_googleSearchApiKeyKey]);
+        _googleSearchApiKey = settingsMap[_googleSearchApiKeyKey];
+      }
+      // Google Search Engine ID
+      if (settingsMap[_googleSearchEngineIdKey] != null) {
+        await prefs.setString(_googleSearchEngineIdKey, settingsMap[_googleSearchEngineIdKey]);
+        _googleSearchEngineId = settingsMap[_googleSearchEngineIdKey];
+      }
+      
+      if (settingsMap[_googleSearchEnabledKey] != null) {
+        await prefs.setBool(_googleSearchEnabledKey, settingsMap[_googleSearchEnabledKey]);
+        _googleSearchEnabled = settingsMap[_googleSearchEnabledKey];
+      }
+      
+      if (settingsMap[_googleSearchResultCountKey] != null) {
+        await prefs.setInt(_googleSearchResultCountKey, settingsMap[_googleSearchResultCountKey]);
+        _googleSearchResultCount = settingsMap[_googleSearchResultCountKey];
+      }
+      
+      if (settingsMap[_googleSearchProviderKey] != null) {
+        await prefs.setString(_googleSearchProviderKey, settingsMap[_googleSearchProviderKey]);
+        _googleSearchProvider = settingsMap[_googleSearchProviderKey];
+      }
+      
+      if (settingsMap[_tavilySearchEnabledKey] != null) {
+        await prefs.setBool(_tavilySearchEnabledKey, settingsMap[_tavilySearchEnabledKey]);
+        _tavilySearchEnabled = settingsMap[_tavilySearchEnabledKey];
       }
       
       // Import model settings
@@ -760,6 +876,12 @@ class SettingsProvider with ChangeNotifier {
     await prefs.remove(_claudeApiKeyKey);
     await prefs.remove(_tavilyApiKeyKey);
     await prefs.remove(_bingApiKeyKey);
+    await prefs.remove(_googleSearchApiKeyKey);
+    await prefs.remove(_googleSearchEngineIdKey);
+    await prefs.remove(_googleSearchEnabledKey);
+    await prefs.remove(_googleSearchResultCountKey);
+    await prefs.remove(_googleSearchProviderKey);
+    await prefs.remove(_tavilySearchEnabledKey);
     await prefs.remove(_selectedModelKey);
     await prefs.remove(_providerUrlKey);
     await prefs.remove(_customModelsKey);

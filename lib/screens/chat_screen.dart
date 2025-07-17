@@ -20,9 +20,11 @@ import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'package:chibot/services/web_search_service.dart' as web_service;
+import 'package:chibot/services/search_command_handler.dart';
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
+import 'package:chibot/services/search_service_manager.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -128,33 +130,85 @@ class _ChatScreenState extends State<ChatScreen> {
 
     String prompt = text;
     if (_enableWebSearch) {
-      final tavilyApiKey = settings.tavilyApiKey;
-      if (tavilyApiKey == null || tavilyApiKey.isEmpty) {
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              text: AppLocalizations.of(context)!.tavilyApiKeyNotSet,
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ),
-          );
-          _isLoading = false;
-        });
-        _scrollToBottom();
-        return;
+      bool didSearch = false;
+      // 1. Tavily
+      if (settings.tavilySearchEnabled && (settings.tavilyApiKey != null && settings.tavilyApiKey!.isNotEmpty)) {
+        try {
+          final webResult = await web_service.WebSearchService(
+            apiKey: settings.tavilyApiKey!,
+          ).searchWeb(text);
+          prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+          didSearch = true;
+        } catch (e) {
+          setState(() {
+            _messages.add(
+              ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                text: AppLocalizations.of(context)!.webSearchFailed(e.toString()),
+                sender: MessageSender.ai,
+                timestamp: DateTime.now(),
+              ),
+            );
+            _isLoading = false;
+          });
+          _scrollToBottom();
+          return;
+        }
       }
-      try {
-        final webResult = await web_service.WebSearchService(
-          apiKey: tavilyApiKey,
-        ).searchWeb(text);
-        prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
-      } catch (e) {
+      // 2. Google
+      else if (settings.googleSearchEnabled && (settings.googleSearchApiKey != null && settings.googleSearchApiKey!.isNotEmpty) && (settings.googleSearchEngineId != null && settings.googleSearchEngineId!.isNotEmpty)) {
+        try {
+          final googleService = await SearchServiceManager.getSearchService(settings);
+          if (googleService == null) {
+            setState(() {
+              _messages.add(
+                ChatMessage(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  text: 'Google 搜索服务配置不完整。请检查 API Key 和 Search Engine ID 是否正确配置。',
+                  sender: MessageSender.ai,
+                  timestamp: DateTime.now(),
+                ),
+              );
+              _isLoading = false;
+            });
+            _scrollToBottom();
+            return;
+          }
+          final result = await googleService.search(text, count: settings.googleSearchResultCount);
+          // 格式化结果为字符串
+          String webResult = '';
+          for (var i = 0; i < result.items.length; i++) {
+            final item = result.items[i];
+            webResult += '${i + 1}. ${item.title}\n${item.snippet}\n${item.link}\n\n';
+          }
+          if (webResult.isEmpty) {
+            webResult = '未找到相关搜索结果。';
+          }
+          prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+          didSearch = true;
+        } catch (e) {
+          setState(() {
+            _messages.add(
+              ChatMessage(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                text: 'Google 搜索失败：${e.toString()}',
+                sender: MessageSender.ai,
+                timestamp: DateTime.now(),
+              ),
+            );
+            _isLoading = false;
+          });
+          _scrollToBottom();
+          return;
+        }
+      }
+      // 3. Neither enabled
+      else {
         setState(() {
           _messages.add(
             ChatMessage(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
-              text: AppLocalizations.of(context)!.webSearchFailed(e.toString()),
+              text: '未启用任何网络搜索功能，请在设置中开启 Tavily 或 Google 搜索。',
               sender: MessageSender.ai,
               timestamp: DateTime.now(),
             ),
