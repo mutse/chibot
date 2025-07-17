@@ -96,5 +96,7 @@
   "exportFailed": "Échec de l'exportation",
   "exportToImg": "Exporter en image",
   "updateFound": "Nouvelle version {version} trouvée",
-  "updateNow": "Mettre à jour maintenant"
+  "updateNow": "Mettre à jour maintenant",
+  "promptCopied": "Invite copiée",
+  "savePrompt": "Enregistrer l'invite"
 }

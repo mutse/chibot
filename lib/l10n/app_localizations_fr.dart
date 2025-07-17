@@ -323,4 +323,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get updateNow => 'Mettre à jour maintenant';
+
+  @override
+  String get promptCopied => 'Invite copiée';
+
+  @override
+  String get savePrompt => 'Enregistrer l\'invite';
 }

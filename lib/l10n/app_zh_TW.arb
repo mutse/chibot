@@ -93,5 +93,10 @@
   "noChatSessionsToExport": "沒有聊天工作階段可匯出",
   "chatExportedSuccessfully": "聊天匯出成功",
   "exportCancelled": "匯出已取消",
-  "exportFailed": "匯出失敗"
+  "exportFailed": "匯出失敗",
+  "exportToImg": "匯出為圖片",
+  "updateFound": "發現新版本 {version}",
+  "updateNow": "立即更新",
+  "promptCopied": "已複製提示詞",
+  "savePrompt": "儲存提示詞"
 }

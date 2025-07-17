@@ -1,11 +1,11 @@
 ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES
 CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO
-FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/shared_preferences_foundation"
+FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/device_info_plus" "${PODS_CONFIGURATION_BUILD_DIR}/file_selector_macos" "${PODS_CONFIGURATION_BUILD_DIR}/open_file_mac" "${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation" "${PODS_CONFIGURATION_BUILD_DIR}/screen_retriever_macos" "${PODS_CONFIGURATION_BUILD_DIR}/share_plus" "${PODS_CONFIGURATION_BUILD_DIR}/shared_preferences_foundation" "${PODS_CONFIGURATION_BUILD_DIR}/tray_manager" "${PODS_CONFIGURATION_BUILD_DIR}/url_launcher_macos" "${PODS_CONFIGURATION_BUILD_DIR}/window_manager"
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
-HEADER_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework/Headers"
+HEADER_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/device_info_plus/device_info_plus.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/file_selector_macos/file_selector_macos.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/open_file_mac/open_file_mac.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/path_provider_foundation/path_provider_foundation.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/screen_retriever_macos/screen_retriever_macos.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/share_plus/share_plus.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/tray_manager/tray_manager.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/url_launcher_macos/url_launcher_macos.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/window_manager/window_manager.framework/Headers"
 LD_RUNPATH_SEARCH_PATHS = $(inherited) /usr/lib/swift '@executable_path/../Frameworks' '@loader_path/Frameworks' "${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}"
 LIBRARY_SEARCH_PATHS = $(inherited) "${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}" /usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)/ $(SDKROOT)/usr/lib/swift
-OTHER_LDFLAGS = $(inherited) -framework "shared_preferences_foundation"
+OTHER_LDFLAGS = $(inherited) -framework "device_info_plus" -framework "file_selector_macos" -framework "open_file_mac" -framework "path_provider_foundation" -framework "screen_retriever_macos" -framework "share_plus" -framework "shared_preferences_foundation" -framework "tray_manager" -framework "url_launcher_macos" -framework "window_manager"
 OTHER_SWIFT_FLAGS = $(inherited) -D COCOAPODS
 PODS_BUILD_DIR = ${BUILD_DIR}
 PODS_CONFIGURATION_BUILD_DIR = ${PODS_BUILD_DIR}/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)

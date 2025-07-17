@@ -686,6 +686,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update Now'**
   String get updateNow;
+
+  /// No description provided for @promptCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Prompt'**
+  String get promptCopied;
+
+  /// No description provided for @savePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Prompt'**
+  String get savePrompt;
 }
 
 class _AppLocalizationsDelegate

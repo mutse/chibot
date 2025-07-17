@@ -97,5 +97,7 @@
   "exportFailed": "Export failed",
   "exportToImg": "Export to Image",
   "updateFound": "New version {version} found",
-  "updateNow": "Update Now"
+  "updateNow": "Update Now",
+  "promptCopied": "Copy Prompt",
+  "savePrompt": "Save Prompt"
 }

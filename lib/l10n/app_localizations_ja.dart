@@ -311,4 +311,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updateNow => '今すぐ更新';
+
+  @override
+  String get promptCopied => 'プロンプトをコピーしました';
+
+  @override
+  String get savePrompt => 'プロンプトを保存';
 }
