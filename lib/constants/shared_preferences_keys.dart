@@ -9,7 +9,6 @@ class SharedPreferencesKeys {
   static const String imageApiKey = 'image_api_key';
   static const String claudeApiKey = 'claude_api_key';
   static const String tavilyApiKey = 'tavily_api_key';
-  static const String bingApiKey = 'bing_api_key';
   
   // Provider URLs
   static const String providerUrl = 'openai_provider_url';

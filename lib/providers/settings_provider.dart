@@ -44,9 +44,6 @@ class SettingsProvider with ChangeNotifier {
   String? _tavilyApiKey;
   static const String _tavilyApiKeyKey = 'tavily_api_key';
 
-  String? _bingApiKey;
-  static const String _bingApiKeyKey = 'bing_api_key';
-
   // Google Search Settings
   String? _googleSearchApiKey;
   String? _googleSearchEngineId;
@@ -133,7 +130,6 @@ class SettingsProvider with ChangeNotifier {
   String? get imageApiKey => _imageApiKey; // Added getter for image API key
   String? get claudeApiKey => _claudeApiKey; // Added getter for Claude API key
   String? get tavilyApiKey => _tavilyApiKey;
-  String? get bingApiKey => _bingApiKey;
   String? get googleSearchApiKey => _googleSearchApiKey;
   String? get googleSearchEngineId => _googleSearchEngineId;
   bool get googleSearchEnabled => _googleSearchEnabled;
@@ -223,7 +219,6 @@ class SettingsProvider with ChangeNotifier {
     _imageApiKey = prefs.getString(_imageApiKeyKey); // Load image API key
     _claudeApiKey = prefs.getString(_claudeApiKeyKey); // Load Claude API key
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
-    _bingApiKey = prefs.getString(_bingApiKeyKey); // Load Bing API key
     _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
     _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
     _googleSearchEnabled = prefs.getBool(_googleSearchEnabledKey) ?? false;
@@ -384,18 +379,6 @@ class SettingsProvider with ChangeNotifier {
         prefs.remove(_tavilyApiKeyKey);
       } else {
         prefs.setString(_tavilyApiKeyKey, key);
-      }
-    });
-    notifyListeners();
-  }
-
-  void setBingApiKey(String? key) {
-    _bingApiKey = key;
-    SharedPreferences.getInstance().then((prefs) {
-      if (key == null || key.isEmpty) {
-        prefs.remove(_bingApiKeyKey);
-      } else {
-        prefs.setString(_bingApiKeyKey, key);
       }
     });
     notifyListeners();
@@ -664,7 +647,6 @@ class SettingsProvider with ChangeNotifier {
       settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
       settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
       settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
-      settingsMap[_bingApiKeyKey] = prefs.getString(_bingApiKeyKey);
       settingsMap[_googleSearchApiKeyKey] = prefs.getString(_googleSearchApiKeyKey); // Google Search API Key
       settingsMap[_googleSearchEngineIdKey] = prefs.getString(_googleSearchEngineIdKey); // Google Search Engine ID
       settingsMap[_googleSearchEnabledKey] = prefs.getBool(_googleSearchEnabledKey);
@@ -724,11 +706,6 @@ class SettingsProvider with ChangeNotifier {
       if (settingsMap[_tavilyApiKeyKey] != null) {
         await prefs.setString(_tavilyApiKeyKey, settingsMap[_tavilyApiKeyKey]);
         _tavilyApiKey = settingsMap[_tavilyApiKeyKey];
-      }
-      
-      if (settingsMap[_bingApiKeyKey] != null) {
-        await prefs.setString(_bingApiKeyKey, settingsMap[_bingApiKeyKey]);
-        _bingApiKey = settingsMap[_bingApiKeyKey];
       }
       // Google Search API Key（解密后存储）
       if (settingsMap[_googleSearchApiKeyKey] != null) {
@@ -875,7 +852,6 @@ class SettingsProvider with ChangeNotifier {
     await prefs.remove(_imageApiKeyKey);
     await prefs.remove(_claudeApiKeyKey);
     await prefs.remove(_tavilyApiKeyKey);
-    await prefs.remove(_bingApiKeyKey);
     await prefs.remove(_googleSearchApiKeyKey);
     await prefs.remove(_googleSearchEngineIdKey);
     await prefs.remove(_googleSearchEnabledKey);

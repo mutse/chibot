@@ -50,7 +50,6 @@ class SettingsXmlHandler {
     _writeEncryptedXmlTag(buffer, 'claude_api_key', settings['claude_api_key'], 4);
     _writeEncryptedXmlTag(buffer, 'image_api_key', settings['image_api_key'], 4);
     _writeEncryptedXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
-    _writeEncryptedXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
     // 新增 Google Search API Key
     _writeEncryptedXmlTag(buffer, 'google_search_api_key', settings['google_search_api_key'], 4);
     buffer.writeln('  </api_keys>');
@@ -121,7 +120,6 @@ class SettingsXmlHandler {
   static void _writeWebSearchSettings(StringBuffer buffer, Map<String, dynamic> settings) {
     buffer.writeln('  <web_search_settings>');
     _writeEncryptedXmlTag(buffer, 'tavily_api_key', settings['tavily_api_key'], 4);
-    _writeEncryptedXmlTag(buffer, 'bing_api_key', settings['bing_api_key'], 4);
     // 新增 Google Search API Key
     _writeEncryptedXmlTag(buffer, 'google_search_api_key', settings['google_search_api_key'], 4);
     // 新增 Google Search Engine ID（不加密）
@@ -174,7 +172,6 @@ class SettingsXmlHandler {
       settings['claude_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'claude_api_key');
       settings['image_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'image_api_key');
       settings['tavily_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'tavily_api_key');
-      settings['bing_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'bing_api_key');
       // 新增 Google Search API Key
       settings['google_search_api_key'] = _extractEncryptedTagValue(apiKeysContent, 'google_search_api_key');
     }
@@ -270,7 +267,6 @@ class SettingsXmlHandler {
     if (webSearchMatch != null) {
       final webSearchContent = webSearchMatch.group(1)!;
       settings['tavily_api_key'] = _extractEncryptedTagValue(webSearchContent, 'tavily_api_key');
-      settings['bing_api_key'] = _extractEncryptedTagValue(webSearchContent, 'bing_api_key');
       // 新增 Google Search API Key
       settings['google_search_api_key'] = _extractEncryptedTagValue(webSearchContent, 'google_search_api_key');
       // 新增 Google Search Engine ID（不加密）

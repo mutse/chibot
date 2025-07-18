@@ -23,7 +23,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _imageProviderUrlController;
   late TextEditingController _customModelController;
   late TextEditingController _tavilyApiKeyController;
-  late TextEditingController _bingApiKeyController;
   late TextEditingController _googleSearchApiKeyController;
   late TextEditingController _googleSearchEngineIdController;
 
@@ -43,9 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _customModelController = TextEditingController();
     _tavilyApiKeyController = TextEditingController(
       text: settings.tavilyApiKey ?? '',
-    );
-    _bingApiKeyController = TextEditingController(
-      text: settings.bingApiKey ?? '',
     );
     _googleSearchApiKeyController = TextEditingController(
       text: settings.googleSearchApiKey ?? '',
@@ -130,7 +126,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _imageProviderUrlController.dispose();
     _customModelController.dispose();
     _tavilyApiKeyController.dispose();
-    _bingApiKeyController.dispose();
     _googleSearchApiKeyController.dispose();
     _googleSearchEngineIdController.dispose();
     super.dispose();
@@ -317,13 +312,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
-                Text('Bing Web 搜索 API Key', style: TextStyle(fontSize: 16)),
-                TextField(
-                  controller: _bingApiKeyController,
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: '输入 Bing API Key'),
-                ),
-                const SizedBox(height: 20),
                 // Google Search Settings
                 Row(
                   children: [
@@ -652,9 +640,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           } else {
                             settings.setTavilyApiKey('');
                           }
-                          settings.setBingApiKey(
-                            _bingApiKeyController.text.trim(),
-                          );
                           settings.setGoogleSearchApiKey(
                             _googleSearchApiKeyController.text.trim(),
                           );
@@ -1118,7 +1103,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _providerUrlController.text = settings.rawProviderUrl ?? '';
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _bingApiKeyController.text = settings.bingApiKey ?? '';
           _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
           _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
         });
@@ -1483,7 +1467,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _providerUrlController.text = settings.rawProviderUrl ?? '';
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _bingApiKeyController.text = settings.bingApiKey ?? '';
           _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
           _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
         });
