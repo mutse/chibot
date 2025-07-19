@@ -335,7 +335,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  Text('Google Search Engine ID', style: TextStyle(fontSize: 14)),
+                  Text(
+                    'Google Search Engine ID',
+                    style: TextStyle(fontSize: 14),
+                  ),
                   TextField(
                     controller: _googleSearchEngineIdController,
                     decoration: InputDecoration(
@@ -1103,8 +1106,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _providerUrlController.text = settings.rawProviderUrl ?? '';
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
-          _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
+          _googleSearchApiKeyController.text =
+              settings.googleSearchApiKey ?? '';
+          _googleSearchEngineIdController.text =
+              settings.googleSearchEngineId ?? '';
         });
 
         if (context.mounted) {
@@ -1467,8 +1472,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _providerUrlController.text = settings.rawProviderUrl ?? '';
           _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
           _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _googleSearchApiKeyController.text = settings.googleSearchApiKey ?? '';
-          _googleSearchEngineIdController.text = settings.googleSearchEngineId ?? '';
+          _googleSearchApiKeyController.text =
+              settings.googleSearchApiKey ?? '';
+          _googleSearchEngineIdController.text =
+              settings.googleSearchEngineId ?? '';
         });
 
         if (context.mounted) {
