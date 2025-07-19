@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'flux_image_service.dart';
 
 class ImageGenerationService {
   Future<String?> generateImage({
@@ -9,6 +10,8 @@ class ImageGenerationService {
     required String providerBaseUrl,
     String openAISize = '1024x1024', // Default for OpenAI
     int n = 1, // Number of images, primarily for OpenAI
+    int maxWaitSeconds = 120, // Polling timeout for FLUX.1 Kontext
+    int pollIntervalMs = 2000, // Polling interval for FLUX.1 Kontext
   }) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key is not set.');
@@ -18,9 +21,7 @@ class ImageGenerationService {
     }
 
     Uri endpointUri;
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-    };
+    Map<String, String> headers = {'Content-Type': 'application/json'};
     Map<String, dynamic> body = {};
 
     if (providerBaseUrl.contains('api.openai.com')) {
@@ -39,7 +40,8 @@ class ImageGenerationService {
       // The Stability AI API path often includes the engine ID.
       // Example: https://api.stability.ai/v1/generation/{engine_id}/text-to-image
       // We'll use a common engine, but this might need to be configurable or derived from `model`
-      String engineId = model; // Assuming model is the engine ID like 'stable-diffusion-v1-6'
+      String engineId =
+          model; // Assuming model is the engine ID like 'stable-diffusion-v1-6'
       // Stability AI image generation endpoint is typically v1/generation/{engine_id}/text-to-image
       // The error URL `https://api.stability.ai/v2beta/chat/completions` seems to be for chat models.
       // We need to ensure the correct image generation endpoint is used.
@@ -49,28 +51,56 @@ class ImageGenerationService {
       // The model 'command-r-plus' is a text model, not an image model.
       // It seems there's a mismatch in the model type being used for image generation.
       // Assuming the user intends to use a Stability AI image model, the endpoint should be:
-      endpointUri = Uri.parse('$providerBaseUrl/v1/generation/$engineId/text-to-image');
+      endpointUri = Uri.parse(
+        '$providerBaseUrl/v1/generation/$engineId/text-to-image',
+      );
       headers['Accept'] = 'application/json';
-      headers['Authorization'] = apiKey; // Stability AI API key is often passed directly as 'key <API_KEY>' or just '<API_KEY>'
-                                      // The 'Bearer' prefix is usually for OAuth tokens.
-                                      // For Stability, it's often just the key itself or prefixed with 'key '.
-                                      // Let's assume the key is passed directly as per some common patterns.
-                                      // If it requires 'key ', the user should include it in their API key setting.
+      headers['Authorization'] =
+          apiKey; // Stability AI API key is often passed directly as 'key <API_KEY>' or just '<API_KEY>'
+      // The 'Bearer' prefix is usually for OAuth tokens.
+      // For Stability, it's often just the key itself or prefixed with 'key '.
+      // Let's assume the key is passed directly as per some common patterns.
+      // If it requires 'key ', the user should include it in their API key setting.
 
       body = {
         'text_prompts': [
-          {'text': prompt, 'weight': 1.0}
+          {'text': prompt, 'weight': 1.0},
         ],
         'cfg_scale': 7, // Default, can be adjusted
         'height': 1024, // Default, can be adjusted
         'width': 1024, // Default, can be adjusted
         'samples': n, // Number of images to generate
-        'steps': 30, // Default, can be adjusted. More steps can mean better quality but longer time.
+        'steps':
+            30, // Default, can be adjusted. More steps can mean better quality but longer time.
         // 'style_preset': 'enhance', // Optional: e.g., 'photographic', 'digital-art', etc.
         // 'seed': 0, // Optional: for reproducibility
       };
+    } else if (providerBaseUrl.contains('api.bfl.ai')) {
+      // FLUX.1 Kontext API
+      endpointUri = Uri.parse('$providerBaseUrl/flux-kontext-pro');
+      headers['accept'] = 'application/json';
+      headers['x-key'] = '$apiKey'; // Use Bearer token as per BFL standards
+      headers['Content-Type'] = 'application/json';
+
+      // Parse OpenAI-style size to aspect ratio for FLUX.1
+      String? aspectRatio;
+      if (openAISize == '1024x1024') {
+        aspectRatio = '1:1';
+      } else if (openAISize == '1792x1024') {
+        aspectRatio = '16:9';
+      } else if (openAISize == '1024x1792') {
+        aspectRatio = '9:16';
+      }
+
+      body = {
+        'prompt': prompt,
+        'aspect_ratio': aspectRatio ?? '1:1',
+        'output_format': 'png',
+      };
     } else {
-      throw Exception('Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai');
+      throw Exception(
+        'Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai, api.bfl.ai',
+      );
     }
 
     try {
@@ -89,34 +119,115 @@ class ImageGenerationService {
             throw Exception('Image URL not found in OpenAI response.');
           }
         } else if (providerBaseUrl.contains('stability.ai')) {
-          if (responseBody['artifacts'] != null && responseBody['artifacts'].isNotEmpty) {
+          if (responseBody['artifacts'] != null &&
+              responseBody['artifacts'].isNotEmpty) {
             final artifact = responseBody['artifacts'][0];
             if (artifact['base64'] != null) {
               return 'data:image/png;base64,${artifact['base64']}';
             }
-            throw Exception('Base64 image data not found in Stability AI response artifact.');
+            throw Exception(
+              'Base64 image data not found in Stability AI response artifact.',
+            );
           } else {
             throw Exception('Artifacts not found in Stability AI response.');
+          }
+        } else if (providerBaseUrl.contains('api.bfl.ai')) {
+          // FLUX.1 Kontext response handling
+          print('FLUX.1 initial response: $responseBody');
+
+          if (responseBody['polling_url'] != null) {
+            // Implement polling for FLUX.1 Kontext
+            final pollingUrl = responseBody['polling_url'];
+            print('Found polling URL: $pollingUrl');
+            final startTime = DateTime.now();
+            int pollCount = 0;
+
+            while (DateTime.now().difference(startTime).inSeconds <
+                maxWaitSeconds) {
+              pollCount++;
+              await Future.delayed(Duration(milliseconds: pollIntervalMs));
+
+              try {
+                final pollResponse = await http.get(
+                  Uri.parse(pollingUrl),
+                  headers: {'x-key': '$apiKey', 'accept': 'application/json'},
+                );
+
+                print('Poll $pollCount status: ${pollResponse.statusCode}');
+                if (pollResponse.statusCode == 200) {
+                  final pollBody = jsonDecode(pollResponse.body);
+                  print('Poll $pollCount body: $pollBody');
+
+                  if (pollBody['status'] == 'Ready' &&
+                      pollBody['result'] != null &&
+                      pollBody['result']['sample'] != null) {
+                    final imageUrl = pollBody['result']['sample'];
+                    print('Successfully got image URL: $imageUrl');
+                    return imageUrl;
+                  } else if (pollBody['status'] == 'Failed') {
+                    throw Exception(
+                      'FLUX.1 Kontext generation failed: '
+                      '${pollBody['error']?['message'] ?? pollBody['message'] ?? 'Unknown error'}',
+                    );
+                  } else if (pollBody['status'] == 'Error') {
+                    throw Exception(
+                      'FLUX.1 Kontext server error: '
+                      '${pollBody['error']?['message'] ?? pollBody['message'] ?? 'Unknown error'}',
+                    );
+                  }
+                  // Continue polling for pending/processing
+                } else {
+                  throw Exception(
+                    'Failed to poll FLUX.1 Kontext result: '
+                    '${pollResponse.statusCode} ${pollResponse.body}',
+                  );
+                }
+              } catch (e) {
+                print('Error during polling: $e');
+                if (e.toString().contains('failed') ||
+                    e.toString().contains('error')) {
+                  rethrow;
+                }
+                // Retry on network errors after same interval
+              }
+            }
+            throw Exception(
+              'FLUX.1 generation timed out after $maxWaitSeconds seconds',
+            );
+          } else {
+            throw Exception(
+              'Image URL not found in FLUX.1 Kontext response. Initial response: ${responseBody.keys}',
+            );
           }
         }
         return null; // Should not reach here if provider is supported
       } else {
-        String errorMessage = 'Failed to generate image. Status code: ${response.statusCode}';
+        String errorMessage =
+            'Failed to generate image. Status code: ${response.statusCode}';
         String responseBodyString = response.body;
         try {
           final errorBody = jsonDecode(responseBodyString);
-          if (providerBaseUrl.contains('api.openai.com') && errorBody['error'] != null && errorBody['error']['message'] != null) {
+          if (providerBaseUrl.contains('api.openai.com') &&
+              errorBody['error'] != null &&
+              errorBody['error']['message'] != null) {
             errorMessage += '\nError: ${errorBody['error']['message']}';
           } else if (providerBaseUrl.contains('stability.ai')) {
-            if (errorBody['message'] != null) { // Stability AI often uses 'message'
+            if (errorBody['message'] != null) {
+              // Stability AI often uses 'message'
               errorMessage += '\nError: ${errorBody['message']}';
-            } else if (errorBody['errors'] != null && errorBody['errors'].isNotEmpty) {
+            } else if (errorBody['errors'] != null &&
+                errorBody['errors'].isNotEmpty) {
               errorMessage += '\nError: ${errorBody['errors'].join(', ')}';
-            } else if (errorBody['name'] != null && errorBody['message'] != null) { // Another Stability AI error format
-                errorMessage += '\nError: ${errorBody['name']} - ${errorBody['message']}';
+            } else if (errorBody['name'] != null &&
+                errorBody['message'] != null) {
+              // Another Stability AI error format
+              errorMessage +=
+                  '\nError: ${errorBody['name']} - ${errorBody['message']}';
             }
-          } else if (errorBody['error'] != null && errorBody['error']['message'] != null) { // Generic fallback
-             errorMessage += '\nError: ${errorBody['error']['message']}';
+          } else if (errorBody['error'] != null &&
+              errorBody['error']['message'] != null) {
+            // Generic fallback
+            errorMessage += '\nError: ${errorBody['error']['message']}';
           }
         } catch (e) {
           // If error body is not JSON or doesn't match expected structure

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
 import 'package:chibot/utils/settings_xml_handler.dart';
+import 'package:chibot/services/flux_image_service.dart';
 import 'dart:convert';
 
 class SettingsProvider with ChangeNotifier {
@@ -25,8 +26,10 @@ class SettingsProvider with ChangeNotifier {
   ModelType _selectedModelType = ModelType.text; // Default to text model type
 
   static const String _apiKeyKey = 'openai_api_key';
-  static const String _imageApiKeyKey = 'image_api_key'; // Added for image API key
-  static const String _claudeApiKeyKey = 'claude_api_key'; // Added for Claude API key
+  static const String _imageApiKeyKey =
+      'image_api_key'; // Added for image API key
+  static const String _claudeApiKeyKey =
+      'claude_api_key'; // Added for Claude API key
   static const String _selectedModelKey = 'openai_selected_model';
   static const String _providerUrlKey = 'openai_provider_url';
   static const String _customModelsKey = 'custom_models_list';
@@ -54,7 +57,8 @@ class SettingsProvider with ChangeNotifier {
   static const String _googleSearchApiKeyKey = 'google_search_api_key';
   static const String _googleSearchEngineIdKey = 'google_search_engine_id';
   static const String _googleSearchEnabledKey = 'google_search_enabled';
-  static const String _googleSearchResultCountKey = 'google_search_result_count';
+  static const String _googleSearchResultCountKey =
+      'google_search_result_count';
   static const String _googleSearchProviderKey = 'google_search_provider';
 
   bool _tavilySearchEnabled = false;
@@ -63,7 +67,8 @@ class SettingsProvider with ChangeNotifier {
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
     'OpenAI': 'https://api.openai.com/v1',
-    'Google': 'https://generativelanguage.googleapis.com/v1beta', // Gemini API 基础 URL
+    'Google':
+        'https://generativelanguage.googleapis.com/v1beta', // Gemini API 基础 URL
     'Anthropic': 'https://api.anthropic.com/v1', // Claude API 基础 URL
   };
 
@@ -72,6 +77,7 @@ class SettingsProvider with ChangeNotifier {
     'OpenAI': 'https://api.openai.com/v1',
     'Stability AI':
         'https://api.stability.ai', // Example, confirm actual base URL
+    'FLUX.1 Kontext': 'https://api.bfl.ai/v1',
   };
 
   // 可选模型列表
@@ -109,6 +115,7 @@ class SettingsProvider with ChangeNotifier {
       'stable-diffusion-v1-6', // Example model ID
       // Add other Stability AI models as needed
     ],
+    'FLUX.1 Kontext': ['flux-kontext-pro', 'flux-kontext-dev'],
   };
 
   // Getter for all provider names (preset and custom)
@@ -223,7 +230,8 @@ class SettingsProvider with ChangeNotifier {
     _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
     _googleSearchEnabled = prefs.getBool(_googleSearchEnabledKey) ?? false;
     _googleSearchResultCount = prefs.getInt(_googleSearchResultCountKey) ?? 10;
-    _googleSearchProvider = prefs.getString(_googleSearchProviderKey) ?? 'googleCustomSearch';
+    _googleSearchProvider =
+        prefs.getString(_googleSearchProviderKey) ?? 'googleCustomSearch';
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
     _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
     _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
@@ -232,9 +240,9 @@ class SettingsProvider with ChangeNotifier {
       try {
         // Deserialize custom providers from JSON
         _customProviders = Map<String, List<String>>.from(
-          json.decode(customProvidersString).map(
-            (key, value) => MapEntry(key, List<String>.from(value)),
-          ),
+          json
+              .decode(customProvidersString)
+              .map((key, value) => MapEntry(key, List<String>.from(value))),
         );
       } catch (e) {
         if (kDebugMode) {
@@ -261,9 +269,9 @@ class SettingsProvider with ChangeNotifier {
     if (customImageProvidersString != null) {
       try {
         _customImageProviders = Map<String, List<String>>.from(
-          json.decode(customImageProvidersString).map(
-            (key, value) => MapEntry(key, List<String>.from(value)),
-          ),
+          json
+              .decode(customImageProvidersString)
+              .map((key, value) => MapEntry(key, List<String>.from(value))),
         );
       } catch (e) {
         if (kDebugMode) {
@@ -505,7 +513,10 @@ class SettingsProvider with ChangeNotifier {
     _customImageProviders[providerName.trim()] =
         models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_customImageProvidersKey, json.encode(_customImageProviders));
+    await prefs.setString(
+      _customImageProvidersKey,
+      json.encode(_customImageProviders),
+    );
     notifyListeners();
   }
 
@@ -641,34 +652,54 @@ class SettingsProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final settingsMap = <String, dynamic>{};
-      
+
       // Get all settings from SharedPreferences
       settingsMap[_apiKeyKey] = prefs.getString(_apiKeyKey);
       settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
       settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
       settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
-      settingsMap[_googleSearchApiKeyKey] = prefs.getString(_googleSearchApiKeyKey); // Google Search API Key
-      settingsMap[_googleSearchEngineIdKey] = prefs.getString(_googleSearchEngineIdKey); // Google Search Engine ID
-      settingsMap[_googleSearchEnabledKey] = prefs.getBool(_googleSearchEnabledKey);
-      settingsMap[_googleSearchResultCountKey] = prefs.getInt(_googleSearchResultCountKey);
-      settingsMap[_googleSearchProviderKey] = prefs.getString(_googleSearchProviderKey);
-      settingsMap[_tavilySearchEnabledKey] = prefs.getBool(_tavilySearchEnabledKey);
+      settingsMap[_googleSearchApiKeyKey] = prefs.getString(
+        _googleSearchApiKeyKey,
+      ); // Google Search API Key
+      settingsMap[_googleSearchEngineIdKey] = prefs.getString(
+        _googleSearchEngineIdKey,
+      ); // Google Search Engine ID
+      settingsMap[_googleSearchEnabledKey] = prefs.getBool(
+        _googleSearchEnabledKey,
+      );
+      settingsMap[_googleSearchResultCountKey] = prefs.getInt(
+        _googleSearchResultCountKey,
+      );
+      settingsMap[_googleSearchProviderKey] = prefs.getString(
+        _googleSearchProviderKey,
+      );
+      settingsMap[_tavilySearchEnabledKey] = prefs.getBool(
+        _tavilySearchEnabledKey,
+      );
       settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
       settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
       settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
       settingsMap[_selectedProviderKey] = prefs.getString(_selectedProviderKey);
       settingsMap[_customProvidersKey] = prefs.getString(_customProvidersKey);
       settingsMap[_selectedModelTypeKey] = prefs.getInt(_selectedModelTypeKey);
-      settingsMap[_selectedImageProviderKey] = prefs.getString(_selectedImageProviderKey);
-      settingsMap[_selectedImageModelKey] = prefs.getString(_selectedImageModelKey);
+      settingsMap[_selectedImageProviderKey] = prefs.getString(
+        _selectedImageProviderKey,
+      );
+      settingsMap[_selectedImageModelKey] = prefs.getString(
+        _selectedImageModelKey,
+      );
       settingsMap[_imageProviderUrlKey] = prefs.getString(_imageProviderUrlKey);
-      settingsMap[_customImageModelsKey] = prefs.getStringList(_customImageModelsKey);
-      settingsMap[_customImageProvidersKey] = prefs.getString(_customImageProvidersKey);
-      
+      settingsMap[_customImageModelsKey] = prefs.getStringList(
+        _customImageModelsKey,
+      );
+      settingsMap[_customImageProvidersKey] = prefs.getString(
+        _customImageProvidersKey,
+      );
+
       if (kDebugMode) {
         print('Settings map for export: $settingsMap');
       }
-      
+
       return SettingsXmlHandler.exportToXml(settingsMap);
     } catch (e) {
       if (kDebugMode) {
@@ -683,93 +714,125 @@ class SettingsProvider with ChangeNotifier {
     try {
       final settingsMap = SettingsXmlHandler.importFromXml(xmlContent);
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Clear existing settings first (optional, depends on requirements)
       // await _clearAllSettings(prefs);
-      
+
       // Import API keys
       if (settingsMap[_apiKeyKey] != null) {
         await prefs.setString(_apiKeyKey, settingsMap[_apiKeyKey]);
         _apiKey = settingsMap[_apiKeyKey];
       }
-      
+
       if (settingsMap[_imageApiKeyKey] != null) {
         await prefs.setString(_imageApiKeyKey, settingsMap[_imageApiKeyKey]);
         _imageApiKey = settingsMap[_imageApiKeyKey];
       }
-      
+
       if (settingsMap[_claudeApiKeyKey] != null) {
         await prefs.setString(_claudeApiKeyKey, settingsMap[_claudeApiKeyKey]);
         _claudeApiKey = settingsMap[_claudeApiKeyKey];
       }
-      
+
       if (settingsMap[_tavilyApiKeyKey] != null) {
         await prefs.setString(_tavilyApiKeyKey, settingsMap[_tavilyApiKeyKey]);
         _tavilyApiKey = settingsMap[_tavilyApiKeyKey];
       }
       // Google Search API Key（解密后存储）
       if (settingsMap[_googleSearchApiKeyKey] != null) {
-        await prefs.setString(_googleSearchApiKeyKey, settingsMap[_googleSearchApiKeyKey]);
+        await prefs.setString(
+          _googleSearchApiKeyKey,
+          settingsMap[_googleSearchApiKeyKey],
+        );
         _googleSearchApiKey = settingsMap[_googleSearchApiKeyKey];
       }
       // Google Search Engine ID
       if (settingsMap[_googleSearchEngineIdKey] != null) {
-        await prefs.setString(_googleSearchEngineIdKey, settingsMap[_googleSearchEngineIdKey]);
+        await prefs.setString(
+          _googleSearchEngineIdKey,
+          settingsMap[_googleSearchEngineIdKey],
+        );
         _googleSearchEngineId = settingsMap[_googleSearchEngineIdKey];
       }
-      
+
       if (settingsMap[_googleSearchEnabledKey] != null) {
-        await prefs.setBool(_googleSearchEnabledKey, settingsMap[_googleSearchEnabledKey]);
+        await prefs.setBool(
+          _googleSearchEnabledKey,
+          settingsMap[_googleSearchEnabledKey],
+        );
         _googleSearchEnabled = settingsMap[_googleSearchEnabledKey];
       }
-      
+
       if (settingsMap[_googleSearchResultCountKey] != null) {
-        await prefs.setInt(_googleSearchResultCountKey, settingsMap[_googleSearchResultCountKey]);
+        await prefs.setInt(
+          _googleSearchResultCountKey,
+          settingsMap[_googleSearchResultCountKey],
+        );
         _googleSearchResultCount = settingsMap[_googleSearchResultCountKey];
       }
-      
+
       if (settingsMap[_googleSearchProviderKey] != null) {
-        await prefs.setString(_googleSearchProviderKey, settingsMap[_googleSearchProviderKey]);
+        await prefs.setString(
+          _googleSearchProviderKey,
+          settingsMap[_googleSearchProviderKey],
+        );
         _googleSearchProvider = settingsMap[_googleSearchProviderKey];
       }
-      
+
       if (settingsMap[_tavilySearchEnabledKey] != null) {
-        await prefs.setBool(_tavilySearchEnabledKey, settingsMap[_tavilySearchEnabledKey]);
+        await prefs.setBool(
+          _tavilySearchEnabledKey,
+          settingsMap[_tavilySearchEnabledKey],
+        );
         _tavilySearchEnabled = settingsMap[_tavilySearchEnabledKey];
       }
-      
+
       // Import model settings
       if (settingsMap[_selectedModelKey] != null) {
-        await prefs.setString(_selectedModelKey, settingsMap[_selectedModelKey]);
+        await prefs.setString(
+          _selectedModelKey,
+          settingsMap[_selectedModelKey],
+        );
         _selectedModel = settingsMap[_selectedModelKey];
         if (kDebugMode) {
           print('Imported selectedModel: $_selectedModel');
         }
       }
-      
+
       if (settingsMap[_providerUrlKey] != null) {
         await prefs.setString(_providerUrlKey, settingsMap[_providerUrlKey]);
         _providerUrl = settingsMap[_providerUrlKey];
       }
-      
+
       if (settingsMap[_customModelsKey] != null) {
-        await prefs.setStringList(_customModelsKey, settingsMap[_customModelsKey]);
+        await prefs.setStringList(
+          _customModelsKey,
+          settingsMap[_customModelsKey],
+        );
         _customModels = settingsMap[_customModelsKey];
       }
-      
+
       if (settingsMap[_selectedProviderKey] != null) {
-        await prefs.setString(_selectedProviderKey, settingsMap[_selectedProviderKey]);
+        await prefs.setString(
+          _selectedProviderKey,
+          settingsMap[_selectedProviderKey],
+        );
         _selectedProvider = settingsMap[_selectedProviderKey];
         if (kDebugMode) {
           print('Imported selectedProvider: $_selectedProvider');
         }
       }
-      
+
       // Load custom providers first before validating models
       if (settingsMap[_customProvidersKey] != null) {
-        await prefs.setString(_customProvidersKey, settingsMap[_customProvidersKey]);
+        await prefs.setString(
+          _customProvidersKey,
+          settingsMap[_customProvidersKey],
+        );
         try {
-          _customProviders = Map<String, List<String>>.from(json.decode(settingsMap[_customProvidersKey]));
+          _customProviders = Map<String, List<String>>.from(
+            json.decode(settingsMap[_customProvidersKey]),
+          );
         } catch (e) {
           if (kDebugMode) {
             print('Error parsing custom providers: $e');
@@ -777,50 +840,76 @@ class SettingsProvider with ChangeNotifier {
           _customProviders = {};
         }
       }
-      
+
       // Special handling: If selected provider is custom but not in _customProviders, add it with the selected model
-      if (!defaultBaseUrls.containsKey(_selectedProvider) && 
+      if (!defaultBaseUrls.containsKey(_selectedProvider) &&
           !_customProviders.containsKey(_selectedProvider) &&
           _selectedModel.isNotEmpty) {
         // Create a custom provider with the selected model
         _customProviders[_selectedProvider] = [_selectedModel];
         // Save to preferences
-        await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+        await prefs.setString(
+          _customProvidersKey,
+          json.encode(_customProviders),
+        );
         if (kDebugMode) {
-          print('Created custom provider $_selectedProvider with model $_selectedModel');
+          print(
+            'Created custom provider $_selectedProvider with model $_selectedModel',
+          );
         }
       }
-      
+
       if (settingsMap[_selectedModelTypeKey] != null) {
-        await prefs.setInt(_selectedModelTypeKey, settingsMap[_selectedModelTypeKey]);
-        _selectedModelType = ModelType.values[settingsMap[_selectedModelTypeKey]];
+        await prefs.setInt(
+          _selectedModelTypeKey,
+          settingsMap[_selectedModelTypeKey],
+        );
+        _selectedModelType =
+            ModelType.values[settingsMap[_selectedModelTypeKey]];
       }
-      
+
       // Import image settings
       if (settingsMap[_selectedImageProviderKey] != null) {
-        await prefs.setString(_selectedImageProviderKey, settingsMap[_selectedImageProviderKey]);
+        await prefs.setString(
+          _selectedImageProviderKey,
+          settingsMap[_selectedImageProviderKey],
+        );
         _selectedImageProvider = settingsMap[_selectedImageProviderKey];
       }
-      
+
       if (settingsMap[_selectedImageModelKey] != null) {
-        await prefs.setString(_selectedImageModelKey, settingsMap[_selectedImageModelKey]);
+        await prefs.setString(
+          _selectedImageModelKey,
+          settingsMap[_selectedImageModelKey],
+        );
         _selectedImageModel = settingsMap[_selectedImageModelKey];
       }
-      
+
       if (settingsMap[_imageProviderUrlKey] != null) {
-        await prefs.setString(_imageProviderUrlKey, settingsMap[_imageProviderUrlKey]);
+        await prefs.setString(
+          _imageProviderUrlKey,
+          settingsMap[_imageProviderUrlKey],
+        );
         _imageProviderUrl = settingsMap[_imageProviderUrlKey];
       }
-      
+
       if (settingsMap[_customImageModelsKey] != null) {
-        await prefs.setStringList(_customImageModelsKey, settingsMap[_customImageModelsKey]);
+        await prefs.setStringList(
+          _customImageModelsKey,
+          settingsMap[_customImageModelsKey],
+        );
         _customImageModels = settingsMap[_customImageModelsKey];
       }
-      
+
       if (settingsMap[_customImageProvidersKey] != null) {
-        await prefs.setString(_customImageProvidersKey, settingsMap[_customImageProvidersKey]);
+        await prefs.setString(
+          _customImageProvidersKey,
+          settingsMap[_customImageProvidersKey],
+        );
         try {
-          _customImageProviders = Map<String, List<String>>.from(json.decode(settingsMap[_customImageProvidersKey]));
+          _customImageProviders = Map<String, List<String>>.from(
+            json.decode(settingsMap[_customImageProvidersKey]),
+          );
         } catch (e) {
           if (kDebugMode) {
             print('Error parsing custom image providers: $e');
@@ -828,13 +917,13 @@ class SettingsProvider with ChangeNotifier {
           _customImageProviders = {};
         }
       }
-      
+
       // Now validate settings after all data is loaded
       _validateSelectedModelForProvider();
       _validateSelectedImageModelForProvider();
-      
+
       notifyListeners();
-      
+
       // Add a small delay to ensure UI updates properly
       await Future.delayed(const Duration(milliseconds: 100));
       notifyListeners();
@@ -880,8 +969,25 @@ class SettingsProvider with ChangeNotifier {
         return _apiKey; // Using OpenAI key for now
       case 'Anthropic':
         return _claudeApiKey;
+      case 'FLUX.1 Kontext':
+        return _imageApiKey;
       default:
         return _apiKey;
+    }
+  }
+
+  // Test FLUX.1 connection
+  Future<bool> testFluxConnection() async {
+    if (_imageApiKey == null || _imageApiKey!.isEmpty) {
+      return false;
+    }
+
+    try {
+      final fluxService = FluxKontextImageService(apiKey: _imageApiKey!);
+      return await fluxService.testConnection();
+    } catch (e) {
+      print('FLUX.1 connection test failed: $e');
+      return false;
     }
   }
 

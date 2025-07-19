@@ -132,19 +132,25 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_enableWebSearch) {
       bool didSearch = false;
       // 1. Tavily
-      if (settings.tavilySearchEnabled && (settings.tavilyApiKey != null && settings.tavilyApiKey!.isNotEmpty)) {
+      if (settings.tavilySearchEnabled &&
+          (settings.tavilyApiKey != null &&
+              settings.tavilyApiKey!.isNotEmpty)) {
         try {
           final webResult = await web_service.WebSearchService(
             apiKey: settings.tavilyApiKey!,
           ).searchWeb(text);
-          prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+          prompt = AppLocalizations.of(
+            context,
+          )!.webSearchPrompt(webResult, text);
           didSearch = true;
         } catch (e) {
           setState(() {
             _messages.add(
               ChatMessage(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-                text: AppLocalizations.of(context)!.webSearchFailed(e.toString()),
+                text: AppLocalizations.of(
+                  context,
+                )!.webSearchFailed(e.toString()),
                 sender: MessageSender.ai,
                 timestamp: DateTime.now(),
               ),
@@ -156,15 +162,22 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
       // 2. Google
-      else if (settings.googleSearchEnabled && (settings.googleSearchApiKey != null && settings.googleSearchApiKey!.isNotEmpty) && (settings.googleSearchEngineId != null && settings.googleSearchEngineId!.isNotEmpty)) {
+      else if (settings.googleSearchEnabled &&
+          (settings.googleSearchApiKey != null &&
+              settings.googleSearchApiKey!.isNotEmpty) &&
+          (settings.googleSearchEngineId != null &&
+              settings.googleSearchEngineId!.isNotEmpty)) {
         try {
-          final googleService = await SearchServiceManager.getSearchService(settings);
+          final googleService = await SearchServiceManager.getSearchService(
+            settings,
+          );
           if (googleService == null) {
             setState(() {
               _messages.add(
                 ChatMessage(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  text: 'Google 搜索服务配置不完整。请检查 API Key 和 Search Engine ID 是否正确配置。',
+                  text:
+                      'Google 搜索服务配置不完整。请检查 API Key 和 Search Engine ID 是否正确配置。',
                   sender: MessageSender.ai,
                   timestamp: DateTime.now(),
                 ),
@@ -174,17 +187,23 @@ class _ChatScreenState extends State<ChatScreen> {
             _scrollToBottom();
             return;
           }
-          final result = await googleService.search(text, count: settings.googleSearchResultCount);
+          final result = await googleService.search(
+            text,
+            count: settings.googleSearchResultCount,
+          );
           // 格式化结果为字符串
           String webResult = '';
           for (var i = 0; i < result.items.length; i++) {
             final item = result.items[i];
-            webResult += '${i + 1}. ${item.title}\n${item.snippet}\n${item.link}\n\n';
+            webResult +=
+                '${i + 1}. ${item.title}\n${item.snippet}\n${item.link}\n\n';
           }
           if (webResult.isEmpty) {
             webResult = '未找到相关搜索结果。';
           }
-          prompt = AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+          prompt = AppLocalizations.of(
+            context,
+          )!.webSearchPrompt(webResult, text);
           didSearch = true;
         } catch (e) {
           setState(() {
@@ -641,7 +660,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 _loadChatSessions();
                               }
                             },
-                            exportLabel: AppLocalizations.of(context)!.exportToMarkdown,
+                            exportLabel:
+                                AppLocalizations.of(context)!.exportToMarkdown,
                           ),
                         );
                       },
@@ -732,7 +752,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 _loadImageSessions();
                               }
                             },
-                            exportLabel: AppLocalizations.of(context)!.exportToImg,
+                            exportLabel:
+                                AppLocalizations.of(context)!.exportToImg,
                           ),
                         );
                       },
@@ -920,9 +941,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                         ),
                                         const SizedBox(width: 12),
                                         Text(
-                                          exportLabel ?? AppLocalizations.of(
-                                            context,
-                                          )!.exportToImg,
+                                          exportLabel ??
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.exportToImg,
                                         ),
                                       ],
                                     ),
@@ -1137,7 +1159,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         onSelected: () {
                           if (message.imageUrl != null &&
                               message.imageUrl!.isNotEmpty) {
-                            ImageSaveService.saveImage(message.imageUrl!, context);
+                            ImageSaveService.saveImage(
+                              message.imageUrl!,
+                              context,
+                            );
                           }
                         },
                       ),
@@ -1200,7 +1225,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               child: CircularProgressIndicator(
                                 value:
                                     loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
                                             loadingProgress.expectedTotalBytes!
                                         : null,
                               ),
@@ -1233,38 +1259,45 @@ class _ChatScreenState extends State<ChatScreen> {
                 icon: Icon(Icons.more_vert, size: 22, color: Colors.black54),
                 onSelected: (value) async {
                   if (value == 'save_image') {
-                    if (message.imageUrl != null && message.imageUrl!.isNotEmpty) {
-                      await ImageSaveService.saveImage(message.imageUrl!, context);
+                    if (message.imageUrl != null &&
+                        message.imageUrl!.isNotEmpty) {
+                      await ImageSaveService.saveImage(
+                        message.imageUrl!,
+                        context,
+                      );
                     }
                   } else if (value == 'save_prompt') {
-                    await Clipboard.setData(ClipboardData(text: message.text ?? ''));
+                    await Clipboard.setData(
+                      ClipboardData(text: message.text ?? ''),
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(localizations.promptCopied)),
                     );
                   }
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'save_image',
-                    child: Row(
-                      children: [
-                        Icon(Icons.download, size: 18),
-                        SizedBox(width: 8),
-                        Text(localizations.saveImage),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'save_prompt',
-                    child: Row(
-                      children: [
-                        Icon(Icons.text_snippet, size: 18),
-                        SizedBox(width: 8),
-                        Text(localizations.savePrompt),
-                      ],
-                    ),
-                  ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem<String>(
+                        value: 'save_image',
+                        child: Row(
+                          children: [
+                            Icon(Icons.download, size: 18),
+                            SizedBox(width: 8),
+                            Text(localizations.saveImage),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'save_prompt',
+                        child: Row(
+                          children: [
+                            Icon(Icons.text_snippet, size: 18),
+                            SizedBox(width: 8),
+                            Text(localizations.savePrompt),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ),
           ),
@@ -1560,72 +1593,82 @@ class _ChatScreenState extends State<ChatScreen> {
           }
 
           if (imageMessageIndex != -1) {
-            _messages[imageMessageIndex] = ImageMessage(
-              id: (_messages[imageMessageIndex] as ImageMessage).id,
-              text: prompt, // Assign prompt to text
-              imageUrl: imageUrl ?? '',
-              sender: MessageSender.ai,
-              timestamp:
-                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
-              isLoading: false,
-              error:
-                  imageUrl == null
-                      ? AppLocalizations.of(context)!.failedToGenerateImageNoUrl
-                      : null,
-            );
-            // Corrected session saving logic
-            if (_currentImageSessionId == null) {
-              // This is the first message in a new image session
-              _currentImageSessionId =
-                  DateTime.now().millisecondsSinceEpoch.toString();
-              final newSession = ImageSession(
-                id: _currentImageSessionId!,
-                title:
-                    prompt.length > 30
-                        ? '${prompt.substring(0, 30)}...'
-                        : prompt,
-                messages: _messages.whereType<ImageMessage>().toList(),
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                model: settings.selectedImageModel,
+            if (imageUrl == null || imageUrl.isEmpty) {
+              _messages[imageMessageIndex] = ImageMessage(
+                id: (_messages[imageMessageIndex] as ImageMessage).id,
+                text: prompt, // Assign prompt to text
+                imageUrl: '',
+                sender: MessageSender.ai,
+                timestamp:
+                    (_messages[imageMessageIndex] as ImageMessage).timestamp,
+                isLoading: false,
+                error: AppLocalizations.of(context)!.failedToGenerateImageNoUrl,
               );
-              _imageSessionService.saveSession(newSession);
-              _loadImageSessions(); // Reload sidebar
             } else {
-              // Update existing image session
-              // Find the existing session to preserve its original title and creation time
-              ImageSession? existingSession;
-              try {
-                existingSession = _imageSessions.firstWhere(
-                  (s) => s.id == _currentImageSessionId,
-                );
-              } catch (e) {
-                // If for some reason the session is not found (e.g., deleted externally),
-                // treat it as a new session. This is a fallback.
-                print(
-                  "Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e",
-                );
-                _currentImageSessionId =
-                    DateTime.now().millisecondsSinceEpoch
-                        .toString(); // Generate a new ID for the new session
-              }
-
-              final updatedSession = ImageSession(
-                id: _currentImageSessionId!, // Use the current or newly generated ID
-                title:
-                    existingSession?.title ??
-                    (prompt.length > 30
-                        ? '${prompt.substring(0, 30)}...'
-                        : prompt), // Keep original title or use prompt
-                messages: _messages.whereType<ImageMessage>().toList(),
-                createdAt:
-                    existingSession?.createdAt ??
-                    DateTime.now(), // Keep original creation time or use now
-                updatedAt: DateTime.now(),
-                model: settings.selectedImageModel,
+              _messages[imageMessageIndex] = ImageMessage(
+                id: (_messages[imageMessageIndex] as ImageMessage).id,
+                text: prompt, // Assign prompt to text
+                imageUrl: imageUrl,
+                sender: MessageSender.ai,
+                timestamp:
+                    (_messages[imageMessageIndex] as ImageMessage).timestamp,
+                isLoading: false,
+                error: null,
               );
-              _imageSessionService.saveSession(updatedSession);
-              _loadImageSessions(); // Reload sidebar
+              // Corrected session saving logic
+              if (_currentImageSessionId == null) {
+                // This is the first message in a new image session
+                _currentImageSessionId =
+                    DateTime.now().millisecondsSinceEpoch.toString();
+                final newSession = ImageSession(
+                  id: _currentImageSessionId!,
+                  title:
+                      prompt.length > 30
+                          ? '${prompt.substring(0, 30)}...'
+                          : prompt,
+                  messages: _messages.whereType<ImageMessage>().toList(),
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                  model: settings.selectedImageModel,
+                );
+                _imageSessionService.saveSession(newSession);
+                _loadImageSessions(); // Reload sidebar
+              } else {
+                // Update existing image session
+                // Find the existing session to preserve its original title and creation time
+                ImageSession? existingSession;
+                try {
+                  existingSession = _imageSessions.firstWhere(
+                    (s) => s.id == _currentImageSessionId,
+                  );
+                } catch (e) {
+                  // If for some reason the session is not found (e.g., deleted externally),
+                  // treat it as a new session. This is a fallback.
+                  print(
+                    "Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e",
+                  );
+                  _currentImageSessionId =
+                      DateTime.now().millisecondsSinceEpoch
+                          .toString(); // Generate a new ID for the new session
+                }
+
+                final updatedSession = ImageSession(
+                  id: _currentImageSessionId!, // Use the current or newly generated ID
+                  title:
+                      existingSession?.title ??
+                      (prompt.length > 30
+                          ? '${prompt.substring(0, 30)}...'
+                          : prompt), // Keep original title or use prompt
+                  messages: _messages.whereType<ImageMessage>().toList(),
+                  createdAt:
+                      existingSession?.createdAt ??
+                      DateTime.now(), // Keep original creation time or use now
+                  updatedAt: DateTime.now(),
+                  model: settings.selectedImageModel,
+                );
+                _imageSessionService.saveSession(updatedSession);
+                _loadImageSessions(); // Reload sidebar
+              }
             }
           }
           _isLoading = false;
