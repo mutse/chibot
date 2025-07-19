@@ -16,10 +16,13 @@
 
 ### 基础信息
 
-- **API 端点**: `https://api.bfl.ml/v1/flux-kontext-pro`
-- **认证方式**: Bearer Token (API Key)
+- **API 端点**: `https://api.bfl.ai/v1/flux-kontext-pro`
+- **认证方式**: `x-key` (推荐) 或 `Authorization: Bearer`（部分历史文档/兼容性）
 - **请求格式**: JSON
 - **响应格式**: JSON + 轮询机制
+- **状态轮询端点**: `https://api.bfl.ai/v1/get_result?id={request_id}`
+
+> **注意**：新版服务推荐使用 `x-key` 头部传递 API Key，部分旧实现或第三方库可能仍支持 `Authorization: Bearer`。
 
 ### 核心功能
 
@@ -29,7 +32,7 @@
 ```json
 {
   "prompt": "string (必填)",
-  "aspect_ratio": "string (可选, 如 16:9, 1:1, 9:16)",
+  "aspect_ratio": "string (可选, 如 16:9, 1:1, 9:16, 21:9, 4:3, 3:4, 5:4, 4:5)",
   "seed": "integer (可选, 用于复现)",
   "prompt_upsampling": "boolean (可选)",
   "safety_tolerance": "integer (0-6, 可选)",
@@ -42,7 +45,7 @@
 {
   "id": "req-123abc",
   "status": "pending",
-  "polling_url": "https://api.bfl.ml/v1/get_result?id=req-123abc"
+  "polling_url": "https://api.bfl.ai/v1/get_result?id=req-123abc"
 }
 ```
 
@@ -56,6 +59,62 @@
   "guidance_scale": "float (1-10, 默认 2.5)"
 }
 ```
+
+#### 3. 轮询机制
+- 通过 `polling_url` 轮询获取生成结果，推荐每 2-3 秒轮询一次。
+- 最大等待时间建议 60-120 秒，超时需提示用户。
+- 结果状态包括：`pending`、`processing`、`ready`、`failed`。
+- 成功时返回图片 URL，失败时返回错误信息。
+
+**结果响应示例**:
+```json
+{
+  "status": "ready",
+  "result": {
+    "sample": "https://storage.googleapis.com/generated-image-url.png",
+    "prompt": "original prompt text",
+    "metadata": {
+      "aspect_ratio": "16:9",
+      "seed": 12345,
+      "safety_check": "passed",
+      "model_schedule": "flux-kontext-pro",
+      "insights": "image analysis tags"
+    }
+  }
+}
+```
+
+**错误响应示例**:
+```json
+{
+  "status": "failed",
+  "error": { "message": "Invalid prompt" }
+}
+```
+
+### 字段说明
+- `prompt`：描述生成图片的文本
+- `aspect_ratio`：宽高比，支持多种格式，默认 1:1
+- `seed`：随机种子，便于结果复现
+- `prompt_upsampling`：是否对 prompt 进行增强
+- `safety_tolerance`：安全容忍度，0-6
+- `output_format`：输出图片格式，png 或 jpeg
+- `image`：参考图片（URL 或 base64）
+- `strength`：图像编辑强度，0-1，默认 0.8
+- `guidance_scale`：文本引导强度，1-10，默认 2.5
+
+### 认证与安全
+- 推荐使用 `x-key` 头部传递 API Key。
+- 兼容 `Authorization: Bearer` 头部，但部分新接口仅支持 `x-key`。
+- 建议后端统一校验，前端不应暴露明文 Key。
+
+### 错误处理
+- 认证失败：401 Unauthorized
+- 参数错误：400 Bad Request
+- 速率限制：429 Too Many Requests
+- 服务错误：500 Internal Server Error
+- 轮询超时：自定义错误，需前端处理
+- 错误响应均包含 `error.message` 字段
 
 ## 架构设计
 
