@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'flux_image_service.dart';
+import 'flux_kontext_service.dart';
 
 class ImageGenerationService {
   Future<String?> generateImage({
@@ -76,27 +77,18 @@ class ImageGenerationService {
         // 'seed': 0, // Optional: for reproducibility
       };
     } else if (providerBaseUrl.contains('api.bfl.ai')) {
-      // FLUX.1 Kontext API
-      endpointUri = Uri.parse('$providerBaseUrl/flux-kontext-pro');
-      headers['accept'] = 'application/json';
-      headers['x-key'] = '$apiKey'; // Use Bearer token as per BFL standards
-      headers['Content-Type'] = 'application/json';
-
-      // Parse OpenAI-style size to aspect ratio for FLUX.1
-      String? aspectRatio;
-      if (openAISize == '1024x1024') {
-        aspectRatio = '1:1';
-      } else if (openAISize == '1792x1024') {
-        aspectRatio = '16:9';
-      } else if (openAISize == '1024x1792') {
-        aspectRatio = '9:16';
+      // Use centralized FluxKontextService for FLUX.1 Kontext API
+      final fluxService = FluxKontextService(apiKey: apiKey);
+      try {
+        return await fluxService.generateImageWithOpenAISize(
+          prompt: prompt,
+          openAISize: openAISize,
+          maxWaitTime: Duration(seconds: maxWaitSeconds),
+          pollInterval: Duration(milliseconds: pollIntervalMs),
+        );
+      } catch (e) {
+        throw Exception('FLUX.1 Kontext error: $e');
       }
-
-      body = {
-        'prompt': prompt,
-        'aspect_ratio': aspectRatio ?? '1:1',
-        'output_format': 'png',
-      };
     } else {
       throw Exception(
         'Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai, api.bfl.ai',
@@ -130,74 +122,6 @@ class ImageGenerationService {
             );
           } else {
             throw Exception('Artifacts not found in Stability AI response.');
-          }
-        } else if (providerBaseUrl.contains('api.bfl.ai')) {
-          // FLUX.1 Kontext response handling
-          print('FLUX.1 initial response: $responseBody');
-
-          if (responseBody['polling_url'] != null) {
-            // Implement polling for FLUX.1 Kontext
-            final pollingUrl = responseBody['polling_url'];
-            print('Found polling URL: $pollingUrl');
-            final startTime = DateTime.now();
-            int pollCount = 0;
-
-            while (DateTime.now().difference(startTime).inSeconds <
-                maxWaitSeconds) {
-              pollCount++;
-              await Future.delayed(Duration(milliseconds: pollIntervalMs));
-
-              try {
-                final pollResponse = await http.get(
-                  Uri.parse(pollingUrl),
-                  headers: {'x-key': '$apiKey', 'accept': 'application/json'},
-                );
-
-                print('Poll $pollCount status: ${pollResponse.statusCode}');
-                if (pollResponse.statusCode == 200) {
-                  final pollBody = jsonDecode(pollResponse.body);
-                  print('Poll $pollCount body: $pollBody');
-
-                  if (pollBody['status'] == 'Ready' &&
-                      pollBody['result'] != null &&
-                      pollBody['result']['sample'] != null) {
-                    final imageUrl = pollBody['result']['sample'];
-                    print('Successfully got image URL: $imageUrl');
-                    return imageUrl;
-                  } else if (pollBody['status'] == 'Failed') {
-                    throw Exception(
-                      'FLUX.1 Kontext generation failed: '
-                      '${pollBody['error']?['message'] ?? pollBody['message'] ?? 'Unknown error'}',
-                    );
-                  } else if (pollBody['status'] == 'Error') {
-                    throw Exception(
-                      'FLUX.1 Kontext server error: '
-                      '${pollBody['error']?['message'] ?? pollBody['message'] ?? 'Unknown error'}',
-                    );
-                  }
-                  // Continue polling for pending/processing
-                } else {
-                  throw Exception(
-                    'Failed to poll FLUX.1 Kontext result: '
-                    '${pollResponse.statusCode} ${pollResponse.body}',
-                  );
-                }
-              } catch (e) {
-                print('Error during polling: $e');
-                if (e.toString().contains('failed') ||
-                    e.toString().contains('error')) {
-                  rethrow;
-                }
-                // Retry on network errors after same interval
-              }
-            }
-            throw Exception(
-              'FLUX.1 generation timed out after $maxWaitSeconds seconds',
-            );
-          } else {
-            throw Exception(
-              'Image URL not found in FLUX.1 Kontext response. Initial response: ${responseBody.keys}',
-            );
           }
         }
         return null; // Should not reach here if provider is supported

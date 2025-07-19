@@ -83,14 +83,11 @@ class FluxKontextService extends BaseApiService {
     : super(baseUrl: 'https://api.bfl.ai/v1', apiKey: apiKey);
 
   @override
-  String get providerName => 'FLUX.1 Kontext';
+  String get providerName => 'Black Foreast Labs';
 
   @override
   Map<String, String> getHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
-    };
+    return {'Content-Type': 'application/json', 'x-key': apiKey};
   }
 
   @override
@@ -112,9 +109,10 @@ class FluxKontextService extends BaseApiService {
   Future<FluxKontextResponse> _submitRequest(FluxKontextRequest request) async {
     try {
       final url = Uri.parse('$baseUrl/flux-kontext-pro');
-      final headers = {
+      final headers = <String, String>{
+        'accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
+        'x-key': apiKey,
       };
 
       final response = await http.post(
@@ -145,7 +143,10 @@ class FluxKontextService extends BaseApiService {
   Future<FluxKontextResult> pollResult(String requestId) async {
     try {
       final url = Uri.parse('$baseUrl/get_result?id=$requestId');
-      final headers = {'Authorization': 'Bearer $apiKey'};
+      final headers = <String, String>{
+        'accept': 'application/json',
+        'x-key': apiKey,
+      };
 
       final response = await http.get(url, headers: headers);
 
@@ -180,6 +181,35 @@ class FluxKontextService extends BaseApiService {
 
     final response = await _submitRequest(request);
     return await _waitForResult(response.id, maxWaitTime, pollInterval);
+  }
+
+  /// Generate image with OpenAI-style size parameter
+  Future<String> generateImageWithOpenAISize({
+    required String prompt,
+    required String openAISize,
+    String? outputFormat = 'png',
+    int? safetyTolerance,
+    Duration maxWaitTime = const Duration(seconds: 120),
+    Duration pollInterval = const Duration(seconds: 2),
+  }) async {
+    // Parse OpenAI-style size to aspect ratio for FLUX.1
+    String? aspectRatio;
+    if (openAISize == '1024x1024') {
+      aspectRatio = '1:1';
+    } else if (openAISize == '1792x1024') {
+      aspectRatio = '16:9';
+    } else if (openAISize == '1024x1792') {
+      aspectRatio = '9:16';
+    }
+
+    return generateImage(
+      prompt: prompt,
+      aspectRatio: aspectRatio ?? '1:1',
+      outputFormat: outputFormat,
+      safetyTolerance: safetyTolerance,
+      maxWaitTime: maxWaitTime,
+      pollInterval: pollInterval,
+    );
   }
 
   Future<String> editImage({
@@ -233,9 +263,9 @@ class FluxKontextService extends BaseApiService {
     try {
       final testPrompt = 'a simple test image';
       final url = Uri.parse('$baseUrl/flux-kontext-pro');
-      final headers = {
+      final headers = <String, String>{
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
+        'x-key': apiKey,
       };
       final body = {'prompt': testPrompt, 'aspect_ratio': '1:1'};
 

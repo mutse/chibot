@@ -77,7 +77,7 @@ class SettingsProvider with ChangeNotifier {
     'OpenAI': 'https://api.openai.com/v1',
     'Stability AI':
         'https://api.stability.ai', // Example, confirm actual base URL
-    'FLUX.1 Kontext': 'https://api.bfl.ai/v1',
+    'Black Foreast Labs': 'https://api.bfl.ai/v1',
   };
 
   // 可选模型列表
@@ -115,7 +115,7 @@ class SettingsProvider with ChangeNotifier {
       'stable-diffusion-v1-6', // Example model ID
       // Add other Stability AI models as needed
     ],
-    'FLUX.1 Kontext': ['flux-kontext-pro', 'flux-kontext-dev'],
+    'Black Foreast Labs': ['flux-kontext-pro', 'flux-kontext-dev'],
   };
 
   // Getter for all provider names (preset and custom)
