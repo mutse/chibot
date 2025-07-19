@@ -64,6 +64,9 @@ class SettingsProvider with ChangeNotifier {
   bool _tavilySearchEnabled = false;
   static const String _tavilySearchEnabledKey = 'tavily_search_enabled';
 
+  String? _fluxKontextApiKey; // Added for FLUX Kontext API key
+  static const String _fluxKontextApiKeyKey = 'flux_kontext_api_key';
+
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
     'OpenAI': 'https://api.openai.com/v1',
@@ -143,6 +146,7 @@ class SettingsProvider with ChangeNotifier {
   int get googleSearchResultCount => _googleSearchResultCount;
   String get googleSearchProvider => _googleSearchProvider;
   bool get tavilySearchEnabled => _tavilySearchEnabled;
+  String? get fluxKontextApiKey => _fluxKontextApiKey;
 
   // Getters for Image Generation Settings
   String get selectedImageProvider => _selectedImageProvider;
@@ -226,6 +230,9 @@ class SettingsProvider with ChangeNotifier {
     _imageApiKey = prefs.getString(_imageApiKeyKey); // Load image API key
     _claudeApiKey = prefs.getString(_claudeApiKeyKey); // Load Claude API key
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
+    _fluxKontextApiKey = prefs.getString(
+      _fluxKontextApiKeyKey,
+    ); // Load FLUX Kontext API key
     _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
     _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
     _googleSearchEnabled = prefs.getBool(_googleSearchEnabledKey) ?? false;
@@ -389,6 +396,17 @@ class SettingsProvider with ChangeNotifier {
         prefs.setString(_tavilyApiKeyKey, key);
       }
     });
+    notifyListeners();
+  }
+
+  Future<void> setFluxKontextApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    _fluxKontextApiKey = apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_fluxKontextApiKeyKey);
+    } else {
+      await prefs.setString(_fluxKontextApiKeyKey, apiKey);
+    }
     notifyListeners();
   }
 
@@ -658,6 +676,9 @@ class SettingsProvider with ChangeNotifier {
       settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
       settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
       settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
+      settingsMap[_fluxKontextApiKeyKey] = prefs.getString(
+        _fluxKontextApiKeyKey,
+      ); // FLUX Kontext API Key
       settingsMap[_googleSearchApiKeyKey] = prefs.getString(
         _googleSearchApiKeyKey,
       ); // Google Search API Key
@@ -737,6 +758,14 @@ class SettingsProvider with ChangeNotifier {
       if (settingsMap[_tavilyApiKeyKey] != null) {
         await prefs.setString(_tavilyApiKeyKey, settingsMap[_tavilyApiKeyKey]);
         _tavilyApiKey = settingsMap[_tavilyApiKeyKey];
+      }
+      // FLUX Kontext API Key（解密后存储）
+      if (settingsMap[_fluxKontextApiKeyKey] != null) {
+        await prefs.setString(
+          _fluxKontextApiKeyKey,
+          settingsMap[_fluxKontextApiKeyKey],
+        );
+        _fluxKontextApiKey = settingsMap[_fluxKontextApiKeyKey];
       }
       // Google Search API Key（解密后存储）
       if (settingsMap[_googleSearchApiKeyKey] != null) {
@@ -941,6 +970,7 @@ class SettingsProvider with ChangeNotifier {
     await prefs.remove(_imageApiKeyKey);
     await prefs.remove(_claudeApiKeyKey);
     await prefs.remove(_tavilyApiKeyKey);
+    await prefs.remove(_fluxKontextApiKeyKey);
     await prefs.remove(_googleSearchApiKeyKey);
     await prefs.remove(_googleSearchEngineIdKey);
     await prefs.remove(_googleSearchEnabledKey);
