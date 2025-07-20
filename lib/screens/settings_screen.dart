@@ -285,6 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
                 // Tavily Web Search Settings
                 Row(
                   children: [
@@ -312,6 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
+
                 // Google Search Settings
                 Row(
                   children: [
@@ -357,6 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settings.setGoogleSearchResultCount(value.toInt());
                     },
                   ),
+
                   SizedBox(height: 10),
                   Text('搜索提供商', style: TextStyle(fontSize: 14)),
                   DropdownButton<String>(

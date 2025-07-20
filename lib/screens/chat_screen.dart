@@ -788,20 +788,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                _buildSidebarItem(
-                  context,
-                  Icons.settings_outlined,
-                  AppLocalizations.of(context)!.settings,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
+                // Removed settings item from sidebar
                 _buildSidebarItem(
                   context,
                   Icons.system_update,
@@ -1022,6 +1009,18 @@ class _ChatScreenState extends State<ChatScreen> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
+            tooltip: AppLocalizations.of(context)!.settings,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       drawer: Drawer(width: _sidebarWidth, child: _buildSidebar(context)),
       body: Column(

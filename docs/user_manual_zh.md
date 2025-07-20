@@ -43,6 +43,10 @@ Chi Chatbot AI（Chibot）是一款基于 Flutter 的跨平台智能聊天应用
 - **多模型支持**：可与 OpenAI 和 Google Gemini 等主流大模型对话。
 - **流式输出**：AI 回复实时显示，体验更流畅。
 - **文本生成图片**：输入描述，AI 可生成相应图片。
+- **Flux Kontext 图像生成**: 本应用支持使用来自 Black Forest Labs 的 Flux Kontext 模型进行图像生成。
+  - **获取 Flux Kontext API Key**: 访问 [Black Forest Labs 网站](https://www.blackforestlabs.ai/) 注册并获取 API Key。
+  - **在应用中配置**: 进入“设置”页面，选择“图像模型”，并选择“Black Forest Labs”作为提供商，输入您的 API Key，并选择所需的模型（例如 `flux-kontext-pro`）。
+  - **如何使用**: 在聊天输入框中，输入您的图像描述。模型将根据您的文本生成图像。您还可以通过提供图像和文本提示来使用图像到图像的编辑功能。
 - **联网搜索**：支持联网生成更丰富的文本内容。
 - **简洁聊天界面**：消息收发清晰，操作便捷。
 - **自定义设置**：可配置 API Key、模型选择、Provider URL 等。

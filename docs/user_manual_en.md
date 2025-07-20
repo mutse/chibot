@@ -43,6 +43,10 @@ Chi Chatbot AI (Chibot) is a cross-platform intelligent chat application built w
 - **Multi-model Support**: Conversations with mainstream large models like OpenAI and Google Gemini
 - **Streaming Output**: AI responses display in real-time for a smoother experience
 - **Text-to-Image Generation**: Input descriptions and AI will generate corresponding images
+- **Flux Kontext Image Generation**: This application supports image generation using Flux Kontext models from Black Forest Labs.
+  - **Get a Flux Kontext API Key**: Visit the [Black Forest Labs website](https://www.blackforestlabs.ai/) to register and get an API Key.
+  - **Configure in the App**: Go to the "Settings" page, select "Image Model" and choose "Black Forest Labs" as the provider, enter your API Key and select the desired model (e.g., `flux-kontext-pro`).
+  - **How to Use**: In the chat input, type your image description. The model will generate an image based on your text. You can also use image-to-image editing by providing an image and a text prompt.
 - **Web Search**: Support for web-connected generation of richer text content
 - **Clean Chat Interface**: Clear message sending/receiving with convenient operation
 - **Customizable Settings**: Configure API Keys, model selection, Provider URLs, etc.
