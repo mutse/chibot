@@ -964,32 +964,6 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
-  // Helper method to clear all settings (optional)
-  Future<void> _clearAllSettings(SharedPreferences prefs) async {
-    await prefs.remove(_apiKeyKey);
-    await prefs.remove(_imageApiKeyKey);
-    await prefs.remove(_claudeApiKeyKey);
-    await prefs.remove(_tavilyApiKeyKey);
-    await prefs.remove(_fluxKontextApiKeyKey);
-    await prefs.remove(_googleSearchApiKeyKey);
-    await prefs.remove(_googleSearchEngineIdKey);
-    await prefs.remove(_googleSearchEnabledKey);
-    await prefs.remove(_googleSearchResultCountKey);
-    await prefs.remove(_googleSearchProviderKey);
-    await prefs.remove(_tavilySearchEnabledKey);
-    await prefs.remove(_selectedModelKey);
-    await prefs.remove(_providerUrlKey);
-    await prefs.remove(_customModelsKey);
-    await prefs.remove(_selectedProviderKey);
-    await prefs.remove(_customProvidersKey);
-    await prefs.remove(_selectedModelTypeKey);
-    await prefs.remove(_selectedImageProviderKey);
-    await prefs.remove(_selectedImageModelKey);
-    await prefs.remove(_imageProviderUrlKey);
-    await prefs.remove(_customImageModelsKey);
-    await prefs.remove(_customImageProvidersKey);
-  }
-
   // Get the appropriate API key for the current provider
   String? getApiKeyForProvider(String provider) {
     switch (provider) {
