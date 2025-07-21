@@ -12,7 +12,7 @@
   "customModels": "自定义模型：",
   "enterCustomModelName": "输入自定义模型名称",
   "yourCustomModels": "您的自定义模型：",
-  "saveSettings": "保存设置",
+  "saveSettings": "保存",
   "settingsSaved": "设置已保存！",
   "selectModelType": "选择模型类型:",
   "textModel": "文本模型",

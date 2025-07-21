@@ -49,7 +49,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get yourCustomModels => '您的自定义模型：';
 
   @override
-  String get saveSettings => '保存设置';
+  String get saveSettings => '保存';
 
   @override
   String get settingsSaved => '设置已保存！';
