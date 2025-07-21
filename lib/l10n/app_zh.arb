@@ -12,7 +12,7 @@
   "customModels": "自定义模型：",
   "enterCustomModelName": "输入自定义模型名称",
   "yourCustomModels": "您的自定义模型：",
-  "saveSettings": "保存设置",
+  "saveSettings": "保存",
   "settingsSaved": "设置已保存！",
   "selectModelType": "选择模型类型:",
   "textModel": "文本模型",
@@ -84,6 +84,16 @@
   "exportToImg": "导出图片",
   "updateFound": "发现新版本 {version}",
   "updateNow": "立即更新",
-  "promptCopied": "复制提示词",
-  "savePrompt": "保存提示词"
+  "promptCopied": "提示词已复制到剪贴板！",
+  "savePrompt": "保存提示词",
+  "loginButtonText": "登录",
+  "registerButtonText": "注册",
+  "pleaseLoginRegisterHint": "请登录或注册",
+  "logoutButtonText": "退出登录",
+  "usernameHint": "用户名",
+  "passwordHint": "密码",
+  "loginSuccess": "登录成功！",
+  "registerSuccess": "注册成功！",
+  "loginFailed": "登录失败：{error}",
+  "registerFailed": "注册失败：{error}"
 }

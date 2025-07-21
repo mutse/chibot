@@ -98,6 +98,16 @@
   "exportToImg": "Export to Image",
   "updateFound": "New version {version} found",
   "updateNow": "Update Now",
-  "promptCopied": "Copy Prompt",
-  "savePrompt": "Save Prompt"
+  "promptCopied": "Prompt copied to clipboard!",
+  "savePrompt": "Save Prompt",
+  "loginButtonText": "Login",
+  "registerButtonText": "Register",
+  "pleaseLoginRegisterHint": "Please login or register",
+  "logoutButtonText": "Logout",
+  "usernameHint": "Username",
+  "passwordHint": "Password",
+  "loginSuccess": "Login successful!",
+  "registerSuccess": "Registration successful!",
+  "loginFailed": "Login failed: {error}",
+  "registerFailed": "Registration failed: {error}"
 }

@@ -5,12 +5,20 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:chibot/services/auth_service.dart';
+import 'package:chibot/providers/auth_provider.dart';
+import 'package:chibot/screens/login_screen.dart';
+import 'package:chibot/screens/register_screen.dart';
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SharedPreferencesManager (its static _prefs will be set)
+  // No explicit init() call needed for static methods, as they handle it internally.
+
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = const WindowOptions(
@@ -34,8 +42,13 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
   @override
   Widget build(BuildContext context) {
     _initTrayAndWindow(context);
-    return ChangeNotifierProvider(
-      create: (context) => SettingsProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+        ChangeNotifierProvider(
+          create: (context) => AuthProvider(AuthService()),
+        ),
+      ],
       child: MaterialApp(
         title: "Chi AI Chatbot",
         home: const ChatScreen(),
@@ -54,6 +67,10 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           Locale('ja', ''),
           Locale('zh', ''), // Chinese, no country code
         ],
+        routes: {
+          LoginScreen.routeName: (context) => const LoginScreen(),
+          RegisterScreen.routeName: (context) => const RegisterScreen(),
+        },
       ),
     );
   }

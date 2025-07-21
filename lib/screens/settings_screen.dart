@@ -285,104 +285,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Tavily Web Search Settings
-                Row(
-                  children: [
-                    Text('Tavily Web 搜索功能', style: TextStyle(fontSize: 16)),
-                    Spacer(),
-                    Switch(
-                      value: settings.tavilySearchEnabled,
-                      onChanged: (value) {
-                        settings.setTavilySearchEnabled(value);
-                      },
-                    ),
-                  ],
-                ),
-                if (settings.tavilySearchEnabled) ...[
-                  Text(
-                    'Tavily Web 搜索 API Key',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  TextField(
-                    controller: _tavilyApiKeyController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: '输入 Tavily API Key',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
-                // Google Search Settings
-                Row(
-                  children: [
-                    Text('Google 搜索功能', style: TextStyle(fontSize: 16)),
-                    Spacer(),
-                    Switch(
-                      value: settings.googleSearchEnabled,
-                      onChanged: (value) {
-                        settings.setGoogleSearchEnabled(value);
-                      },
-                    ),
-                  ],
-                ),
-                if (settings.googleSearchEnabled) ...[
-                  Text('Google Search API Key', style: TextStyle(fontSize: 14)),
-                  TextField(
-                    controller: _googleSearchApiKeyController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      hintText: '输入 Google Custom Search API Key',
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Google Search Engine ID',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  TextField(
-                    controller: _googleSearchEngineIdController,
-                    decoration: InputDecoration(
-                      hintText: '输入 Custom Search Engine ID',
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text('搜索结果数量', style: TextStyle(fontSize: 14)),
-                  Slider(
-                    value: settings.googleSearchResultCount.toDouble(),
-                    min: 1,
-                    max: 20,
-                    divisions: 19,
-                    label: settings.googleSearchResultCount.toString(),
-                    onChanged: (value) {
-                      settings.setGoogleSearchResultCount(value.toInt());
-                    },
-                  ),
-
-                  SizedBox(height: 10),
-                  Text('搜索提供商', style: TextStyle(fontSize: 14)),
-                  DropdownButton<String>(
-                    value: settings.googleSearchProvider,
-                    isExpanded: true,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'googleCustomSearch',
-                        child: Text('Google Custom Search API'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'programmableSearch',
-                        child: Text('Programmable Search Engine'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        settings.setGoogleSearchProvider(value);
-                      }
-                    },
-                  ),
-                ],
-                const SizedBox(height: 20),
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
                 DropdownButton<String>(
                   value:
@@ -463,6 +365,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+
+                // Tavily Web Search Settings
+                Row(
+                  children: [
+                    Text('Tavily Web 搜索功能', style: TextStyle(fontSize: 16)),
+                    Spacer(),
+                    Switch(
+                      value: settings.tavilySearchEnabled,
+                      onChanged: (value) {
+                        settings.setTavilySearchEnabled(value);
+                      },
+                    ),
+                  ],
+                ),
+                if (settings.tavilySearchEnabled) ...[
+                  Text(
+                    'Tavily Web 搜索 API Key',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  TextField(
+                    controller: _tavilyApiKeyController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      hintText: '输入 Tavily API Key',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                const SizedBox(height: 10),
+                // Google Search Settings
+                Row(
+                  children: [
+                    Text('Google 搜索功能', style: TextStyle(fontSize: 16)),
+                    Spacer(),
+                    Switch(
+                      value: settings.googleSearchEnabled,
+                      onChanged: (value) {
+                        settings.setGoogleSearchEnabled(value);
+                      },
+                    ),
+                  ],
+                ),
+                if (settings.googleSearchEnabled) ...[
+                  Text('Google Search API Key', style: TextStyle(fontSize: 14)),
+                  TextField(
+                    controller: _googleSearchApiKeyController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: '输入 Google Custom Search API Key',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Google Search Engine ID',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  TextField(
+                    controller: _googleSearchEngineIdController,
+                    decoration: InputDecoration(
+                      hintText: '输入 Custom Search Engine ID',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text('搜索结果数量', style: TextStyle(fontSize: 14)),
+                  Slider(
+                    value: settings.googleSearchResultCount.toDouble(),
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: settings.googleSearchResultCount.toString(),
+                    onChanged: (value) {
+                      settings.setGoogleSearchResultCount(value.toInt());
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Text('搜索提供商', style: TextStyle(fontSize: 14)),
+                  DropdownButton<String>(
+                    value: settings.googleSearchProvider,
+                    isExpanded: true,
+                    items: [
+                      DropdownMenuItem(
+                        value: 'googleCustomSearch',
+                        child: Text('Google Custom Search API'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'programmableSearch',
+                        child: Text('Programmable Search Engine'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        settings.setGoogleSearchProvider(value);
+                      }
+                    },
+                  ),
+                ],
               ] else ...[
                 DropdownButton<String>(
                   value:

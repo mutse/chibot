@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'flux_image_service.dart';
 import 'flux_kontext_service.dart';
 
 class ImageGenerationService {
