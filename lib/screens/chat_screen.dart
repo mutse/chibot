@@ -17,14 +17,18 @@ import 'package:chibot/services/image_generation_service.dart'
 import 'package:chibot/services/image_save_service.dart';
 import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:chibot/core/logger.dart';
+import 'package:chibot/providers/auth_provider.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
 import 'package:chibot/services/web_search_service.dart' as web_service;
-import 'package:chibot/services/search_command_handler.dart';
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
 import 'package:chibot/services/search_service_manager.dart';
+import 'package:chibot/core/logger.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -53,11 +57,49 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Listen to authentication changes
+    Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).addListener(_onAuthChange);
     _loadChatSessions();
     _loadImageSessions();
   }
 
+  @override
+  void dispose() {
+    Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).removeListener(_onAuthChange);
+    super.dispose();
+  }
+
+  void _onAuthChange() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAuthenticated) {
+      _loadChatSessions();
+      _loadImageSessions();
+    } else {
+      // Clear sessions if user logs out
+      setState(() {
+        _chatSessions.clear();
+        _imageSessions.clear();
+        _messages.clear(); // Clear current chat messages too
+        _currentSessionId = null;
+        _currentImageSessionId = null;
+      });
+    }
+  }
+
   Future<void> _loadChatSessions() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthenticated) {
+      setState(() {
+        _chatSessions.clear();
+      });
+      return;
+    }
     final sessions = await _sessionService.loadSessions();
     setState(() {
       _chatSessions = sessions;
@@ -69,6 +111,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadImageSessions() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthenticated) {
+      setState(() {
+        _imageSessions.clear();
+      });
+      return;
+    }
     final sessions = await _imageSessionService.loadSessions();
     setState(() {
       _imageSessions = sessions;
@@ -116,6 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _sendMessage() async {
+    if (!mounted) return;
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
@@ -417,7 +467,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       }
-      print("Error receiving stream: $e");
+      AppLogger.error("Error receiving stream: $e");
     } finally {
       // Ensure isLoading is false if not already set by success/error blocks
       if (mounted && _isLoading) {
@@ -473,50 +523,168 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Header section
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // App title
-                Text(
-                  'Chibot AI',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Search bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(
-                      Platform.isMacOS ? 8 : 12,
+          // User account section
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              final localizations = AppLocalizations.of(context)!;
+              final isAuthenticated = authProvider.isAuthenticated;
+              final currentUser = authProvider.currentUser;
+
+              return Container(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User Avatar and Name/Hint
+                    GestureDetector(
+                      onTap: () {
+                        if (isAuthenticated) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        } else {
+                          Navigator.pushNamed(context, LoginScreen.routeName);
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage:
+                                isAuthenticated &&
+                                        currentUser?.avatarUrl != null &&
+                                        currentUser!.avatarUrl!.isNotEmpty
+                                    ? NetworkImage(currentUser.avatarUrl!)
+                                    : null,
+                            child:
+                                isAuthenticated
+                                    ? null
+                                    : Icon(
+                                      Icons.person,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                            backgroundColor:
+                                isAuthenticated
+                                    ? Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer
+                                    : Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceVariant,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              isAuthenticated
+                                  ? currentUser!.username
+                                  : localizations.pleaseLoginRegisterHint,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: TextField(
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.search,
-                      hintStyle: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                          0.6,
+                    const SizedBox(height: 16),
+                    // Login/Register/Logout Buttons
+                    if (!isAuthenticated)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  RegisterScreen.routeName,
+                                );
+                              },
+                              child: Text(localizations.registerButtonText),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  LoginScreen.routeName,
+                                );
+                              },
+                              child: Text(localizations.loginButtonText),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: () async {
+                          await authProvider.logout();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(localizations.logoutButtonText),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onError,
+                          minimumSize: const Size(double.infinity, 40),
+                        ),
+                        child: Text(localizations.logoutButtonText),
+                      ),
+                    const SizedBox(height: 16),
+                    // Search bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceVariant.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(
+                          Platform.isMacOS ? 8 : 12,
                         ),
                       ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        size: 20,
+                      child: TextField(
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: localizations.search,
+                          hintStyle: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: 20,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
+                        ),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           // Navigation section
@@ -550,6 +718,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icons.download_outlined,
                   AppLocalizations.of(context)!.exportAllChats,
                   onTap: () async {
+                    if (!mounted) return;
                     if (_chatSessions.isNotEmpty) {
                       await MarkdownExportService.exportMultipleToMarkdown(
                         _chatSessions,
@@ -576,192 +745,216 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(height: 16),
 
           // Chat sessions section
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_chatSessions.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'Recent Chats',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _chatSessions.length,
-                      itemBuilder: (context, index) {
-                        final session = _chatSessions[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildSidebarItem(
-                            context,
-                            Icons.chat_outlined,
-                            session.title,
-                            isSelected: _currentSessionId == session.id,
-                            onTap: () => _loadSession(session),
-                            onExport: () async {
-                              await MarkdownExportService.exportToMarkdown(
-                                session,
-                                context,
-                              );
-                            },
-                            onDelete: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Delete'),
-                                      content: const Text(
-                                        'Delete this chat history?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.of(ctx).pop(false),
-                                          child: Text(
-                                            AppLocalizations.of(
-                                                  context,
-                                                )?.cancel ??
-                                                'Cancel',
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(true),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                theme.colorScheme.error,
-                                            foregroundColor:
-                                                theme.colorScheme.onError,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                await _sessionService.deleteSession(session.id);
-                                if (_currentSessionId == session.id) {
-                                  setState(() {
-                                    _messages.clear();
-                                    _currentSessionId = null;
-                                  });
-                                }
-                                _loadChatSessions();
-                              }
-                            },
-                            exportLabel:
-                                AppLocalizations.of(context)!.exportToMarkdown,
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              if (authProvider.isAuthenticated) {
+                return Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_chatSessions.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                          child: Text(
+                            'Recent Chats',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _chatSessions.length,
+                            itemBuilder: (context, index) {
+                              final session = _chatSessions[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: _buildSidebarItem(
+                                  context,
+                                  Icons.chat_outlined,
+                                  session.title,
+                                  isSelected: _currentSessionId == session.id,
+                                  onTap: () => _loadSession(session),
+                                  onExport: () async {
+                                    if (!mounted) return;
+                                    await MarkdownExportService.exportToMarkdown(
+                                      session,
+                                      context,
+                                    );
+                                  },
+                                  onDelete: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder:
+                                          (ctx) => AlertDialog(
+                                            title: const Text('Delete'),
+                                            content: const Text(
+                                              'Delete this chat history?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed:
+                                                    () => Navigator.of(
+                                                      ctx,
+                                                    ).pop(false),
+                                                child: Text(
+                                                  AppLocalizations.of(
+                                                        context,
+                                                      )?.cancel ??
+                                                      'Cancel',
+                                                ),
+                                              ),
+                                              FilledButton(
+                                                onPressed:
+                                                    () => Navigator.of(
+                                                      ctx,
+                                                    ).pop(true),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor:
+                                                      theme.colorScheme.error,
+                                                  foregroundColor:
+                                                      theme.colorScheme.onError,
+                                                ),
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                    );
+                                    if (confirm == true) {
+                                      await _sessionService.deleteSession(
+                                        session.id,
+                                      );
+                                      if (_currentSessionId == session.id) {
+                                        setState(() {
+                                          _messages.clear();
+                                          _currentSessionId = null;
+                                        });
+                                      }
+                                      _loadChatSessions();
+                                    }
+                                  },
+                                  exportLabel:
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.exportToMarkdown,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
 
-                // Image sessions section
-                if (_imageSessions.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'Image Sessions',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _imageSessions.length,
-                      itemBuilder: (context, index) {
-                        final session = _imageSessions[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildSidebarItem(
-                            context,
-                            Icons.image_outlined,
-                            session.title,
-                            isSelected: _currentImageSessionId == session.id,
-                            onTap: () => _loadImageSession(session),
-                            onExport: () async {
-                              await ImageSaveService.exportImageHistory(
-                                session,
-                                context,
-                              );
-                            },
-                            onDelete: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Delete'),
-                                      content: const Text(
-                                        'Delete this image session?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.of(ctx).pop(false),
-                                          child: Text(
-                                            AppLocalizations.of(
-                                                  context,
-                                                )?.cancel ??
-                                                'Cancel',
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(true),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                theme.colorScheme.error,
-                                            foregroundColor:
-                                                theme.colorScheme.onError,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                await _imageSessionService.deleteSession(
-                                  session.id,
-                                );
-                                if (_currentImageSessionId == session.id) {
-                                  setState(() {
-                                    _messages.clear();
-                                    _currentImageSessionId = null;
-                                  });
-                                }
-                                _loadImageSessions();
-                              }
-                            },
-                            exportLabel:
-                                AppLocalizations.of(context)!.exportToImg,
+                      // Image sessions section
+                      if (_imageSessions.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                        );
-                      },
-                    ),
+                          child: Text(
+                            'Image Sessions',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _imageSessions.length,
+                            itemBuilder: (context, index) {
+                              final session = _imageSessions[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: _buildSidebarItem(
+                                  context,
+                                  Icons.image_outlined,
+                                  session.title,
+                                  isSelected:
+                                      _currentImageSessionId == session.id,
+                                  onTap: () => _loadImageSession(session),
+                                  onExport: () async {
+                                    if (!mounted) return;
+                                    await ImageSaveService.exportImageHistory(
+                                      session,
+                                      context,
+                                    );
+                                  },
+                                  onDelete: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder:
+                                          (ctx) => AlertDialog(
+                                            title: const Text('Delete'),
+                                            content: const Text(
+                                              'Delete this image session?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed:
+                                                    () => Navigator.of(
+                                                      ctx,
+                                                    ).pop(false),
+                                                child: Text(
+                                                  AppLocalizations.of(
+                                                        context,
+                                                      )?.cancel ??
+                                                      'Cancel',
+                                                ),
+                                              ),
+                                              FilledButton(
+                                                onPressed:
+                                                    () => Navigator.of(
+                                                      ctx,
+                                                    ).pop(true),
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor:
+                                                      theme.colorScheme.error,
+                                                  foregroundColor:
+                                                      theme.colorScheme.onError,
+                                                ),
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                    );
+                                    if (confirm == true) {
+                                      await _imageSessionService.deleteSession(
+                                        session.id,
+                                      );
+                                      if (_currentImageSessionId ==
+                                          session.id) {
+                                        setState(() {
+                                          _messages.clear();
+                                          _currentImageSessionId = null;
+                                        });
+                                      }
+                                      _loadImageSessions();
+                                    }
+                                  },
+                                  exportLabel:
+                                      AppLocalizations.of(context)!.exportToImg,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
-            ),
+                );
+              } else {
+                return const Expanded(
+                  child: SizedBox.shrink(),
+                ); // Hide sessions if not authenticated
+              }
+            },
           ),
 
           // Bottom section
@@ -1010,14 +1203,27 @@ class _ChatScreenState extends State<ChatScreen> {
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
-            tooltip: AppLocalizations.of(context)!.settings,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              if (authProvider.isAuthenticated) {
+                return IconButton(
+                  icon: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.black87,
+                  ),
+                  tooltip: AppLocalizations.of(context)!.settings,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                );
+              } else {
+                return const SizedBox.shrink(); // Hide settings icon if not authenticated
+              }
             },
           ),
         ],
@@ -1493,6 +1699,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _generateImage(String prompt) async {
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         // Add user's /imagine message first
@@ -1643,7 +1850,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 } catch (e) {
                   // If for some reason the session is not found (e.g., deleted externally),
                   // treat it as a new session. This is a fallback.
-                  print(
+                  AppLogger.warning(
                     "Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e",
                   );
                   _currentImageSessionId =
@@ -1713,7 +1920,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       }
-      print("Error generating image: $e");
+      AppLogger.error("Error generating image: $e");
     } finally {
       if (mounted && _isLoading) {
         setState(() {

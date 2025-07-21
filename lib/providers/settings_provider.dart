@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
 import 'package:chibot/utils/settings_xml_handler.dart';
 import 'package:chibot/services/flux_image_service.dart';
-import 'dart:convert';
+import 'package:chibot/core/logger.dart';
 
 class SettingsProvider with ChangeNotifier {
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
@@ -253,7 +254,7 @@ class SettingsProvider with ChangeNotifier {
         );
       } catch (e) {
         if (kDebugMode) {
-          print('Error loading custom providers: $e');
+          AppLogger.error('Error loading custom providers: $e');
         }
         _customProviders = {}; // Reset on error
       }
@@ -282,7 +283,7 @@ class SettingsProvider with ChangeNotifier {
         );
       } catch (e) {
         if (kDebugMode) {
-          print('Error loading custom image providers: $e');
+          AppLogger.error('Error loading custom image providers: $e');
         }
         _customImageProviders = {};
       }
@@ -345,7 +346,9 @@ class SettingsProvider with ChangeNotifier {
         _selectedModel = ''; // No models available
       }
       if (kDebugMode) {
-        print('Model validation changed selectedModel to: $_selectedModel');
+        AppLogger.debug(
+          'Model validation changed selectedModel to: $_selectedModel',
+        );
       }
       // 异步保存更改后的 selectedModel
       SharedPreferences.getInstance().then((prefs) {
@@ -718,13 +721,13 @@ class SettingsProvider with ChangeNotifier {
       );
 
       if (kDebugMode) {
-        print('Settings map for export: $settingsMap');
+        AppLogger.debug('Settings map for export: $settingsMap');
       }
 
       return SettingsXmlHandler.exportToXml(settingsMap);
     } catch (e) {
       if (kDebugMode) {
-        print('Error in exportSettingsToXml: $e');
+        AppLogger.error('Error in exportSettingsToXml: $e');
       }
       throw Exception('Failed to export settings: $e');
     }
@@ -824,7 +827,7 @@ class SettingsProvider with ChangeNotifier {
         );
         _selectedModel = settingsMap[_selectedModelKey];
         if (kDebugMode) {
-          print('Imported selectedModel: $_selectedModel');
+          AppLogger.debug('Imported selectedModel: $_selectedModel');
         }
       }
 
@@ -848,7 +851,7 @@ class SettingsProvider with ChangeNotifier {
         );
         _selectedProvider = settingsMap[_selectedProviderKey];
         if (kDebugMode) {
-          print('Imported selectedProvider: $_selectedProvider');
+          AppLogger.debug('Imported selectedProvider: $_selectedProvider');
         }
       }
 
@@ -864,7 +867,7 @@ class SettingsProvider with ChangeNotifier {
           );
         } catch (e) {
           if (kDebugMode) {
-            print('Error parsing custom providers: $e');
+            AppLogger.error('Error parsing custom providers: $e');
           }
           _customProviders = {};
         }
@@ -882,7 +885,7 @@ class SettingsProvider with ChangeNotifier {
           json.encode(_customProviders),
         );
         if (kDebugMode) {
-          print(
+          AppLogger.debug(
             'Created custom provider $_selectedProvider with model $_selectedModel',
           );
         }
@@ -941,7 +944,7 @@ class SettingsProvider with ChangeNotifier {
           );
         } catch (e) {
           if (kDebugMode) {
-            print('Error parsing custom image providers: $e');
+            AppLogger.error('Error parsing custom image providers: $e');
           }
           _customImageProviders = {};
         }
@@ -958,7 +961,7 @@ class SettingsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('Error importing settings from XML: $e');
+        AppLogger.error('Error importing settings from XML: $e');
       }
       throw Exception('Failed to import settings: $e');
     }
@@ -990,7 +993,7 @@ class SettingsProvider with ChangeNotifier {
       final fluxService = FluxKontextImageService(apiKey: _imageApiKey!);
       return await fluxService.testConnection();
     } catch (e) {
-      print('FLUX.1 connection test failed: $e');
+      AppLogger.error('FLUX.1 connection test failed: $e');
       return false;
     }
   }
