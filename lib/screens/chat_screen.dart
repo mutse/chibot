@@ -20,11 +20,11 @@ import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'package:chibot/services/web_search_service.dart' as web_service;
-import 'package:chibot/services/search_command_handler.dart';
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
 import 'package:chibot/services/search_service_manager.dart';
+import 'package:chibot/models/available_model.dart' as available_model;
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -77,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startNewChat() {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
-    settings.setSelectedModelType(ModelType.text);
+    settings.setSelectedModelType(available_model.ModelType.text);
     setState(() {
       _messages.clear();
       _currentSessionId = null;
@@ -97,7 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startNewImageSession() {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
-    settings.setSelectedModelType(ModelType.image);
+    settings.setSelectedModelType(available_model.ModelType.image);
     setState(() {
       _messages.clear();
       _currentImageSessionId = null;
@@ -120,7 +120,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
 
     final settings = Provider.of<SettingsProvider>(context, listen: false);
-    if (settings.selectedModelType == ModelType.image) {
+    if (settings.selectedModelType == available_model.ModelType.image) {
       _generateImage(text);
       _textController.clear();
       return;
@@ -1374,7 +1374,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Consumer<SettingsProvider>(
                         builder: (context, settings, _) {
                           final isTextModel =
-                              settings.selectedModelType == ModelType.text;
+                              settings.selectedModelType ==
+                              available_model.ModelType.text;
                           final isActive = isTextModel && _enableWebSearch;
                           return Ink(
                             decoration: BoxDecoration(

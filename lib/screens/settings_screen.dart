@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/settings_provider.dart';
+import 'package:chibot/providers/settings_models_provider.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
-
-enum ModelType { text, image }
+import 'package:chibot/models/available_model.dart' as available_model;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -52,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _getProviderApiKey(SettingsProvider settings) {
-    if (settings.selectedModelType == ModelType.image) {
+    if (settings.selectedModelType == available_model.ModelType.image) {
       return settings.imageApiKey ?? '';
     }
 
@@ -69,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _getApiKeyLabel(SettingsProvider settings) {
-    if (settings.selectedModelType == ModelType.image) {
+    if (settings.selectedModelType == available_model.ModelType.image) {
       return l10n.apiKey(settings.selectedImageProvider);
     }
 
@@ -86,7 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _getApiKeyHint(SettingsProvider settings) {
-    if (settings.selectedModelType == ModelType.image) {
+    if (settings.selectedModelType == available_model.ModelType.image) {
       return l10n.enterYourAPIKey;
     }
 
@@ -140,6 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<SettingsProvider>(context);
+    final settingsModels = Provider.of<SettingsModelsProvider>(context);
 
     // 动态切换 API Key Controller 内容 - now provider-aware
     final expectedApiKey = _getProviderApiKey(settings);
@@ -164,20 +165,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 16),
                   ChoiceChip(
                     label: Text(l10n.textModel),
-                    selected: settings.selectedModelType == ModelType.text,
+                    selected:
+                        settings.selectedModelType ==
+                        available_model.ModelType.text,
                     onSelected: (selected) {
                       if (selected) {
-                        settings.setSelectedModelType(ModelType.text);
+                        settings.setSelectedModelType(
+                          available_model.ModelType.text,
+                        );
                       }
                     },
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
                     label: Text(l10n.imageModel),
-                    selected: settings.selectedModelType == ModelType.image,
+                    selected:
+                        settings.selectedModelType ==
+                        available_model.ModelType.image,
                     onSelected: (selected) {
                       if (selected) {
-                        settings.setSelectedModelType(ModelType.image);
+                        settings.setSelectedModelType(
+                          available_model.ModelType.image,
+                        );
                       }
                     },
                   ),
@@ -204,7 +213,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-              if (settings.selectedModelType == ModelType.text) ...[
+              if (settings.selectedModelType ==
+                  available_model.ModelType.text) ...[
                 DropdownButton<String>(
                   value:
                       settings.allProviderNames.contains(
@@ -230,27 +240,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         );
                       }).toList(),
-                  onChanged: (String? newValue) {
+                  onChanged: (String? newValue) async {
                     if (newValue != null) {
-                      settings.setSelectedProvider(newValue);
-                      // Pre-fill for custom providers
-                      final isCustom =
-                          !SettingsProvider.defaultBaseUrls.keys.contains(
-                            newValue,
-                          );
-                      if (isCustom) {
-                        if (_providerUrlController.text.isEmpty) {
-                          setState(() {
-                            _providerUrlController.text =
-                                'http://localhost:8000/v1';
-                          });
-                        }
-                        if (settings.availableModels.isEmpty) {
-                          // Add a default model if none exists
-                          settings.addCustomModel('gpt-3.5-turbo');
-                          settings.setSelectedModel('gpt-3.5-turbo');
-                        }
-                      }
+                      await settings.setSelectedProvider(newValue);
+                      _providerUrlController.text =
+                          settings.rawProviderUrl ?? '';
+                      _apiKeyController.text = _getProviderApiKey(settings);
+                      // 只显示该供应商下的模型
+                      setState(() {});
                     }
                   },
                 ),
@@ -403,26 +400,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
                 DropdownButton<String>(
                   value:
-                      settings.availableModels.contains(settings.selectedModel)
+                      settingsModels.textModels
+                              .where(
+                                (m) => m.provider == settings.selectedProvider,
+                              )
+                              .any((m) => m.id == settings.selectedModel)
                           ? settings.selectedModel
-                          : (settings.availableModels.isNotEmpty
-                              ? settings.availableModels.first
+                          : (settingsModels.textModels
+                                  .where(
+                                    (m) =>
+                                        m.provider == settings.selectedProvider,
+                                  )
+                                  .isNotEmpty
+                              ? settingsModels.textModels
+                                  .where(
+                                    (m) =>
+                                        m.provider == settings.selectedProvider,
+                                  )
+                                  .first
+                                  .id
                               : null),
                   isExpanded: true,
                   items:
-                      settings.availableModels.map((String model) {
-                        return DropdownMenuItem<String>(
-                          value: model,
-                          child: Text(model),
-                        );
-                      }).toList(),
+                      settingsModels.textModels
+                          .where(
+                            (model) =>
+                                model.provider == settings.selectedProvider,
+                          )
+                          .map((model) {
+                            return DropdownMenuItem<String>(
+                              value: model.id,
+                              child: Text(model.name),
+                            );
+                          })
+                          .toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       settings.setSelectedModel(newValue);
                     }
                   },
                   hint:
-                      settings.availableModels.isEmpty
+                      settingsModels.textModels
+                              .where(
+                                (m) => m.provider == settings.selectedProvider,
+                              )
+                              .isEmpty
                           ? Text(l10n.noModelsAvailable)
                           : null,
                 ),
@@ -498,9 +520,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Text(provider),
                         );
                       }).toList(),
-                  onChanged: (String? newValue) {
+                  onChanged: (String? newValue) async {
                     if (newValue != null) {
-                      settings.setSelectedImageProvider(newValue);
+                      await settings.setSelectedImageProvider(newValue);
+                      _imageProviderUrlController.text =
+                          settings.rawImageProviderUrl ?? '';
+                      _apiKeyController.text = settings.imageApiKey ?? '';
+                      if (settings.availableImageModels.isNotEmpty) {
+                        await settings.setSelectedImageModel(
+                          settings.availableImageModels.first,
+                        );
+                      } else {
+                        await settings.setSelectedImageModel('');
+                      }
+                      setState(() {});
                     }
                   },
                 ),
@@ -554,28 +587,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
                 DropdownButton<String>(
                   value:
-                      settings.availableImageModels.contains(
-                            settings.selectedImageModel,
-                          )
+                      settingsModels.imageModels
+                              .where(
+                                (m) =>
+                                    m.provider ==
+                                    settings.selectedImageProvider,
+                              )
+                              .any((m) => m.id == settings.selectedImageModel)
                           ? settings.selectedImageModel
-                          : (settings.availableImageModels.isNotEmpty
-                              ? settings.availableImageModels.first
+                          : (settingsModels.imageModels
+                                  .where(
+                                    (m) =>
+                                        m.provider ==
+                                        settings.selectedImageProvider,
+                                  )
+                                  .isNotEmpty
+                              ? settingsModels.imageModels
+                                  .where(
+                                    (m) =>
+                                        m.provider ==
+                                        settings.selectedImageProvider,
+                                  )
+                                  .first
+                                  .id
                               : null),
                   isExpanded: true,
                   items:
-                      settings.availableImageModels.map((String model) {
-                        return DropdownMenuItem<String>(
-                          value: model,
-                          child: Text(model),
-                        );
-                      }).toList(),
+                      settingsModels.imageModels
+                          .where(
+                            (model) =>
+                                model.provider ==
+                                settings.selectedImageProvider,
+                          )
+                          .map((model) {
+                            return DropdownMenuItem<String>(
+                              value: model.id,
+                              child: Text(model.name),
+                            );
+                          })
+                          .toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       settings.setSelectedImageModel(newValue);
                     }
                   },
                   hint:
-                      settings.availableImageModels.isEmpty
+                      settingsModels.imageModels
+                              .where(
+                                (m) =>
+                                    m.provider ==
+                                    settings.selectedImageProvider,
+                              )
+                              .isEmpty
                           ? Text(l10n.noModelsAvailable)
                           : null,
                 ),
@@ -667,7 +730,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () {
                         final apiKeyText = _apiKeyController.text.trim();
 
-                        if (settings.selectedModelType == ModelType.text) {
+                        if (settings.selectedModelType ==
+                            available_model.ModelType.text) {
                           // Save API key to the correct provider
                           _saveProviderApiKey(settings, apiKeyText);
 
@@ -694,6 +758,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         }
 
+                        // 保存后同步模型到内存注册表
+                        settings.syncModelsToRegistry();
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(l10n.settingsSaved)),
                         );
@@ -716,12 +783,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showAddProviderAndModelDialog(
     BuildContext context,
     SettingsProvider settings,
-    ModelType modelType,
+    available_model.ModelType modelType,
   ) {
     final TextEditingController providerNameController =
         TextEditingController();
     final TextEditingController modelNameController = TextEditingController();
     final TextEditingController providerUrlController = TextEditingController();
+    final TextEditingController apiKeyController = TextEditingController();
 
     showDialog(
       context: context,
@@ -745,6 +813,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     hintText: l10n.modelProviderURLOptional,
                   ),
                 ),
+                TextField(
+                  controller: apiKeyController,
+                  decoration: InputDecoration(hintText: 'API Key (可选)'),
+                  obscureText: true,
+                ),
               ],
             ),
           ),
@@ -761,9 +834,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final String providerName = providerNameController.text.trim();
                 final String modelName = modelNameController.text.trim();
                 final String providerUrl = providerUrlController.text.trim();
+                final String apiKey = apiKeyController.text.trim();
 
                 if (providerName.isNotEmpty && modelName.isNotEmpty) {
-                  if (modelType == ModelType.text) {
+                  if (modelType == available_model.ModelType.text) {
                     settings.addCustomProviderWithModels(providerName, [
                       modelName,
                     ]);
@@ -776,7 +850,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         settings.setProviderUrl(providerUrl);
                       }
                     }
-                  } else if (modelType == ModelType.image) {
+                    if (apiKey.isNotEmpty) {
+                      // 假设自定义 provider 也用 setApiKey 存储
+                      settings.setApiKey(apiKey);
+                    }
+                  } else if (modelType == available_model.ModelType.image) {
                     settings.addCustomImageProviderWithModels(providerName, [
                       modelName,
                     ]);
@@ -789,11 +867,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         settings.setImageProviderUrl(providerUrl);
                       }
                     }
+                    if (apiKey.isNotEmpty) {
+                      settings.setImageApiKey(apiKey);
+                    }
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(l10n.providerAndModelAdded)),
                   );
                   Navigator.of(context).pop();
+                  setState(() {}); // 刷新 UI
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -814,6 +896,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     SettingsProvider settings,
   ) async {
     try {
+      // 强制同步最新模型到 ModelRegistry
+      settings.syncModelsToRegistry?.call();
       print('Starting export process...');
       final xmlContent = await settings.exportSettingsToXml();
       print('XML content generated: ${xmlContent.length} characters');
@@ -899,6 +983,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             duration: const Duration(seconds: 6),
           ),
         );
+        // 导出后刷新模型数据
+        setState(() {});
       }
     } catch (e) {
       print('Export error: $e');
@@ -1136,20 +1222,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (confirmed == true) {
         print('User confirmed file picker import');
         await settings.importSettingsFromXml(xmlContent);
-        print('Settings imported successfully from file picker');
-
-        // Update controllers with new values
-        setState(() {
-          _apiKeyController.text = _getProviderApiKey(settings);
-          _providerUrlController.text = settings.rawProviderUrl ?? '';
-          _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
-          _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _googleSearchApiKeyController.text =
-              settings.googleSearchApiKey ?? '';
-          _googleSearchEngineIdController.text =
-              settings.googleSearchEngineId ?? '';
-        });
-
+        // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
+        setState(() {});
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1502,20 +1576,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (confirmed == true) {
         print('User confirmed import');
         await settings.importSettingsFromXml(xmlContent);
-        print('Settings imported successfully');
-
-        // Update controllers with new values
-        setState(() {
-          _apiKeyController.text = _getProviderApiKey(settings);
-          _providerUrlController.text = settings.rawProviderUrl ?? '';
-          _imageProviderUrlController.text = settings.rawImageProviderUrl ?? '';
-          _tavilyApiKeyController.text = settings.tavilyApiKey ?? '';
-          _googleSearchApiKeyController.text =
-              settings.googleSearchApiKey ?? '';
-          _googleSearchEngineIdController.text =
-              settings.googleSearchEngineId ?? '';
-        });
-
+        // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
+        setState(() {});
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
