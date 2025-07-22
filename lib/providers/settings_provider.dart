@@ -4,8 +4,11 @@ import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
 import 'package:chibot/utils/settings_xml_handler.dart';
 import 'package:chibot/services/flux_image_service.dart';
 import 'dart:convert';
+import '../models/model_registry.dart';
+import '../models/available_model.dart' as available_model;
 
 class SettingsProvider with ChangeNotifier {
+  final ModelRegistry? modelRegistry;
   String _selectedProvider = 'OpenAI'; // 新增：默认提供商为 OpenAI
   String? _apiKey;
   String? _imageApiKey; // Added for image API key
@@ -23,7 +26,8 @@ class SettingsProvider with ChangeNotifier {
   Map<String, List<String>> _customImageProviders =
       {}; // Added to force recompile
 
-  ModelType _selectedModelType = ModelType.text; // Default to text model type
+  available_model.ModelType _selectedModelType =
+      available_model.ModelType.text; // Default to text model type
 
   static const String _apiKeyKey = 'openai_api_key';
   static const String _imageApiKeyKey =
@@ -101,18 +105,12 @@ class SettingsProvider with ChangeNotifier {
       'gemini-2.5-pro-preview-06-05',
       'gemini-2.5-flash-preview-05-20',
     ],
-    'Anthropic': [
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku-20241022',
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-    ],
+    'Anthropic': ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
   };
 
   // Preset models for image generation
   final Map<String, List<String>> _categorizedPresetImageModels = {
-    'OpenAI': ['dall-e-3', 'dall-e-2'],
+    'OpenAI': ['dall-e-3'],
     'Stability AI': [
       'stable-diffusion-xl-1024-v1-0', // Example model ID
       'stable-diffusion-v1-6', // Example model ID
@@ -130,7 +128,7 @@ class SettingsProvider with ChangeNotifier {
     ); // Remove duplicates and make unmodifiable
   }
 
-  SettingsProvider() {
+  SettingsProvider({this.modelRegistry}) {
     _loadSettings();
   }
 
@@ -151,7 +149,7 @@ class SettingsProvider with ChangeNotifier {
   // Getters for Image Generation Settings
   String get selectedImageProvider => _selectedImageProvider;
   String get selectedImageModel => _selectedImageModel;
-  ModelType get selectedModelType => _selectedModelType;
+  available_model.ModelType get selectedModelType => _selectedModelType;
 
   List<String> get availableImageModels {
     List<String> modelsToShow = [];
@@ -261,8 +259,8 @@ class SettingsProvider with ChangeNotifier {
     _selectedProvider =
         prefs.getString(_selectedProviderKey) ?? 'OpenAI'; // 加载 Provider
     _selectedModelType =
-        ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
-            ModelType.text.index];
+        available_model.ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
+            available_model.ModelType.text.index];
 
     // Load Image Generation Settings
     _selectedImageProvider =
@@ -294,6 +292,73 @@ class SettingsProvider with ChangeNotifier {
     // Ensure the selected model is valid for the loaded provider
     _validateSelectedModelForProvider();
     _validateSelectedImageModelForProvider();
+    // 新增：同步到 ModelRegistry
+    syncModelsToRegistry();
+  }
+
+  void syncModelsToRegistry() {
+    if (modelRegistry == null) return;
+    // 1. 注册文本模型
+    for (var provider in _categorizedPresetModels.keys) {
+      for (var model in _categorizedPresetModels[provider]!) {
+        modelRegistry!.registerModel(
+          available_model.AvailableModel(
+            id: model,
+            name: model,
+            provider: provider,
+            type: available_model.ModelType.text,
+            supportsStreaming: true,
+            capabilities: {},
+            baseUrl: defaultBaseUrls[provider],
+          ),
+        );
+      }
+    }
+    // 2. 注册自定义文本模型
+    for (var model in _customModels) {
+      modelRegistry!.registerModel(
+        available_model.AvailableModel(
+          id: model,
+          name: model,
+          provider: _selectedProvider,
+          type: available_model.ModelType.text,
+          supportsStreaming: true,
+          capabilities: {},
+          baseUrl: _providerUrl,
+        ),
+      );
+    }
+    // 3. 注册图像模型
+    for (var provider in _categorizedPresetImageModels.keys) {
+      for (var model in _categorizedPresetImageModels[provider]!) {
+        modelRegistry!.registerModel(
+          available_model.AvailableModel(
+            id: model,
+            name: model,
+            provider: provider,
+            type: available_model.ModelType.image,
+            supportsStreaming: false,
+            capabilities: {},
+            baseUrl: defaultImageBaseUrls[provider],
+          ),
+        );
+      }
+    }
+    // 4. 注册自定义图像模型
+    for (var model in _customImageModels) {
+      modelRegistry!.registerModel(
+        available_model.AvailableModel(
+          id: model,
+          name: model,
+          provider: _selectedImageProvider,
+          type: available_model.ModelType.image,
+          supportsStreaming: false,
+          capabilities: {},
+          baseUrl: _imageProviderUrl,
+        ),
+      );
+    }
+    // 5. 可扩展：注册 OpenAI 兼容自定义模型
   }
 
   Future<void> setSelectedProvider(String newProvider) async {
@@ -471,7 +536,7 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> setSelectedModelType(ModelType newType) async {
+  Future<void> setSelectedModelType(available_model.ModelType newType) async {
     if (_selectedModelType != newType) {
       _selectedModelType = newType;
       final prefs = await SharedPreferences.getInstance();
@@ -717,6 +782,23 @@ class SettingsProvider with ChangeNotifier {
         _customImageProvidersKey,
       );
 
+      // 新增：导出 OpenAI 兼容自定义模型（如有）
+      if (prefs.containsKey('custom_openai_models')) {
+        settingsMap['custom_openai_models'] = prefs.getStringList(
+          'custom_openai_models',
+        );
+      }
+      if (prefs.containsKey('custom_openai_base_urls')) {
+        settingsMap['custom_openai_base_urls'] = prefs.getStringList(
+          'custom_openai_base_urls',
+        );
+      }
+      if (prefs.containsKey('custom_openai_api_keys')) {
+        settingsMap['custom_openai_api_keys'] = prefs.getStringList(
+          'custom_openai_api_keys',
+        );
+      }
+
       if (kDebugMode) {
         print('Settings map for export: $settingsMap');
       }
@@ -894,7 +976,9 @@ class SettingsProvider with ChangeNotifier {
           settingsMap[_selectedModelTypeKey],
         );
         _selectedModelType =
-            ModelType.values[settingsMap[_selectedModelTypeKey]];
+            available_model
+                .ModelType
+                .values[settingsMap[_selectedModelTypeKey]];
       }
 
       // Import image settings
@@ -945,6 +1029,26 @@ class SettingsProvider with ChangeNotifier {
           }
           _customImageProviders = {};
         }
+      }
+
+      // 新增：导入 OpenAI 兼容自定义模型
+      if (settingsMap['custom_openai_models'] != null) {
+        await prefs.setStringList(
+          'custom_openai_models',
+          List<String>.from(settingsMap['custom_openai_models']),
+        );
+      }
+      if (settingsMap['custom_openai_base_urls'] != null) {
+        await prefs.setStringList(
+          'custom_openai_base_urls',
+          List<String>.from(settingsMap['custom_openai_base_urls']),
+        );
+      }
+      if (settingsMap['custom_openai_api_keys'] != null) {
+        await prefs.setStringList(
+          'custom_openai_api_keys',
+          List<String>.from(settingsMap['custom_openai_api_keys']),
+        );
       }
 
       // Now validate settings after all data is loaded

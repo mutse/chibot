@@ -8,6 +8,8 @@ import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'models/model_registry.dart';
+import 'providers/settings_models_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +35,17 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    _initTrayAndWindow(context);
-    return ChangeNotifierProvider(
-      create: (context) => SettingsProvider(),
+    final modelRegistry = ModelRegistry();
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(modelRegistry: modelRegistry),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SettingsModelsProvider(modelRegistry),
+        ),
+        Provider.value(value: modelRegistry),
+      ],
       child: MaterialApp(
         title: "Chi AI Chatbot",
         home: const ChatScreen(),
