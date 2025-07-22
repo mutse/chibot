@@ -83,7 +83,7 @@ class FluxKontextService extends BaseApiService {
     : super(baseUrl: 'https://api.bfl.ai/v1', apiKey: apiKey);
 
   @override
-  String get providerName => 'Black Foreast Labs';
+  String get providerName => 'BFL';
 
   @override
   Map<String, String> getHeaders() {

@@ -80,7 +80,7 @@ class SettingsProvider with ChangeNotifier {
     'OpenAI': 'https://api.openai.com/v1',
     'Stability AI':
         'https://api.stability.ai', // Example, confirm actual base URL
-    'Black Foreast Labs': 'https://api.bfl.ai/v1',
+    'Black Forest Labs': 'https://api.bfl.ai/v1',
   };
 
   // 可选模型列表
@@ -118,7 +118,7 @@ class SettingsProvider with ChangeNotifier {
       'stable-diffusion-v1-6', // Example model ID
       // Add other Stability AI models as needed
     ],
-    'Black Foreast Labs': ['flux-kontext-pro', 'flux-kontext-dev'],
+    'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev'],
   };
 
   // Getter for all provider names (preset and custom)
@@ -973,7 +973,7 @@ class SettingsProvider with ChangeNotifier {
         return _apiKey; // Using OpenAI key for now
       case 'Anthropic':
         return _claudeApiKey;
-      case 'FLUX.1 Kontext':
+      case 'BFL':
         return _imageApiKey;
       default:
         return _apiKey;
