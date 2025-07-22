@@ -277,12 +277,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _getApiKeyLabel(settings),
                   style: const TextStyle(fontSize: 16),
                 ),
-                TextField(
-                  controller: _apiKeyController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: _getApiKeyHint(settings),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _apiKeyController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: _getApiKeyHint(settings),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: '清除',
+                      onPressed: () {
+                        setState(() {
+                          _apiKeyController.clear();
+                        });
+                        // 清空 provider 的 API key
+                        _saveProviderApiKey(settings, '');
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
@@ -510,10 +527,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   l10n.apiKey(settings.selectedImageProvider),
                   style: const TextStyle(fontSize: 16),
                 ),
-                TextField(
-                  controller: _apiKeyController,
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: l10n.enterYourAPIKey),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _apiKeyController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: l10n.enterYourAPIKey,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: '清除',
+                      onPressed: () {
+                        setState(() {
+                          _apiKeyController.clear();
+                        });
+                        settings.setImageApiKey('');
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
