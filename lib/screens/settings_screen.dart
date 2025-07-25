@@ -641,6 +641,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Text(l10n.noModelsAvailable)
                           : null,
                 ),
+                // Aspect Ratio selector for Black Forest Labs
+                if (settings.selectedImageProvider == 'Black Forest Labs') ...[
+                  const SizedBox(height: 20),
+                  Text(l10n.aspectRatio, style: TextStyle(fontSize: 16)),
+                  DropdownButton<String>(
+                    value: settings.bflAspectRatio ?? '1:1',
+                    isExpanded: true,
+                    items: [
+                      DropdownMenuItem(value: '1:1', child: Text('1:1 (正方形)')),
+                      DropdownMenuItem(value: '16:9', child: Text('16:9 (横屏)')),
+                      DropdownMenuItem(value: '9:16', child: Text('9:16 (竖屏)')),
+                      DropdownMenuItem(value: '4:3', child: Text('4:3')),
+                      DropdownMenuItem(value: '3:2', child: Text('3:2')),
+                    ],
+                    onChanged: (value) {
+                      settings.bflAspectRatio = value;
+                    },
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(l10n.customModels, style: const TextStyle(fontSize: 16)),
                 Row(
