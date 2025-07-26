@@ -1216,67 +1216,7 @@ class _ChatScreenState extends State<ChatScreen> {
             },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.0),
-              child:
-                  message.imageUrl?.startsWith('data:image') == true
-                      ? Image.memory(
-                        base64Decode(message.imageUrl!.split(',').last),
-                        width: width,
-                        height: height,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: width,
-                            height: height,
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Text(
-                                localizations.errorLoadingImage,
-                                style: TextStyle(color: Colors.red[700]),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                      : Image.network(
-                        message.imageUrl!,
-                        width: width,
-                        height: height,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (
-                          BuildContext context,
-                          Widget child,
-                          ImageChunkEvent? loadingProgress,
-                        ) {
-                          if (loadingProgress == null) return child;
-                          return SizedBox(
-                            width: width,
-                            height: height,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress
-                                                .cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: width,
-                            height: height,
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: Text(
-                                localizations.errorLoadingImage,
-                                style: TextStyle(color: Colors.red[700]),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+              child: _buildImageWidget(message, width, height, localizations),
             ),
           ),
           // 右上角按钮
@@ -1289,10 +1229,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 icon: Icon(Icons.more_vert, size: 22, color: Colors.black54),
                 onSelected: (value) async {
                   if (value == 'save_image') {
-                    if (message.imageUrl != null &&
-                        message.imageUrl!.isNotEmpty) {
+                    final imageSource = message.bestImageSource;
+                    if (imageSource != null && imageSource.isNotEmpty) {
                       await ImageSaveService.saveImage(
-                        message.imageUrl!,
+                        imageSource,
                         context,
                       );
                     }
@@ -1758,5 +1698,148 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       _scrollToBottom();
     }
+  }
+
+  Widget _buildImageWidget(ImageMessage message, double width, double height, AppLocalizations localizations) {
+    // Use the bestImageSource to get the most appropriate image source
+    final imageSource = message.bestImageSource;
+    
+    if (imageSource == null) {
+      return Container(
+        width: width,
+        height: height,
+        color: Colors.grey[200],
+        child: Center(
+          child: Text(
+            localizations.errorLoadingImage,
+            style: TextStyle(color: Colors.red[700]),
+          ),
+        ),
+      );
+    }
+
+    // Handle local file path
+    if (message.imagePath != null) {
+      return Image.file(
+        File(message.imagePath!),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                localizations.errorLoadingImage,
+                style: TextStyle(color: Colors.red[700]),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Handle base64 data URLs (data:image/...)
+    if (message.imageUrl?.startsWith('data:image') == true) {
+      return Image.memory(
+        base64Decode(message.imageUrl!.split(',').last),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                localizations.errorLoadingImage,
+                style: TextStyle(color: Colors.red[700]),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Handle direct base64 image data
+    if (message.imageData != null) {
+      return Image.memory(
+        base64Decode(message.imageData!),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                localizations.errorLoadingImage,
+                style: TextStyle(color: Colors.red[700]),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Handle network URLs
+    if (message.imageUrl != null) {
+      return Image.network(
+        message.imageUrl!,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        loadingBuilder: (
+          BuildContext context,
+          Widget child,
+          ImageChunkEvent? loadingProgress,
+        ) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: width,
+            height: height,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: Center(
+              child: Text(
+                localizations.errorLoadingImage,
+                style: TextStyle(color: Colors.red[700]),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Fallback if no valid image source found
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.grey[200],
+      child: Center(
+        child: Text(
+          localizations.errorLoadingImage,
+          style: TextStyle(color: Colors.red[700]),
+        ),
+      ),
+    );
   }
 }
