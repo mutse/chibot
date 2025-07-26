@@ -1136,6 +1136,37 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isLastMessage,
     AppLocalizations localizations,
   ) {
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    // Determine aspect ratio
+    String aspectRatio =
+        settings.selectedImageProvider == 'Black Forest Labs'
+            ? (settings.bflAspectRatio ?? '1:1')
+            : '1:1';
+    double width = 250;
+    double height = 250;
+    switch (aspectRatio) {
+      case '16:9':
+        width = 280;
+        height = 158;
+        break;
+      case '9:16':
+        width = 158;
+        height = 280;
+        break;
+      case '4:3':
+        width = 266;
+        height = 200;
+        break;
+      case '3:2':
+        width = 270;
+        height = 180;
+        break;
+      case '1:1':
+      default:
+        width = 250;
+        height = 250;
+        break;
+    }
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Stack(
@@ -1189,13 +1220,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   message.imageUrl?.startsWith('data:image') == true
                       ? Image.memory(
                         base64Decode(message.imageUrl!.split(',').last),
-                        width: 250,
-                        height: 250,
+                        width: width,
+                        height: height,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            width: 250,
-                            height: 250,
+                            width: width,
+                            height: height,
                             color: Colors.grey[200],
                             child: Center(
                               child: Text(
@@ -1208,8 +1239,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       )
                       : Image.network(
                         message.imageUrl!,
-                        width: 250,
-                        height: 250,
+                        width: width,
+                        height: height,
                         fit: BoxFit.cover,
                         loadingBuilder: (
                           BuildContext context,
@@ -1218,8 +1249,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         ) {
                           if (loadingProgress == null) return child;
                           return SizedBox(
-                            width: 250,
-                            height: 250,
+                            width: width,
+                            height: height,
                             child: Center(
                               child: CircularProgressIndicator(
                                 value:
@@ -1234,8 +1265,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            width: 250,
-                            height: 250,
+                            width: width,
+                            height: height,
                             color: Colors.grey[200],
                             child: Center(
                               child: Text(
@@ -1577,6 +1608,10 @@ class _ChatScreenState extends State<ChatScreen> {
         prompt: prompt,
         model: settings.selectedImageModel,
         providerBaseUrl: settings.imageProviderUrl,
+        aspectRatio:
+            settings.selectedImageProvider == 'Black Forest Labs'
+                ? settings.bflAspectRatio
+                : null,
       );
 
       if (mounted) {

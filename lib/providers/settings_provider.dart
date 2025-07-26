@@ -25,6 +25,8 @@ class SettingsProvider with ChangeNotifier {
   List<String> _customImageModels = [];
   Map<String, List<String>> _customImageProviders =
       {}; // Added to force recompile
+  String? _bflAspectRatio;
+  static const String _bflAspectRatioKey = 'bfl_aspect_ratio';
 
   available_model.ModelType _selectedModelType =
       available_model.ModelType.text; // Default to text model type
@@ -145,6 +147,21 @@ class SettingsProvider with ChangeNotifier {
   String get googleSearchProvider => _googleSearchProvider;
   bool get tavilySearchEnabled => _tavilySearchEnabled;
   String? get fluxKontextApiKey => _fluxKontextApiKey;
+  String? get bflAspectRatio => _bflAspectRatio;
+  set bflAspectRatio(String? value) {
+    _bflAspectRatio = value;
+    _saveBflAspectRatio();
+    notifyListeners();
+  }
+
+  Future<void> _saveBflAspectRatio() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_bflAspectRatio != null) {
+      await prefs.setString(_bflAspectRatioKey, _bflAspectRatio!);
+    } else {
+      await prefs.remove(_bflAspectRatioKey);
+    }
+  }
 
   // Getters for Image Generation Settings
   String get selectedImageProvider => _selectedImageProvider;
@@ -285,6 +302,7 @@ class SettingsProvider with ChangeNotifier {
         _customImageProviders = {};
       }
     }
+    _bflAspectRatio = prefs.getString(_bflAspectRatioKey);
 
     _tavilySearchEnabled = prefs.getBool(_tavilySearchEnabledKey) ?? false;
 
@@ -781,6 +799,7 @@ class SettingsProvider with ChangeNotifier {
       settingsMap[_customImageProvidersKey] = prefs.getString(
         _customImageProvidersKey,
       );
+      settingsMap[_bflAspectRatioKey] = _bflAspectRatio;
 
       // 新增：导出 OpenAI 兼容自定义模型（如有）
       if (prefs.containsKey('custom_openai_models')) {
@@ -1029,6 +1048,11 @@ class SettingsProvider with ChangeNotifier {
           }
           _customImageProviders = {};
         }
+      }
+
+      if (settingsMap[_bflAspectRatioKey] != null) {
+        _bflAspectRatio = settingsMap[_bflAspectRatioKey];
+        await _saveBflAspectRatio();
       }
 
       // 新增：导入 OpenAI 兼容自定义模型

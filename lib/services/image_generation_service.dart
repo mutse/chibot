@@ -13,6 +13,7 @@ class ImageGenerationService {
     int n = 1, // Number of images, primarily for OpenAI
     int maxWaitSeconds = 120, // Polling timeout for FLUX.1 Kontext
     int pollIntervalMs = 2000, // Polling interval for FLUX.1 Kontext
+    String? aspectRatio,
   }) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key is not set.');
@@ -80,12 +81,23 @@ class ImageGenerationService {
       // Use centralized FluxKontextService for FLUX.1 Kontext API
       final fluxService = FluxKontextService(apiKey: apiKey);
       try {
-        return await fluxService.generateImageWithOpenAISize(
-          prompt: prompt,
-          openAISize: openAISize,
-          maxWaitTime: Duration(seconds: maxWaitSeconds),
-          pollInterval: Duration(milliseconds: pollIntervalMs),
-        );
+        if (aspectRatio != null && aspectRatio.isNotEmpty) {
+          // Use direct aspect ratio if provided
+          return await fluxService.generateImage(
+            prompt: prompt,
+            aspectRatio: aspectRatio,
+            maxWaitTime: Duration(seconds: maxWaitSeconds),
+            pollInterval: Duration(milliseconds: pollIntervalMs),
+          );
+        } else {
+          // Fallback to OpenAI size mapping
+          return await fluxService.generateImageWithOpenAISize(
+            prompt: prompt,
+            openAISize: openAISize,
+            maxWaitTime: Duration(seconds: maxWaitSeconds),
+            pollInterval: Duration(milliseconds: pollIntervalMs),
+          );
+        }
       } catch (e) {
         throw Exception('FLUX.1 Kontext error: $e');
       }

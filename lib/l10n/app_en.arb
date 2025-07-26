@@ -99,5 +99,6 @@
   "updateFound": "New version {version} found",
   "updateNow": "Update Now",
   "promptCopied": "Copy Prompt",
-  "savePrompt": "Save Prompt"
+  "savePrompt": "Save Prompt",
+  "aspectRatio": "Aspect Ratio"
 }
