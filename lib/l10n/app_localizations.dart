@@ -698,6 +698,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Prompt'**
   String get savePrompt;
+
+  /// No description provided for @aspectRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspect Ratio'**
+  String get aspectRatio;
 }
 
 class _AppLocalizationsDelegate

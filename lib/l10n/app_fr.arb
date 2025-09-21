@@ -98,5 +98,6 @@
   "updateFound": "Nouvelle version {version} trouvée",
   "updateNow": "Mettre à jour maintenant",
   "promptCopied": "Invite copiée",
-  "savePrompt": "Enregistrer l'invite"
+  "savePrompt": "Enregistrer l'invite",
+  "aspectRatio": "Rapport d'aspect"
 }

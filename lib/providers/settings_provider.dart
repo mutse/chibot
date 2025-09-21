@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chibot/screens/settings_screen.dart'; // Import ModelType enum
+// Import ModelType enum
 import 'package:chibot/utils/settings_xml_handler.dart';
-import 'package:chibot/services/flux_image_service.dart';
+import 'package:chibot/services/flux_kontext_service.dart';
+import 'package:chibot/services/flux_krea_service.dart';
 import 'dart:convert';
 import '../models/model_registry.dart';
 import '../models/available_model.dart' as available_model;
@@ -87,6 +88,7 @@ class SettingsProvider with ChangeNotifier {
     'Stability AI':
         'https://api.stability.ai', // Example, confirm actual base URL
     'Black Forest Labs': 'https://api.bfl.ai/v1',
+    'Google': 'https://generativelanguage.googleapis.com',
   };
 
   // 可选模型列表
@@ -118,7 +120,8 @@ class SettingsProvider with ChangeNotifier {
       'stable-diffusion-v1-6', // Example model ID
       // Add other Stability AI models as needed
     ],
-    'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev'],
+    'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev', 'flux-krea-dev'],
+    'Google': ['nano-banana', 'gemini-pro-vision'],
   };
 
   // Getter for all provider names (preset and custom)
@@ -1110,15 +1113,53 @@ class SettingsProvider with ChangeNotifier {
 
   // Test FLUX.1 connection
   Future<bool> testFluxConnection() async {
+    if (kDebugMode) {
+      print('[SettingsProvider] Testing FLUX.1 connection');
+      print('[SettingsProvider] Selected model: $_selectedImageModel');
+      print('[SettingsProvider] API key available: ${_imageApiKey != null && _imageApiKey!.isNotEmpty}');
+    }
+    
     if (_imageApiKey == null || _imageApiKey!.isEmpty) {
+      if (kDebugMode) {
+        print('[SettingsProvider] No API key provided for FLUX.1 test');
+      }
       return false;
     }
 
     try {
-      final fluxService = FluxKontextImageService(apiKey: _imageApiKey!);
-      return await fluxService.testConnection();
+      // Test FLUX.1 Kontext connection
+      if (_selectedImageModel.contains('kontext')) {
+        if (kDebugMode) {
+          print('[SettingsProvider] Testing FLUX.1-Kontext connection');
+        }
+        final fluxService = FluxKontextService(apiKey: _imageApiKey!);
+        final result = await fluxService.testConnection();
+        if (kDebugMode) {
+          print('[SettingsProvider] FLUX.1-Kontext test result: $result');
+        }
+        return result;
+      } 
+      // Test FLUX.1 Krea connection
+      else if (_selectedImageModel.contains('krea')) {
+        if (kDebugMode) {
+          print('[SettingsProvider] Testing FLUX.1-Krea-dev connection');
+        }
+        final fluxService = FluxKreaService(apiKey: _imageApiKey!);
+        final result = await fluxService.testConnection();
+        if (kDebugMode) {
+          print('[SettingsProvider] FLUX.1-Krea-dev test result: $result');
+        }
+        return result;
+      }
+      
+      if (kDebugMode) {
+        print('[SettingsProvider] No FLUX.1 model selected');
+      }
+      return false;
     } catch (e) {
-      print('FLUX.1 connection test failed: $e');
+      if (kDebugMode) {
+        print('[SettingsProvider] FLUX.1 connection test failed: $e');
+      }
       return false;
     }
   }

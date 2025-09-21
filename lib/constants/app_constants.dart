@@ -28,7 +28,6 @@ class AppConstants {
       'https://generativelanguage.googleapis.com/v1beta';
   static const String claudeBaseUrl = 'https://api.anthropic.com/v1';
   static const String tavilyBaseUrl = 'https://api.tavily.com';
-  static const String bingBaseUrl = 'https://api.bing.microsoft.com/v7.0';
 
   // Default Models
   static const String defaultTextModel = 'gpt-4o';

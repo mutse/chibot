@@ -98,5 +98,6 @@
   "updateFound": "Neue Version {version} gefunden",
   "updateNow": "Jetzt aktualisieren",
   "promptCopied": "Prompt kopiert",
-  "savePrompt": "Prompt speichern"
+  "savePrompt": "Prompt speichern",
+  "aspectRatio": "Seitenverhältnis"
 }

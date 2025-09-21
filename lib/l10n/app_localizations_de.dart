@@ -325,4 +325,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get savePrompt => 'Prompt speichern';
+
+  @override
+  String get aspectRatio => 'Seitenverhältnis';
 }

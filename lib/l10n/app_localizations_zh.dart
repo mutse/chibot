@@ -318,6 +318,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get savePrompt => '保存提示词';
+
+  @override
+  String get aspectRatio => '宽长比';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

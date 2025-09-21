@@ -317,4 +317,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get savePrompt => 'プロンプトを保存';
+
+  @override
+  String get aspectRatio => 'アスペクト比';
 }

@@ -323,4 +323,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savePrompt => 'Save Prompt';
+
+  @override
+  String get aspectRatio => 'Aspect Ratio';
 }

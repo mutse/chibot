@@ -329,4 +329,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get savePrompt => 'Enregistrer l\'invite';
+
+  @override
+  String get aspectRatio => 'Rapport d\'aspect';
 }

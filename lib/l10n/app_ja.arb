@@ -98,5 +98,6 @@
   "updateFound": "新しいバージョン {version} が見つかりました",
   "updateNow": "今すぐ更新",
   "promptCopied": "プロンプトをコピーしました",
-  "savePrompt": "プロンプトを保存"
+  "savePrompt": "プロンプトを保存",
+  "aspectRatio": "アスペクト比"
 }

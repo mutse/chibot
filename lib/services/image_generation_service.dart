@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'flux_image_service.dart';
 import 'flux_kontext_service.dart';
+import 'flux_krea_service.dart';
+import 'google_image_service.dart';
 
 class ImageGenerationService {
   Future<String?> generateImage({
@@ -15,6 +17,14 @@ class ImageGenerationService {
     int pollIntervalMs = 2000, // Polling interval for FLUX.1 Kontext
     String? aspectRatio,
   }) async {
+    if (kDebugMode) {
+      print('[ImageGenerationService] Starting image generation');
+      print('[ImageGenerationService] Model: $model');
+      print('[ImageGenerationService] Provider: $providerBaseUrl');
+      print('[ImageGenerationService] Prompt: $prompt');
+      print('[ImageGenerationService] Aspect ratio: $aspectRatio');
+    }
+    
     if (apiKey.isEmpty) {
       throw Exception('API Key is not set.');
     }
@@ -77,33 +87,130 @@ class ImageGenerationService {
         // 'style_preset': 'enhance', // Optional: e.g., 'photographic', 'digital-art', etc.
         // 'seed': 0, // Optional: for reproducibility
       };
-    } else if (providerBaseUrl.contains('api.bfl.ai')) {
-      // Use centralized FluxKontextService for FLUX.1 Kontext API
-      final fluxService = FluxKontextService(apiKey: apiKey);
+    } else if (providerBaseUrl.contains('generativelanguage.googleapis.com') || 
+               providerBaseUrl.contains('google')) {
+      // Handle Google Generative AI models (including nano-banana)
+      if (kDebugMode) {
+        print('[ImageGenerationService] Detected Google Generative AI endpoint');
+        print('[ImageGenerationService] Model: $model');
+      }
+      
+      final googleService = GoogleImageService(apiKey: apiKey);
       try {
         if (aspectRatio != null && aspectRatio.isNotEmpty) {
           // Use direct aspect ratio if provided
-          return await fluxService.generateImage(
+          if (kDebugMode) {
+            print('[ImageGenerationService] Using direct aspect ratio: $aspectRatio');
+          }
+          return await googleService.generateImage(
             prompt: prompt,
+            model: model,
             aspectRatio: aspectRatio,
-            maxWaitTime: Duration(seconds: maxWaitSeconds),
-            pollInterval: Duration(milliseconds: pollIntervalMs),
+            maxWaitSeconds: maxWaitSeconds,
+            pollIntervalMs: pollIntervalMs,
           );
         } else {
           // Fallback to OpenAI size mapping
-          return await fluxService.generateImageWithOpenAISize(
+          if (kDebugMode) {
+            print('[ImageGenerationService] Using OpenAI size mapping: $openAISize');
+          }
+          return await googleService.generateImageWithOpenAISize(
             prompt: prompt,
+            model: model,
             openAISize: openAISize,
             maxWaitTime: Duration(seconds: maxWaitSeconds),
             pollInterval: Duration(milliseconds: pollIntervalMs),
           );
         }
       } catch (e) {
-        throw Exception('FLUX.1 Kontext error: $e');
+        if (kDebugMode) {
+          print('[ImageGenerationService] Google Generative AI error: $e');
+        }
+        throw Exception('Google Generative AI error: $e');
+      }
+    } else if (providerBaseUrl.contains('api.bfl.ai')) {
+      // Handle different FLUX.1 models based on the model parameter
+      if (kDebugMode) {
+        print('[ImageGenerationService] Detected FLUX.1 API endpoint');
+        print('[ImageGenerationService] Model: $model');
+      }
+      
+      if (model.contains('krea')) {
+        // Use FLUX.1-Krea-dev model
+        if (kDebugMode) {
+          print('[ImageGenerationService] Using FLUX.1-Krea-dev service');
+        }
+        final fluxService = FluxKreaService(apiKey: apiKey);
+        try {
+          if (aspectRatio != null && aspectRatio.isNotEmpty) {
+            // Use direct aspect ratio if provided
+            if (kDebugMode) {
+              print('[ImageGenerationService] Using direct aspect ratio: $aspectRatio');
+            }
+            return await fluxService.generateImage(
+              prompt: prompt,
+              aspectRatio: aspectRatio,
+              maxWaitTime: Duration(seconds: maxWaitSeconds),
+              pollInterval: Duration(milliseconds: pollIntervalMs),
+            );
+          } else {
+            // Fallback to OpenAI size mapping
+            if (kDebugMode) {
+              print('[ImageGenerationService] Using OpenAI size mapping: $openAISize');
+            }
+            return await fluxService.generateImageWithOpenAISize(
+              prompt: prompt,
+              openAISize: openAISize,
+              maxWaitTime: Duration(seconds: maxWaitSeconds),
+              pollInterval: Duration(milliseconds: pollIntervalMs),
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('[ImageGenerationService] FLUX.1-Krea-dev error: $e');
+          }
+          throw Exception('FLUX.1 Krea error: $e');
+        }
+      } else {
+        // Use FLUX.1-Kontext for other models (pro, dev)
+        if (kDebugMode) {
+          print('[ImageGenerationService] Using FLUX.1-Kontext service');
+        }
+        final fluxService = FluxKontextService(apiKey: apiKey);
+        try {
+          if (aspectRatio != null && aspectRatio.isNotEmpty) {
+            // Use direct aspect ratio if provided
+            if (kDebugMode) {
+              print('[ImageGenerationService] Using direct aspect ratio: $aspectRatio');
+            }
+            return await fluxService.generateImage(
+              prompt: prompt,
+              aspectRatio: aspectRatio,
+              maxWaitTime: Duration(seconds: maxWaitSeconds),
+              pollInterval: Duration(milliseconds: pollIntervalMs),
+            );
+          } else {
+            // Fallback to OpenAI size mapping
+            if (kDebugMode) {
+              print('[ImageGenerationService] Using OpenAI size mapping: $openAISize');
+            }
+            return await fluxService.generateImageWithOpenAISize(
+              prompt: prompt,
+              openAISize: openAISize,
+              maxWaitTime: Duration(seconds: maxWaitSeconds),
+              pollInterval: Duration(milliseconds: pollIntervalMs),
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('[ImageGenerationService] FLUX.1-Kontext error: $e');
+          }
+          throw Exception('FLUX.1 Kontext error: $e');
+        }
       }
     } else {
       throw Exception(
-        'Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai, api.bfl.ai',
+        'Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai, api.bfl.ai, generativelanguage.googleapis.com',
       );
     }
 
