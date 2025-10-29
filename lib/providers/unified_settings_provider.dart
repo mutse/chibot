@@ -7,6 +7,7 @@ import 'search_provider.dart';
 import '../models/model_registry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/available_model.dart' as available_model;
+import '../utils/settings_xml_handler.dart';
 
 /// 统一的设置提供者聚合类
 /// 这个类聚合了所有分解的提供者，提供向后兼容的 API
@@ -235,5 +236,171 @@ class UnifiedSettingsProvider with ChangeNotifier {
     if (data.containsKey('search')) {
       await searchProvider.fromMap(data['search']);
     }
+  }
+
+  /// 导出所有设置为 XML 格式
+  Future<String> exportSettingsToXml() async {
+    try {
+      final nestedSettings = await exportSettings();
+      final flatMap = _flattenSettingsMap(nestedSettings);
+      return SettingsXmlHandler.exportToXml(flatMap);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in exportSettingsToXml: $e');
+      }
+      throw Exception('Failed to export settings to XML: $e');
+    }
+  }
+
+  /// 从 XML 格式导入所有设置
+  Future<void> importSettingsFromXml(String xmlContent) async {
+    try {
+      final flatMap = SettingsXmlHandler.importFromXml(xmlContent);
+      final nestedMap = _reconstructSettingsMap(flatMap);
+      await importSettings(nestedMap);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in importSettingsFromXml: $e');
+      }
+      throw Exception('Failed to import settings from XML: $e');
+    }
+  }
+
+  /// 将嵌套的设置 Map 展平为扁平 Map 用于 XML 处理
+  Map<String, dynamic> _flattenSettingsMap(Map<String, dynamic> nested) {
+    final flat = <String, dynamic>{};
+
+    // 展平 API 密钥
+    if (nested.containsKey('apiKeys')) {
+      flat.addAll(nested['apiKeys'] as Map<String, dynamic>);
+    }
+
+    // 展平聊天模型设置
+    if (nested.containsKey('chatModel')) {
+      flat.addAll(nested['chatModel'] as Map<String, dynamic>);
+    }
+
+    // 展平图像模型设置
+    if (nested.containsKey('imageModel')) {
+      flat.addAll(nested['imageModel'] as Map<String, dynamic>);
+    }
+
+    // 展平视频模型设置
+    if (nested.containsKey('videoModel')) {
+      flat.addAll(nested['videoModel'] as Map<String, dynamic>);
+    }
+
+    // 展平搜索设置
+    if (nested.containsKey('search')) {
+      flat.addAll(nested['search'] as Map<String, dynamic>);
+    }
+
+    // 添加模型类型
+    flat[_selectedModelTypeKey] = _selectedModelType.index;
+
+    return flat;
+  }
+
+  /// 从扁平 Map 重建嵌套的设置 Map
+  Map<String, dynamic> _reconstructSettingsMap(Map<String, dynamic> flat) {
+    return {
+      'apiKeys': _extractApiKeys(flat),
+      'chatModel': _extractChatModel(flat),
+      'imageModel': _extractImageModel(flat),
+      'videoModel': _extractVideoModel(flat),
+      'search': _extractSearch(flat),
+    };
+  }
+
+  /// 从扁平 Map 提取 API 密钥设置
+  Map<String, dynamic> _extractApiKeys(Map<String, dynamic> flat) {
+    const keys = [
+      'openai_api_key',
+      'claude_api_key',
+      'google_api_key',
+      'flux_kontext_api_key',
+      'tavily_api_key',
+    ];
+    final extracted = <String, dynamic>{};
+    for (final key in keys) {
+      if (flat.containsKey(key)) {
+        extracted[key] = flat[key];
+      }
+    }
+    return extracted;
+  }
+
+  /// 从扁平 Map 提取聊天模型设置
+  Map<String, dynamic> _extractChatModel(Map<String, dynamic> flat) {
+    const keys = [
+      'selected_model_provider',
+      'openai_selected_model',
+      'openai_provider_url',
+      'custom_models_list',
+      'custom_providers_map',
+    ];
+    final extracted = <String, dynamic>{};
+    for (final key in keys) {
+      if (flat.containsKey(key)) {
+        extracted[key] = flat[key];
+      }
+    }
+    return extracted;
+  }
+
+  /// 从扁平 Map 提取图像模型设置
+  Map<String, dynamic> _extractImageModel(Map<String, dynamic> flat) {
+    const keys = [
+      'selected_image_provider',
+      'selected_image_model',
+      'image_provider_url',
+      'custom_image_models_list',
+      'custom_image_providers_map',
+      'bfl_aspect_ratio',
+    ];
+    final extracted = <String, dynamic>{};
+    for (final key in keys) {
+      if (flat.containsKey(key)) {
+        extracted[key] = flat[key];
+      }
+    }
+    return extracted;
+  }
+
+  /// 从扁平 Map 提取视频模型设置
+  Map<String, dynamic> _extractVideoModel(Map<String, dynamic> flat) {
+    const keys = [
+      'selected_video_provider',
+      'video_resolution',
+      'video_duration',
+      'video_quality',
+      'video_aspect_ratio',
+    ];
+    final extracted = <String, dynamic>{};
+    for (final key in keys) {
+      if (flat.containsKey(key)) {
+        extracted[key] = flat[key];
+      }
+    }
+    return extracted;
+  }
+
+  /// 从扁平 Map 提取搜索设置
+  Map<String, dynamic> _extractSearch(Map<String, dynamic> flat) {
+    const keys = [
+      'google_search_enabled',
+      'google_search_result_count',
+      'google_search_provider',
+      'tavily_search_enabled',
+      'google_search_api_key',
+      'google_search_engine_id',
+    ];
+    final extracted = <String, dynamic>{};
+    for (final key in keys) {
+      if (flat.containsKey(key)) {
+        extracted[key] = flat[key];
+      }
+    }
+    return extracted;
   }
 }

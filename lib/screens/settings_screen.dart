@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chibot/providers/settings_provider.dart';
+import 'package:chibot/providers/api_key_provider.dart';
+import 'package:chibot/providers/chat_model_provider.dart';
+import 'package:chibot/providers/image_model_provider.dart';
+import 'package:chibot/providers/video_model_provider.dart';
+import 'package:chibot/providers/search_provider.dart';
 import 'package:chibot/providers/settings_models_provider.dart';
+import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
@@ -30,54 +35,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+    final chatModel = Provider.of<ChatModelProvider>(context, listen: false);
+    final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
+    final videoModel = Provider.of<VideoModelProvider>(context, listen: false);
+    final search = Provider.of<SearchProvider>(context, listen: false);
+
     _apiKeyController = TextEditingController(
-      text: _getProviderApiKey(settings),
+      text: _getProviderApiKey(apiKeys, chatModel),
     );
     _providerUrlController = TextEditingController(
-      text: settings.rawProviderUrl,
+      text: chatModel.rawProviderUrl,
     );
     _imageProviderUrlController = TextEditingController(
-      text: settings.rawImageProviderUrl,
+      text: imageModel.rawImageProviderUrl,
     );
     _customModelController = TextEditingController();
     _tavilyApiKeyController = TextEditingController(
-      text: settings.tavilyApiKey ?? '',
+      text: apiKeys.tavilyApiKey ?? '',
     );
     _googleSearchApiKeyController = TextEditingController(
-      text: settings.googleSearchApiKey ?? '',
+      text: apiKeys.googleSearchApiKey ?? '',
     );
     _googleSearchEngineIdController = TextEditingController(
-      text: settings.googleSearchEngineId ?? '',
+      text: search.googleSearchEngineId ?? '',
     );
     _veo3ApiKeyController = TextEditingController(
-      text: settings.veo3ApiKey ?? '',
+      text: apiKeys.googleApiKey ?? '',
     );
   }
 
-  String _getProviderApiKey(SettingsProvider settings) {
-    if (settings.selectedModelType == available_model.ModelType.image) {
-      return settings.imageApiKey ?? '';
-    }
-
-    switch (settings.selectedProvider) {
+  String _getProviderApiKey(ApiKeyProvider apiKeys, ChatModelProvider chatModel) {
+    switch (chatModel.selectedProvider) {
       case 'OpenAI':
-        return settings.apiKey ?? '';
+        return apiKeys.apiKey ?? '';
       case 'Anthropic':
-        return settings.claudeApiKey ?? '';
+        return apiKeys.claudeApiKey ?? '';
       case 'Google':
-        return settings.apiKey ?? ''; // Using OpenAI key for Google for now
+        return apiKeys.apiKey ?? ''; // Using OpenAI key for Google for now
       default:
-        return settings.apiKey ?? '';
+        return apiKeys.apiKey ?? '';
     }
   }
 
-  String _getApiKeyLabel(SettingsProvider settings) {
-    if (settings.selectedModelType == available_model.ModelType.image) {
-      return l10n.apiKey(settings.selectedImageProvider);
+  String _getApiKeyLabel(ChatModelProvider chatModel, ImageModelProvider imageModel, bool isImageMode) {
+    if (isImageMode) {
+      return l10n.apiKey(imageModel.selectedImageProvider);
     }
 
-    switch (settings.selectedProvider) {
+    switch (chatModel.selectedProvider) {
       case 'OpenAI':
         return 'OpenAI API Key';
       case 'Anthropic':
@@ -85,16 +91,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'Google':
         return 'Google API Key';
       default:
-        return l10n.apiKey(settings.selectedProvider);
+        return l10n.apiKey(chatModel.selectedProvider);
     }
   }
 
-  String _getApiKeyHint(SettingsProvider settings) {
-    if (settings.selectedModelType == available_model.ModelType.image) {
+  String _getApiKeyHint(ChatModelProvider chatModel, bool isImageMode) {
+    if (isImageMode) {
       return l10n.enterYourAPIKey;
     }
 
-    switch (settings.selectedProvider) {
+    switch (chatModel.selectedProvider) {
       case 'OpenAI':
         return 'Enter your OpenAI API Key';
       case 'Anthropic':
@@ -106,19 +112,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _saveProviderApiKey(SettingsProvider settings, String apiKey) {
-    switch (settings.selectedProvider) {
+  Future<void> _saveProviderApiKey(ApiKeyProvider apiKeys, ChatModelProvider chatModel, String apiKey) async {
+    switch (chatModel.selectedProvider) {
       case 'OpenAI':
-        settings.setApiKey(apiKey);
+        await apiKeys.setOpenaiApiKey(apiKey);
         break;
       case 'Anthropic':
-        settings.setClaudeApiKey(apiKey);
+        await apiKeys.setClaudeApiKey(apiKey);
         break;
       case 'Google':
-        settings.setApiKey(apiKey); // Using OpenAI key for Google for now
+        await apiKeys.setGoogleApiKey(apiKey);
         break;
       default:
-        settings.setApiKey(apiKey);
+        await apiKeys.setOpenaiApiKey(apiKey);
+        break;
+    }
+  }
+
+  Future<void> _saveImageProviderApiKey(ApiKeyProvider apiKeys, ImageModelProvider imageModel, String apiKey) async {
+    switch (imageModel.selectedImageProvider) {
+      case 'OpenAI':
+        await apiKeys.setOpenaiApiKey(apiKey);
+        break;
+      case 'Google':
+        await apiKeys.setGoogleApiKey(apiKey);
+        break;
+      case 'Black Forest Labs':
+        await apiKeys.setFluxKontextApiKey(apiKey);
+        break;
+      default:
+        await apiKeys.setOpenaiApiKey(apiKey);
         break;
     }
   }
@@ -144,11 +167,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<SettingsProvider>(context);
+    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(context);
     final settingsModels = Provider.of<SettingsModelsProvider>(context);
+    final apiKeys = Provider.of<ApiKeyProvider>(context);
+    final chatModel = Provider.of<ChatModelProvider>(context);
+    final imageModel = Provider.of<ImageModelProvider>(context);
+    final videoModel = Provider.of<VideoModelProvider>(context);
+    final search = Provider.of<SearchProvider>(context);
 
     // 动态切换 API Key Controller 内容 - now provider-aware
-    final expectedApiKey = _getProviderApiKey(settings);
+    final expectedApiKey = _getProviderApiKey(apiKeys, chatModel);
     if (_apiKeyController.text != expectedApiKey) {
       _apiKeyController.text = expectedApiKey;
     }
@@ -171,11 +199,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ChoiceChip(
                     label: Text(l10n.textModel),
                     selected:
-                        settings.selectedModelType ==
+                        unifiedSettings.selectedModelType ==
                         available_model.ModelType.text,
                     onSelected: (selected) {
                       if (selected) {
-                        settings.setSelectedModelType(
+                        unifiedSettings.setSelectedModelType(
                           available_model.ModelType.text,
                         );
                       }
@@ -185,11 +213,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ChoiceChip(
                     label: Text(l10n.imageModel),
                     selected:
-                        settings.selectedModelType ==
+                        unifiedSettings.selectedModelType ==
                         available_model.ModelType.image,
                     onSelected: (selected) {
                       if (selected) {
-                        settings.setSelectedModelType(
+                        unifiedSettings.setSelectedModelType(
                           available_model.ModelType.image,
                         );
                       }
@@ -205,35 +233,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     l10n.selectModelProvider,
                     style: const TextStyle(fontSize: 16),
                   ),
-                  TextButton.icon(
+              TextButton.icon(
                     icon: const Icon(Icons.add),
                     label: Text(l10n.add),
                     onPressed: () {
                       _showAddProviderAndModelDialog(
                         context,
-                        settings,
-                        settings.selectedModelType,
+                        unifiedSettings,
+                        unifiedSettings.selectedModelType,
                       );
                     },
                   ),
                 ],
               ),
-              if (settings.selectedModelType ==
+              if (unifiedSettings.selectedModelType ==
                   available_model.ModelType.text) ...[
                 DropdownButton<String>(
                   value:
-                      settings.allProviderNames.contains(
-                            settings.selectedProvider,
+                      chatModel.allProviderNames.contains(
+                            chatModel.selectedProvider,
                           )
-                          ? settings.selectedProvider
-                          : (settings.allProviderNames.isNotEmpty
-                              ? settings.allProviderNames.first
+                          ? chatModel.selectedProvider
+                          : (chatModel.allProviderNames.isNotEmpty
+                              ? chatModel.allProviderNames.first
                               : null),
                   isExpanded: true,
                   items:
-                      settings.allProviderNames.map((String provider) {
+                      chatModel.allProviderNames.map((String provider) {
                         final isCustom =
-                            !SettingsProvider.defaultBaseUrls.keys.contains(
+                            !ChatModelProvider.defaultBaseUrls.keys.contains(
                               provider,
                             );
                         return DropdownMenuItem<String>(
@@ -247,10 +275,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }).toList(),
                   onChanged: (String? newValue) async {
                     if (newValue != null) {
-                      await settings.setSelectedProvider(newValue);
+                      await chatModel.setSelectedProvider(newValue);
                       _providerUrlController.text =
-                          settings.rawProviderUrl ?? '';
-                      _apiKeyController.text = _getProviderApiKey(settings);
+                          chatModel.rawProviderUrl ?? '';
+                      _apiKeyController.text = _getProviderApiKey(apiKeys, chatModel);
                       // 只显示该供应商下的模型
                       setState(() {});
                     }
@@ -263,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Text(
                   l10n.defaultUrl(
-                    SettingsProvider.defaultBaseUrls['OpenAI'] ?? '',
+                    ChatModelProvider.defaultBaseUrls['OpenAI'] ?? '',
                   ),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
@@ -276,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  _getApiKeyLabel(settings),
+                  _getApiKeyLabel(chatModel, imageModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
                   style: const TextStyle(fontSize: 16),
                 ),
                 Row(
@@ -286,19 +314,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         controller: _apiKeyController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: _getApiKeyHint(settings),
+                          hintText: _getApiKeyHint(chatModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
                         ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.clear),
                       tooltip: '清除',
-                      onPressed: () {
+                      onPressed: () async {
                         setState(() {
                           _apiKeyController.clear();
                         });
                         // 清空 provider 的 API key
-                        _saveProviderApiKey(settings, '');
+                        await _saveProviderApiKey(apiKeys, chatModel, '');
                       },
                     ),
                   ],
@@ -309,20 +337,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value:
                       settingsModels.textModels
                               .where(
-                                (m) => m.provider == settings.selectedProvider,
+                                (m) => m.provider == chatModel.selectedProvider,
                               )
-                              .any((m) => m.id == settings.selectedModel)
-                          ? settings.selectedModel
+                              .any((m) => m.id == chatModel.selectedModel)
+                          ? chatModel.selectedModel
                           : (settingsModels.textModels
                                   .where(
                                     (m) =>
-                                        m.provider == settings.selectedProvider,
+                                        m.provider == chatModel.selectedProvider,
                                   )
                                   .isNotEmpty
                               ? settingsModels.textModels
                                   .where(
                                     (m) =>
-                                        m.provider == settings.selectedProvider,
+                                        m.provider == chatModel.selectedProvider,
                                   )
                                   .first
                                   .id
@@ -332,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settingsModels.textModels
                           .where(
                             (model) =>
-                                model.provider == settings.selectedProvider,
+                                model.provider == chatModel.selectedProvider,
                           )
                           .map((model) {
                             return DropdownMenuItem<String>(
@@ -343,13 +371,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           .toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
-                      settings.setSelectedModel(newValue);
+                      chatModel.setSelectedModel(newValue);
                     }
                   },
                   hint:
                       settingsModels.textModels
                               .where(
-                                (m) => m.provider == settings.selectedProvider,
+                                (m) => m.provider == chatModel.selectedProvider,
                               )
                               .isEmpty
                           ? Text(l10n.noModelsAvailable)
@@ -372,8 +400,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () {
                         final modelName = _customModelController.text.trim();
                         if (modelName.isNotEmpty) {
-                          settings.addCustomModel(modelName);
-                          settings.setSelectedModel(modelName); // 新增：自动选中
+                          chatModel.addCustomModel(modelName);
+                          chatModel.setSelectedModel(modelName); // 新增：自动选中
                           _customModelController.clear();
                         }
                       },
@@ -386,15 +414,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Text('Tavily Web 搜索功能', style: TextStyle(fontSize: 16)),
                     Spacer(),
                     Switch(
-                      value: settings.tavilySearchEnabled,
+                      value: search.tavilySearchEnabled,
                       onChanged: (value) {
-                        settings.setTavilySearchEnabled(value);
+                        search.setTavilySearchEnabled(value);
                       },
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (settings.tavilySearchEnabled) ...[
+                if (search.tavilySearchEnabled) ...[
                   Text(
                     'Tavily Web 搜索 API Key',
                     style: const TextStyle(fontSize: 16),
@@ -415,14 +443,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Text('Google 搜索功能', style: TextStyle(fontSize: 16)),
                     Spacer(),
                     Switch(
-                      value: settings.googleSearchEnabled,
+                      value: search.googleSearchEnabled,
                       onChanged: (value) {
-                        settings.setGoogleSearchEnabled(value);
+                        search.setGoogleSearchEnabled(value);
                       },
                     ),
                   ],
                 ),
-                if (settings.googleSearchEnabled) ...[
+                if (search.googleSearchEnabled) ...[
                   Text('Google Search API Key', style: TextStyle(fontSize: 14)),
                   TextField(
                     controller: _googleSearchApiKeyController,
@@ -445,20 +473,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(height: 10),
                   Text('搜索结果数量', style: TextStyle(fontSize: 14)),
                   Slider(
-                    value: settings.googleSearchResultCount.toDouble(),
+                    value: search.googleSearchResultCount.toDouble(),
                     min: 1,
                     max: 20,
                     divisions: 19,
-                    label: settings.googleSearchResultCount.toString(),
+                    label: search.googleSearchResultCount.toString(),
                     onChanged: (value) {
-                      settings.setGoogleSearchResultCount(value.toInt());
+                      search.setGoogleSearchResultCount(value.toInt());
                     },
                   ),
 
                   SizedBox(height: 10),
                   Text('搜索提供商', style: TextStyle(fontSize: 14)),
                   DropdownButton<String>(
-                    value: settings.googleSearchProvider,
+                    value: search.googleSearchProvider,
                     isExpanded: true,
                     items: [
                       DropdownMenuItem(
@@ -472,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                     onChanged: (value) {
                       if (value != null) {
-                        settings.setGoogleSearchProvider(value);
+                        search.setGoogleSearchProvider(value);
                       }
                     },
                   ),
@@ -517,7 +545,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         setState(() {
                           _veo3ApiKeyController.clear();
                         });
-                        settings.setVeo3ApiKey('');
+                        apiKeys.setGoogleApiKey('');
                       },
                     ),
                   ],
@@ -531,7 +559,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 5),
                 DropdownButton<String>(
-                  value: settings.videoResolution,
+                  value: videoModel.videoResolution,
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: '480p', child: Text('480p (854×480)')),
@@ -540,7 +568,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      settings.setVideoResolution(value);
+                      videoModel.setVideoResolution(value);
                     }
                   },
                 ),
@@ -553,7 +581,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 5),
                 DropdownButton<String>(
-                  value: settings.videoDuration,
+                  value: videoModel.videoDuration,
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: '5s', child: Text('5 seconds')),
@@ -563,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      settings.setVideoDuration(value);
+                      videoModel.setVideoDuration(value);
                     }
                   },
                 ),
@@ -576,7 +604,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 5),
                 DropdownButton<String>(
-                  value: settings.videoQuality,
+                  value: videoModel.videoQuality,
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: 'standard', child: Text('Standard Quality')),
@@ -584,7 +612,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      settings.setVideoQuality(value);
+                      videoModel.setVideoQuality(value);
                     }
                   },
                 ),
@@ -597,7 +625,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 5),
                 DropdownButton<String>(
-                  value: settings.videoAspectRatio,
+                  value: videoModel.videoAspectRatio,
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: '16:9', child: Text('16:9 (Landscape)')),
@@ -607,13 +635,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      settings.setVideoAspectRatio(value);
+                      videoModel.setVideoAspectRatio(value);
                     }
                   },
                 ),
                 const SizedBox(height: 20),
 
-                if (settings.customModels.isNotEmpty)
+                if (chatModel.customModels.isNotEmpty)
                   Text(
                     l10n.yourCustomModels,
                     style: const TextStyle(
@@ -624,9 +652,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: settings.customModels.length,
+                  itemCount: chatModel.customModels.length,
                   itemBuilder: (context, index) {
-                    final model = settings.customModels[index];
+                    final model = chatModel.customModels[index];
                     return ListTile(
                       title: Text(model),
                       trailing: IconButton(
@@ -635,7 +663,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Colors.redAccent,
                         ),
                         onPressed: () {
-                          settings.removeCustomModel(model);
+                          chatModel.removeCustomModel(model);
                         },
                       ),
                     );
@@ -644,16 +672,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ] else ...[
                 DropdownButton<String>(
                   value:
-                      settings.allImageProviderNames.contains(
-                            settings.selectedImageProvider,
+                      imageModel.allImageProviderNames.contains(
+                            imageModel.selectedImageProvider,
                           )
-                          ? settings.selectedImageProvider
-                          : (settings.allImageProviderNames.isNotEmpty
-                              ? settings.allImageProviderNames.first
+                          ? imageModel.selectedImageProvider
+                          : (imageModel.allImageProviderNames.isNotEmpty
+                              ? imageModel.allImageProviderNames.first
                               : null),
                   isExpanded: true,
                   items:
-                      settings.allImageProviderNames.map((String provider) {
+                      imageModel.allImageProviderNames.map((String provider) {
                         return DropdownMenuItem<String>(
                           value: provider,
                           child: Text(provider),
@@ -661,16 +689,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }).toList(),
                   onChanged: (String? newValue) async {
                     if (newValue != null) {
-                      await settings.setSelectedImageProvider(newValue);
+                      await imageModel.setSelectedImageProvider(newValue);
                       _imageProviderUrlController.text =
-                          settings.rawImageProviderUrl ?? '';
-                      _apiKeyController.text = settings.imageApiKey ?? '';
-                      if (settings.availableImageModels.isNotEmpty) {
-                        await settings.setSelectedImageModel(
-                          settings.availableImageModels.first,
+                          imageModel.rawImageProviderUrl ?? '';
+                      _apiKeyController.text = apiKeys.getImageApiKeyForProvider(newValue) ?? '';
+                      if (imageModel.availableImageModels.isNotEmpty) {
+                        await imageModel.setSelectedImageModel(
+                          imageModel.availableImageModels.first,
                         );
                       } else {
-                        await settings.setSelectedImageModel('');
+                        await imageModel.setSelectedImageModel('');
                       }
                       setState(() {});
                     }
@@ -683,7 +711,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Text(
                   l10n.defaultUrl(
-                    SettingsProvider.defaultImageBaseUrls['OpenAI'] ?? '',
+                    ImageModelProvider.defaultImageBaseUrls['OpenAI'] ?? '',
                   ),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
@@ -696,7 +724,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  l10n.apiKey(settings.selectedImageProvider),
+                  l10n.apiKey(imageModel.selectedImageProvider),
                   style: const TextStyle(fontSize: 16),
                 ),
                 Row(
@@ -713,11 +741,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     IconButton(
                       icon: const Icon(Icons.clear),
                       tooltip: '清除',
-                      onPressed: () {
+                      onPressed: () async {
                         setState(() {
                           _apiKeyController.clear();
                         });
-                        settings.setImageApiKey('');
+                        // Clear image API key for the current image provider
+                        await _saveImageProviderApiKey(apiKeys, imageModel, '');
                       },
                     ),
                   ],
@@ -730,22 +759,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               .where(
                                 (m) =>
                                     m.provider ==
-                                    settings.selectedImageProvider,
+                                    imageModel.selectedImageProvider,
                               )
-                              .any((m) => m.id == settings.selectedImageModel)
-                          ? settings.selectedImageModel
+                              .any((m) => m.id == imageModel.selectedImageModel)
+                          ? imageModel.selectedImageModel
                           : (settingsModels.imageModels
                                   .where(
                                     (m) =>
                                         m.provider ==
-                                        settings.selectedImageProvider,
+                                        imageModel.selectedImageProvider,
                                   )
                                   .isNotEmpty
                               ? settingsModels.imageModels
                                   .where(
                                     (m) =>
                                         m.provider ==
-                                        settings.selectedImageProvider,
+                                        imageModel.selectedImageProvider,
                                   )
                                   .first
                                   .id
@@ -756,7 +785,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           .where(
                             (model) =>
                                 model.provider ==
-                                settings.selectedImageProvider,
+                                imageModel.selectedImageProvider,
                           )
                           .map((model) {
                             return DropdownMenuItem<String>(
@@ -767,7 +796,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           .toList(),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
-                      settings.setSelectedImageModel(newValue);
+                      imageModel.setSelectedImageModel(newValue);
                     }
                   },
                   hint:
@@ -775,18 +804,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               .where(
                                 (m) =>
                                     m.provider ==
-                                    settings.selectedImageProvider,
+                                    imageModel.selectedImageProvider,
                               )
                               .isEmpty
                           ? Text(l10n.noModelsAvailable)
                           : null,
                 ),
                 // Aspect Ratio selector for Black Forest Labs
-                if (settings.selectedImageProvider == 'Black Forest Labs') ...[
+                if (imageModel.selectedImageProvider == 'Black Forest Labs') ...[
                   const SizedBox(height: 20),
                   Text(l10n.aspectRatio, style: TextStyle(fontSize: 16)),
                   DropdownButton<String>(
-                    value: settings.bflAspectRatio ?? '1:1',
+                    value: imageModel.bflAspectRatio ?? '1:1',
                     isExpanded: true,
                     items: [
                       DropdownMenuItem(value: '1:1', child: Text('1:1 (正方形)')),
@@ -795,8 +824,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       DropdownMenuItem(value: '4:3', child: Text('4:3')),
                       DropdownMenuItem(value: '3:2', child: Text('3:2')),
                     ],
-                    onChanged: (value) {
-                      settings.bflAspectRatio = value;
+                    onChanged: (value) async {
+                      await imageModel.setBflAspectRatio(value);
                     },
                   ),
                 ],
@@ -817,8 +846,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () {
                         final modelName = _customModelController.text.trim();
                         if (modelName.isNotEmpty) {
-                          settings.addCustomImageModel(modelName);
-                          settings.setSelectedImageModel(modelName); // 新增：自动选中
+                          imageModel.addCustomImageModel(modelName);
+                          imageModel.setSelectedImageModel(modelName); // 新增：自动选中
                           _customModelController.clear();
                         }
                       },
@@ -826,7 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (settings.customImageModels.isNotEmpty)
+                if (imageModel.customImageModels.isNotEmpty)
                   Text(
                     l10n.yourCustomModels,
                     style: const TextStyle(
@@ -837,9 +866,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: settings.customImageModels.length,
+                  itemCount: imageModel.customImageModels.length,
                   itemBuilder: (context, index) {
-                    final model = settings.customImageModels[index];
+                    final model = imageModel.customImageModels[index];
                     return ListTile(
                       title: Text(model),
                       trailing: IconButton(
@@ -848,7 +877,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Colors.redAccent,
                         ),
                         onPressed: () {
-                          settings.removeCustomImageModel(model);
+                          imageModel.removeCustomImageModel(model);
                         },
                       ),
                     );
@@ -865,7 +894,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () => _exportSettings(context, settings),
+                      onPressed: () => _exportSettings(context, unifiedSettings),
                       icon: const Icon(Icons.file_upload),
                       label: Text(l10n.exportConfig),
                       style: ElevatedButton.styleFrom(
@@ -875,7 +904,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _showImportOptions(context, settings),
+                      onPressed: () => _showImportOptions(context, unifiedSettings),
                       icon: const Icon(Icons.file_download),
                       label: Text(l10n.importConfig),
                       style: ElevatedButton.styleFrom(
@@ -885,43 +914,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final apiKeyText = _apiKeyController.text.trim();
 
-                        if (settings.selectedModelType ==
+                        if (unifiedSettings.selectedModelType ==
                             available_model.ModelType.text) {
                           // Save API key to the correct provider
-                          _saveProviderApiKey(settings, apiKeyText);
+                          await _saveProviderApiKey(apiKeys, chatModel, apiKeyText);
 
-                          settings.setProviderUrl(
+                          chatModel.setProviderUrl(
                             _providerUrlController.text.trim(),
                           );
-                          if (settings.tavilySearchEnabled) {
-                            settings.setTavilyApiKey(
+                          if (search.tavilySearchEnabled) {
+                            await apiKeys.setTavilyApiKey(
                               _tavilyApiKeyController.text.trim(),
                             );
                           } else {
-                            settings.setTavilyApiKey('');
+                            await apiKeys.setTavilyApiKey('');
                           }
-                          settings.setGoogleSearchApiKey(
+                          await apiKeys.setGoogleSearchApiKey(
                             _googleSearchApiKeyController.text.trim(),
                           );
-                          settings.setGoogleSearchEngineId(
+                          await search.setGoogleSearchEngineId(
                             _googleSearchEngineIdController.text.trim(),
                           );
                           // Save Veo3 API key
-                          settings.setVeo3ApiKey(
+                          await apiKeys.setGoogleApiKey(
                             _veo3ApiKeyController.text.trim(),
                           );
                         } else {
-                          settings.setImageApiKey(apiKeyText);
-                          settings.setImageProviderUrl(
+                          // Save image API key based on selected image provider
+                          await _saveImageProviderApiKey(apiKeys, imageModel, apiKeyText);
+                          imageModel.setImageProviderUrl(
                             _imageProviderUrlController.text.trim(),
                           );
                         }
 
                         // 保存后同步模型到内存注册表
-                        settings.syncModelsToRegistry();
+                        chatModel.syncModelsToRegistry();
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(l10n.settingsSaved)),
@@ -944,7 +974,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showAddProviderAndModelDialog(
     BuildContext context,
-    SettingsProvider settings,
+    UnifiedSettingsProvider unifiedSettings,
     available_model.ModelType modelType,
   ) {
     final TextEditingController providerNameController =
@@ -992,7 +1022,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               child: Text(l10n.add),
-              onPressed: () {
+              onPressed: () async {
                 final String providerName = providerNameController.text.trim();
                 final String modelName = modelNameController.text.trim();
                 final String providerUrl = providerUrlController.text.trim();
@@ -1000,37 +1030,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (providerName.isNotEmpty && modelName.isNotEmpty) {
                   if (modelType == available_model.ModelType.text) {
-                    settings.addCustomProviderWithModels(providerName, [
-                      modelName,
-                    ]);
-                    settings.setSelectedProvider(
-                      providerName,
-                    ); // 新增：自动选中Provider
-                    settings.setSelectedModel(modelName); // 新增：自动选中模型
+                    // Add custom provider with the model to ChatModelProvider
+                    final chatModel = Provider.of<ChatModelProvider>(context, listen: false);
+                    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+
+                    await chatModel.addCustomProvider(providerName, [modelName]);
+                    await chatModel.setSelectedProvider(providerName);
+                    await chatModel.setSelectedModel(modelName);
+
                     if (providerUrl.isNotEmpty) {
-                      if (settings.selectedProvider == providerName) {
-                        settings.setProviderUrl(providerUrl);
-                      }
+                      await chatModel.setProviderUrl(providerUrl);
                     }
                     if (apiKey.isNotEmpty) {
-                      // 假设自定义 provider 也用 setApiKey 存储
-                      settings.setApiKey(apiKey);
+                      // Save API key based on provider type
+                      await _saveProviderApiKey(apiKeys, chatModel, apiKey);
                     }
                   } else if (modelType == available_model.ModelType.image) {
-                    settings.addCustomImageProviderWithModels(providerName, [
-                      modelName,
-                    ]);
-                    settings.setSelectedImageProvider(
-                      providerName,
-                    ); // 新增：自动选中Provider
-                    settings.setSelectedImageModel(modelName); // 新增：自动选中模型
+                    // Add custom image provider with the model to ImageModelProvider
+                    final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
+                    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+
+                    await imageModel.addCustomImageProvider(providerName, [modelName]);
+                    await imageModel.setSelectedImageProvider(providerName);
+                    await imageModel.setSelectedImageModel(modelName);
+
                     if (providerUrl.isNotEmpty) {
-                      if (settings.selectedImageProvider == providerName) {
-                        settings.setImageProviderUrl(providerUrl);
-                      }
+                      await imageModel.setImageProviderUrl(providerUrl);
                     }
                     if (apiKey.isNotEmpty) {
-                      settings.setImageApiKey(apiKey);
+                      // Save image API key based on provider type
+                      await _saveImageProviderApiKey(apiKeys, imageModel, apiKey);
                     }
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1055,13 +1084,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _exportSettings(
     BuildContext context,
-    SettingsProvider settings,
+    UnifiedSettingsProvider unifiedSettings,
   ) async {
     try {
       // 强制同步最新模型到 ModelRegistry
-      settings.syncModelsToRegistry?.call();
+      unifiedSettings.syncModelsToRegistry?.call();
       print('Starting export process...');
-      final xmlContent = await settings.exportSettingsToXml();
+      final xmlContent = await unifiedSettings.exportSettingsToXml();
       print('XML content generated: ${xmlContent.length} characters');
 
       // Get the appropriate directory based on platform
@@ -1162,7 +1191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showImportOptions(BuildContext context, SettingsProvider settings) {
+  void _showImportOptions(BuildContext context, UnifiedSettingsProvider unifiedSettings) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -1185,7 +1214,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(_getPlatformDirectory()),
                 onTap: () {
                   Navigator.of(dialogContext).pop();
-                  _importSettings(context, settings);
+                  _importSettings(context, unifiedSettings);
                 },
               ),
               const Divider(),
@@ -1195,7 +1224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: const Text('浏览文件系统选择配置文件'),
                 onTap: () {
                   Navigator.of(dialogContext).pop();
-                  _importSettingsFromFilePicker(context, settings);
+                  _importSettingsFromFilePicker(context, unifiedSettings);
                 },
               ),
             ],
@@ -1229,7 +1258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _importSettingsFromFilePicker(
     BuildContext context,
-    SettingsProvider settings,
+    UnifiedSettingsProvider unifiedSettings,
   ) async {
     try {
       print('Starting file picker import...');
@@ -1383,7 +1412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (confirmed == true) {
         print('User confirmed file picker import');
-        await settings.importSettingsFromXml(xmlContent);
+        await unifiedSettings.importSettingsFromXml(xmlContent);
         // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
         setState(() {});
         if (context.mounted) {
@@ -1464,7 +1493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _importSettings(
     BuildContext context,
-    SettingsProvider settings,
+    UnifiedSettingsProvider unifiedSettings,
   ) async {
     try {
       print('Starting import process...');
@@ -1737,7 +1766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (confirmed == true) {
         print('User confirmed import');
-        await settings.importSettingsFromXml(xmlContent);
+        await unifiedSettings.importSettingsFromXml(xmlContent);
         // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
         setState(() {});
         if (context.mounted) {
