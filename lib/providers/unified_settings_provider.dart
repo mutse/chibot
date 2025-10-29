@@ -5,6 +5,8 @@ import 'image_model_provider.dart';
 import 'video_model_provider.dart';
 import 'search_provider.dart';
 import '../models/model_registry.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/available_model.dart' as available_model;
 
 /// 统一的设置提供者聚合类
 /// 这个类聚合了所有分解的提供者，提供向后兼容的 API
@@ -29,6 +31,11 @@ class UnifiedSettingsProvider with ChangeNotifier {
   final VideoModelProvider videoModelProvider;
   final SearchProvider searchProvider;
 
+  // 跟踪当前选定的模型类型（文本、图像、视频）
+  available_model.ModelType _selectedModelType =
+      available_model.ModelType.text;
+  static const String _selectedModelTypeKey = 'selected_model_type';
+
   UnifiedSettingsProvider({
     required this.apiKeyProvider,
     required this.chatModelProvider,
@@ -42,6 +49,26 @@ class UnifiedSettingsProvider with ChangeNotifier {
     imageModelProvider.addListener(_onProviderChanged);
     videoModelProvider.addListener(_onProviderChanged);
     searchProvider.addListener(_onProviderChanged);
+    _loadSelectedModelType();
+  }
+
+  Future<void> _loadSelectedModelType() async {
+    final prefs = await SharedPreferences.getInstance();
+    _selectedModelType = available_model.ModelType.values[
+        prefs.getInt(_selectedModelTypeKey) ??
+            available_model.ModelType.text.index];
+  }
+
+  available_model.ModelType get selectedModelType => _selectedModelType;
+
+  Future<void> setSelectedModelType(
+      available_model.ModelType newType) async {
+    if (_selectedModelType != newType) {
+      _selectedModelType = newType;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_selectedModelTypeKey, newType.index);
+      notifyListeners();
+    }
   }
 
   void _onProviderChanged() {

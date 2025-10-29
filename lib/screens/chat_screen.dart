@@ -9,7 +9,7 @@ import 'package:chibot/models/chat_session.dart';
 import 'package:chibot/models/image_session.dart';
 import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/image_session_service.dart';
-import 'package:chibot/providers/settings_provider.dart';
+import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
 import 'package:chibot/services/image_generation_service.dart'
@@ -19,11 +19,13 @@ import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
+import 'video_generation_screen.dart';
 import 'package:chibot/services/web_search_service.dart' as web_service;
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
 import 'package:chibot/services/search_service_manager.dart';
+import 'package:chibot/services/search_service_manager_v2.dart' as search_manager_v2;
 import 'package:chibot/models/available_model.dart' as available_model;
 
 class ChatScreen extends StatefulWidget {
@@ -76,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewChat() {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     settings.setSelectedModelType(available_model.ModelType.text);
     setState(() {
       _messages.clear();
@@ -96,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewImageSession() {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     settings.setSelectedModelType(available_model.ModelType.image);
     setState(() {
       _messages.clear();
@@ -119,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     if (settings.selectedModelType == available_model.ModelType.image) {
       _generateImage(text);
       _textController.clear();
@@ -168,25 +170,11 @@ class _ChatScreenState extends State<ChatScreen> {
           (settings.googleSearchEngineId != null &&
               settings.googleSearchEngineId!.isNotEmpty)) {
         try {
-          final googleService = await SearchServiceManager.getSearchService(
-            settings,
+          final googleService = search_manager_v2.SearchServiceManager
+              .createAndValidateGoogleSearchService(
+            search: settings.searchProvider,
+            apiKeys: settings.apiKeyProvider,
           );
-          if (googleService == null) {
-            setState(() {
-              _messages.add(
-                ChatMessage(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  text:
-                      'Google 搜索服务配置不完整。请检查 API Key 和 Search Engine ID 是否正确配置。',
-                  sender: MessageSender.ai,
-                  timestamp: DateTime.now(),
-                ),
-              );
-              _isLoading = false;
-            });
-            _scrollToBottom();
-            return;
-          }
           final result = await googleService.search(
             text,
             count: settings.googleSearchResultCount,
@@ -271,7 +259,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    final settings1 = Provider.of<SettingsProvider>(context, listen: false);
+    final settings1 = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     if (settings1.apiKey == null || settings1.apiKey!.isEmpty) {
       if (mounted) {
         setState(() {
@@ -318,7 +306,11 @@ class _ChatScreenState extends State<ChatScreen> {
         aiMessages.removeLast(); // Remove the original user message
         aiMessages.add(aiUserMessage); // Add the prompt with web search
       }
-      final chatService = ServiceManager.createChatService(settings);
+      final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+
+      final chatService = ServiceManager.createChatService(
+        settings: settings,
+      );
       final stream = chatService.generateResponse(
         prompt: prompt,
         context:
@@ -543,6 +535,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icons.add_photo_alternate_outlined,
                   AppLocalizations.of(context)!.newImageSession,
                   onTap: _startNewImageSession,
+                ),
+                const SizedBox(height: 8),
+                _buildSidebarItem(
+                  context,
+                  Icons.videocam_outlined,
+                  'Video Generation',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const VideoGenerationScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 _buildSidebarItem(
@@ -1136,7 +1142,7 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isLastMessage,
     AppLocalizations localizations,
   ) {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     // Determine aspect ratio
     String aspectRatio =
         settings.selectedImageProvider == 'Black Forest Labs'
@@ -1342,7 +1348,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     // Add web search toggle
                     Padding(
                       padding: const EdgeInsets.only(right: 12.0),
-                      child: Consumer<SettingsProvider>(
+                      child: Consumer<UnifiedSettingsProvider>(
                         builder: (context, settings, _) {
                           final isTextModel =
                               settings.selectedModelType ==
@@ -1492,7 +1498,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     // Check for both general and image-specific API keys
     if (settings.apiKey == null ||
         settings.apiKey!.isEmpty ||

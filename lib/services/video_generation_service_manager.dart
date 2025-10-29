@@ -1,6 +1,7 @@
 import '../providers/video_model_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'video_generation_service.dart';
+import 'veo3_service.dart';
 
 /// 视频生成服务管理器 - 使用专职提供者创建视频生成服务
 ///
@@ -36,7 +37,6 @@ class VideoGenerationServiceManager {
     required VideoModelProvider videoModel,
     required ApiKeyProvider apiKeys,
   }) {
-    final provider = videoModel.selectedVideoProvider;
     final apiKey = apiKeys.googleApiKey; // Video generation currently uses Google API
 
     return apiKey != null && apiKey.isNotEmpty;
@@ -60,7 +60,7 @@ class VideoGenerationServiceManager {
     }
 
     // 返回已验证配置的服务
-    return VideoGenerationService();
+    return Veo3Service(apiKey: apiKey);
   }
 
   /// 获取所有支持的视频生成提供商

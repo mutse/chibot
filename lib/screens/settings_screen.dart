@@ -25,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _tavilyApiKeyController;
   late TextEditingController _googleSearchApiKeyController;
   late TextEditingController _googleSearchEngineIdController;
+  late TextEditingController _veo3ApiKeyController;
 
   @override
   void initState() {
@@ -48,6 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     _googleSearchEngineIdController = TextEditingController(
       text: settings.googleSearchEngineId ?? '',
+    );
+    _veo3ApiKeyController = TextEditingController(
+      text: settings.veo3ApiKey ?? '',
     );
   }
 
@@ -128,6 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tavilyApiKeyController.dispose();
     _googleSearchApiKeyController.dispose();
     _googleSearchEngineIdController.dispose();
+    _veo3ApiKeyController.dispose();
     super.dispose();
   }
 
@@ -473,6 +478,141 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 SizedBox(height: 10),
+
+                // Video Generation Settings (Veo3)
+                const Divider(),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.videocam, size: 20),
+                    const SizedBox(width: 8),
+                    const Text('Video Generation Settings',
+                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 15),
+
+                // Veo3 API Key
+                Text(
+                  'Google Veo3 API Key',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _veo3ApiKeyController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your Google Veo3 API Key',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Clear',
+                      onPressed: () {
+                        setState(() {
+                          _veo3ApiKeyController.clear();
+                        });
+                        settings.setVeo3ApiKey('');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+
+                // Video Resolution
+                Text(
+                  'Video Resolution',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                DropdownButton<String>(
+                  value: settings.videoResolution,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: '480p', child: Text('480p (854×480)')),
+                    DropdownMenuItem(value: '720p', child: Text('720p HD (1280×720)')),
+                    DropdownMenuItem(value: '1080p', child: Text('1080p Full HD (1920×1080)')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      settings.setVideoResolution(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                // Video Duration
+                Text(
+                  'Video Duration',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                DropdownButton<String>(
+                  value: settings.videoDuration,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: '5s', child: Text('5 seconds')),
+                    DropdownMenuItem(value: '10s', child: Text('10 seconds')),
+                    DropdownMenuItem(value: '15s', child: Text('15 seconds')),
+                    DropdownMenuItem(value: '30s', child: Text('30 seconds')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      settings.setVideoDuration(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                // Video Quality
+                Text(
+                  'Video Quality',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                DropdownButton<String>(
+                  value: settings.videoQuality,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: 'standard', child: Text('Standard Quality')),
+                    DropdownMenuItem(value: 'high', child: Text('High Quality')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      settings.setVideoQuality(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                // Video Aspect Ratio
+                Text(
+                  'Video Aspect Ratio',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                DropdownButton<String>(
+                  value: settings.videoAspectRatio,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: '16:9', child: Text('16:9 (Landscape)')),
+                    DropdownMenuItem(value: '9:16', child: Text('9:16 (Portrait)')),
+                    DropdownMenuItem(value: '1:1', child: Text('1:1 (Square)')),
+                    DropdownMenuItem(value: '4:3', child: Text('4:3 (Traditional)')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      settings.setVideoAspectRatio(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+
                 if (settings.customModels.isNotEmpty)
                   Text(
                     l10n.yourCustomModels,
@@ -768,6 +908,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                           settings.setGoogleSearchEngineId(
                             _googleSearchEngineIdController.text.trim(),
+                          );
+                          // Save Veo3 API key
+                          settings.setVeo3ApiKey(
+                            _veo3ApiKeyController.text.trim(),
                           );
                         } else {
                           settings.setImageApiKey(apiKeyText);

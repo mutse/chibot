@@ -1,6 +1,7 @@
 import '../repositories/interfaces.dart';
 import '../providers/chat_model_provider.dart';
 import '../providers/api_key_provider.dart';
+import '../providers/unified_settings_provider.dart';
 import 'chat_service_factory.dart';
 
 /// 服务管理器 - 使用专职提供者创建和验证服务
@@ -9,23 +10,48 @@ import 'chat_service_factory.dart';
 /// - 使用 ChatModelProvider 和 ApiKeyProvider 代替 SettingsProvider
 /// - 提供验证和配置检查方法
 /// - 支持多提供商配置
+/// - 向后兼容 UnifiedSettingsProvider
 ///
 /// 使用示例：
 /// ```dart
-/// final manager = ServiceManager();
-/// final service = manager.createChatService(
+/// // 新方式：直接使用专职提供者
+/// final service = ServiceManager.createChatService(
 ///   chatModel: chatModelProvider,
 ///   apiKeys: apiKeyProvider,
+/// );
+///
+/// // 向后兼容：使用 UnifiedSettingsProvider
+/// final service = ServiceManager.createChatService(
+///   settings: unifiedSettingsProvider,
 /// );
 /// ```
 class ServiceManager {
   /// 从专职提供者创建聊天服务
   ///
+  /// 可以使用两种方式调用：
+  /// 1. 直接传入专职提供者：createChatService(chatModel: ..., apiKeys: ...)
+  /// 2. 传入 UnifiedSettingsProvider（向后兼容）：createChatService(settings: ...)
+  ///
   /// 如果 API Key 未配置，会抛出异常
   static ChatService createChatService({
-    required ChatModelProvider chatModel,
-    required ApiKeyProvider apiKeys,
+    ChatModelProvider? chatModel,
+    ApiKeyProvider? apiKeys,
+    UnifiedSettingsProvider? settings,
   }) {
+    // 支持 UnifiedSettingsProvider 作为向后兼容方式
+    if (settings != null) {
+      return ChatServiceFactory.createFromProviders(
+        chatModel: settings.chatModelProvider,
+        apiKeys: settings.apiKeyProvider,
+      );
+    }
+
+    if (chatModel == null || apiKeys == null) {
+      throw ArgumentError(
+        'Either provide both chatModel and apiKeys, or provide settings',
+      );
+    }
+
     return ChatServiceFactory.createFromProviders(
       chatModel: chatModel,
       apiKeys: apiKeys,

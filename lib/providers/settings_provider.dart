@@ -74,6 +74,21 @@ class SettingsProvider with ChangeNotifier {
   String? _fluxKontextApiKey; // Added for FLUX Kontext API key
   static const String _fluxKontextApiKeyKey = 'flux_kontext_api_key';
 
+  // Video Generation Settings (Veo3)
+  String? _veo3ApiKey;
+  String _selectedVideoProvider = 'Google Veo3';
+  String _videoResolution = '720p';
+  String _videoDuration = '10s';
+  String _videoQuality = 'standard';
+  String _videoAspectRatio = '16:9';
+
+  static const String _veo3ApiKeyKey = 'veo3_api_key';
+  static const String _selectedVideoProviderKey = 'selected_video_provider';
+  static const String _videoResolutionKey = 'video_resolution';
+  static const String _videoDurationKey = 'video_duration';
+  static const String _videoQualityKey = 'video_quality';
+  static const String _videoAspectRatioKey = 'video_aspect_ratio';
+
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
     'OpenAI': 'https://api.openai.com/v1',
@@ -89,6 +104,11 @@ class SettingsProvider with ChangeNotifier {
         'https://api.stability.ai', // Example, confirm actual base URL
     'Black Forest Labs': 'https://api.bfl.ai/v1',
     'Google': 'https://generativelanguage.googleapis.com',
+  };
+
+  // Default base URLs for video generation providers
+  static const Map<String, String> defaultVideoBaseUrls = {
+    'Google Veo3': 'https://generativelanguage.googleapis.com/v1beta',
   };
 
   // 可选模型列表
@@ -308,6 +328,14 @@ class SettingsProvider with ChangeNotifier {
     _bflAspectRatio = prefs.getString(_bflAspectRatioKey);
 
     _tavilySearchEnabled = prefs.getBool(_tavilySearchEnabledKey) ?? false;
+
+    // Load Video Generation Settings
+    _veo3ApiKey = prefs.getString(_veo3ApiKeyKey);
+    _selectedVideoProvider = prefs.getString(_selectedVideoProviderKey) ?? 'Google Veo3';
+    _videoResolution = prefs.getString(_videoResolutionKey) ?? '720p';
+    _videoDuration = prefs.getString(_videoDurationKey) ?? '10s';
+    _videoQuality = prefs.getString(_videoQualityKey) ?? 'standard';
+    _videoAspectRatio = prefs.getString(_videoAspectRatioKey) ?? '16:9';
 
     notifyListeners();
     // Ensure the selected model is valid for the loaded provider
@@ -707,6 +735,61 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
+  // Video Generation Settings Getters
+  String? get veo3ApiKey => _veo3ApiKey;
+  String get selectedVideoProvider => _selectedVideoProvider;
+  String get videoResolution => _videoResolution;
+  String get videoDuration => _videoDuration;
+  String get videoQuality => _videoQuality;
+  String get videoAspectRatio => _videoAspectRatio;
+
+  // Video Generation Settings Setters
+  Future<void> setVeo3ApiKey(String? apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    _veo3ApiKey = apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      await prefs.remove(_veo3ApiKeyKey);
+    } else {
+      await prefs.setString(_veo3ApiKeyKey, apiKey);
+    }
+    notifyListeners();
+  }
+
+  Future<void> setSelectedVideoProvider(String provider) async {
+    final prefs = await SharedPreferences.getInstance();
+    _selectedVideoProvider = provider;
+    await prefs.setString(_selectedVideoProviderKey, provider);
+    notifyListeners();
+  }
+
+  Future<void> setVideoResolution(String resolution) async {
+    final prefs = await SharedPreferences.getInstance();
+    _videoResolution = resolution;
+    await prefs.setString(_videoResolutionKey, resolution);
+    notifyListeners();
+  }
+
+  Future<void> setVideoDuration(String duration) async {
+    final prefs = await SharedPreferences.getInstance();
+    _videoDuration = duration;
+    await prefs.setString(_videoDurationKey, duration);
+    notifyListeners();
+  }
+
+  Future<void> setVideoQuality(String quality) async {
+    final prefs = await SharedPreferences.getInstance();
+    _videoQuality = quality;
+    await prefs.setString(_videoQualityKey, quality);
+    notifyListeners();
+  }
+
+  Future<void> setVideoAspectRatio(String aspectRatio) async {
+    final prefs = await SharedPreferences.getInstance();
+    _videoAspectRatio = aspectRatio;
+    await prefs.setString(_videoAspectRatioKey, aspectRatio);
+    notifyListeners();
+  }
+
   // Google Search Settings Methods
   Future<void> setGoogleSearchApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
@@ -803,6 +886,14 @@ class SettingsProvider with ChangeNotifier {
         _customImageProvidersKey,
       );
       settingsMap[_bflAspectRatioKey] = _bflAspectRatio;
+
+      // Video Generation Settings
+      settingsMap[_veo3ApiKeyKey] = prefs.getString(_veo3ApiKeyKey);
+      settingsMap[_selectedVideoProviderKey] = prefs.getString(_selectedVideoProviderKey);
+      settingsMap[_videoResolutionKey] = prefs.getString(_videoResolutionKey);
+      settingsMap[_videoDurationKey] = prefs.getString(_videoDurationKey);
+      settingsMap[_videoQualityKey] = prefs.getString(_videoQualityKey);
+      settingsMap[_videoAspectRatioKey] = prefs.getString(_videoAspectRatioKey);
 
       // 新增：导出 OpenAI 兼容自定义模型（如有）
       if (prefs.containsKey('custom_openai_models')) {

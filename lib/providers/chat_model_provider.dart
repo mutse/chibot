@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../models/model_registry.dart';
+import '../models/available_model.dart';
+import 'package:chibot/models/available_model.dart' as available_model;
 
 /// 负责聊天相关的模型配置和提供商管理
 /// 职责：选择聊天模型、管理提供商、配置提供商 URL
@@ -212,11 +214,17 @@ class ChatModelProvider with ChangeNotifier {
   /// 将模型同步到模型注册表
   Future<void> syncModelsToRegistry() async {
     if (modelRegistry != null) {
-      modelRegistry!.registerChatModels(
-        _selectedProvider,
-        availableModels,
-        selectedModel: _selectedModel,
-      );
+      // 注册当前提供商的所有可用模型
+      for (final model in availableModels) {
+        modelRegistry!.registerModel(
+          AvailableModel(
+            id: model,
+            name: model,
+            provider: _selectedProvider,
+            type: available_model.ModelType.text,
+          ),
+        );
+      }
     }
   }
 

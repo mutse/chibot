@@ -245,11 +245,11 @@ void main() {
       final exported = await settings.exportSettings();
 
       // 验证导出的数据包含预期的值
-      expect(exported, containsKey('apiKeys'));
-      expect(exported, containsKey('chatModel'));
-      expect(exported, containsKey('imageModel'));
-      expect(exported, containsKey('videoModel'));
-      expect(exported, containsKey('search'));
+      expect(exported.containsKey('apiKeys'), isTrue);
+      expect(exported.containsKey('chatModel'), isTrue);
+      expect(exported.containsKey('imageModel'), isTrue);
+      expect(exported.containsKey('videoModel'), isTrue);
+      expect(exported.containsKey('search'), isTrue);
     });
   });
 }
