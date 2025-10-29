@@ -10,6 +10,10 @@ import 'package:chibot/models/image_session.dart';
 import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/image_session_service.dart';
 import 'package:chibot/providers/unified_settings_provider.dart';
+import 'package:chibot/providers/api_key_provider.dart';
+import 'package:chibot/providers/chat_model_provider.dart';
+import 'package:chibot/providers/image_model_provider.dart';
+import 'package:chibot/providers/search_provider.dart';
 import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
 import 'package:chibot/services/image_generation_service.dart'
@@ -121,8 +125,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
-    if (settings.selectedModelType == available_model.ModelType.image) {
+    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final searchProvider = Provider.of<SearchProvider>(context, listen: false);
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+
+    if (unifiedSettings.selectedModelType == available_model.ModelType.image) {
       _generateImage(text);
       _textController.clear();
       return;
@@ -134,12 +141,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_enableWebSearch) {
       bool didSearch = false;
       // 1. Tavily
-      if (settings.tavilySearchEnabled &&
-          (settings.tavilyApiKey != null &&
-              settings.tavilyApiKey!.isNotEmpty)) {
+      if (searchProvider.tavilySearchEnabled &&
+          (apiKeys.tavilyApiKey != null &&
+              apiKeys.tavilyApiKey!.isNotEmpty)) {
         try {
           final webResult = await web_service.WebSearchService(
-            apiKey: settings.tavilyApiKey!,
+            apiKey: apiKeys.tavilyApiKey!,
           ).searchWeb(text);
           prompt = AppLocalizations.of(
             context,
@@ -164,20 +171,20 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
       // 2. Google
-      else if (settings.googleSearchEnabled &&
-          (settings.googleSearchApiKey != null &&
-              settings.googleSearchApiKey!.isNotEmpty) &&
-          (settings.googleSearchEngineId != null &&
-              settings.googleSearchEngineId!.isNotEmpty)) {
+      else if (searchProvider.googleSearchEnabled &&
+          (apiKeys.googleSearchApiKey != null &&
+              apiKeys.googleSearchApiKey!.isNotEmpty) &&
+          (searchProvider.googleSearchEngineId != null &&
+              searchProvider.googleSearchEngineId!.isNotEmpty)) {
         try {
           final googleService = search_manager_v2.SearchServiceManager
               .createAndValidateGoogleSearchService(
-            search: settings.searchProvider,
-            apiKeys: settings.apiKeyProvider,
+            search: searchProvider,
+            apiKeys: apiKeys,
           );
           final result = await googleService.search(
             text,
-            count: settings.googleSearchResultCount,
+            count: searchProvider.googleSearchResultCount,
           );
           // 格式化结果为字符串
           String webResult = '';
@@ -259,8 +266,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    final settings1 = Provider.of<UnifiedSettingsProvider>(context, listen: false);
-    if (settings1.apiKey == null || settings1.apiKey!.isEmpty) {
+    if (apiKeys.apiKey == null || apiKeys.apiKey!.isEmpty) {
       if (mounted) {
         setState(() {
           _messages.add(
@@ -306,10 +312,11 @@ class _ChatScreenState extends State<ChatScreen> {
         aiMessages.removeLast(); // Remove the original user message
         aiMessages.add(aiUserMessage); // Add the prompt with web search
       }
-      final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+      final chatModelProvider = Provider.of<ChatModelProvider>(context, listen: false);
 
       final chatService = ServiceManager.createChatService(
-        settings: settings,
+        chatModel: chatModelProvider,
+        apiKeys: apiKeys,
       );
       final stream = chatService.generateResponse(
         prompt: prompt,
@@ -317,7 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
             aiMessages
                 .where((msg) => msg.sender != MessageSender.user)
                 .toList(),
-        model: settings.selectedModel,
+        model: chatModelProvider.selectedModel,
       );
 
       String fullResponse = "";
@@ -1142,11 +1149,11 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isLastMessage,
     AppLocalizations localizations,
   ) {
-    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
     // Determine aspect ratio
     String aspectRatio =
-        settings.selectedImageProvider == 'Black Forest Labs'
-            ? (settings.bflAspectRatio ?? '1:1')
+        imageModel.selectedImageProvider == 'Black Forest Labs'
+            ? (imageModel.bflAspectRatio ?? '1:1')
             : '1:1';
     double width = 250;
     double height = 250;
@@ -1471,6 +1478,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _generateImage(String prompt) async {
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+    final imageModelProvider = Provider.of<ImageModelProvider>(context, listen: false);
+    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+
     if (mounted) {
       setState(() {
         // Add user's /imagine message first
@@ -1498,12 +1509,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
     // Check for both general and image-specific API keys
-    if (settings.apiKey == null ||
-        settings.apiKey!.isEmpty ||
-        settings.imageApiKey == null ||
-        settings.imageApiKey!.isEmpty) {
+    if (apiKeys.apiKey == null ||
+        apiKeys.apiKey!.isEmpty ||
+        apiKeys.googleApiKey == null ||
+        apiKeys.googleApiKey!.isEmpty) {
       if (mounted) {
         setState(() {
           // Try to update the loading ImageMessage with an error
@@ -1550,13 +1560,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final imageUrl = await _imageGenerationService.generateImage(
-        apiKey: settings.imageApiKey!, // Use image API key
+        apiKey: apiKeys.googleApiKey!, // Use image API key
         prompt: prompt,
-        model: settings.selectedImageModel,
-        providerBaseUrl: settings.imageProviderUrl,
+        model: imageModelProvider.selectedImageModel,
+        providerBaseUrl: imageModelProvider.imageProviderUrl,
         aspectRatio:
-            settings.selectedImageProvider == 'Black Forest Labs'
-                ? settings.bflAspectRatio
+            imageModelProvider.selectedImageProvider == 'Black Forest Labs'
+                ? imageModelProvider.bflAspectRatio
                 : null,
       );
 
@@ -1610,7 +1620,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messages: _messages.whereType<ImageMessage>().toList(),
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
-                  model: settings.selectedImageModel,
+                  model: imageModelProvider.selectedImageModel,
                 );
                 _imageSessionService.saveSession(newSession);
                 _loadImageSessions(); // Reload sidebar
@@ -1645,7 +1655,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       existingSession?.createdAt ??
                       DateTime.now(), // Keep original creation time or use now
                   updatedAt: DateTime.now(),
-                  model: settings.selectedImageModel,
+                  model: imageModelProvider.selectedImageModel,
                 );
                 _imageSessionService.saveSession(updatedSession);
                 _loadImageSessions(); // Reload sidebar

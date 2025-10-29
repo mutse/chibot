@@ -5,7 +5,8 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../models/video_message.dart';
 import '../models/video_session.dart';
 import '../models/chat_message.dart';
-import '../providers/settings_provider.dart';
+import '../providers/api_key_provider.dart';
+import '../providers/video_model_provider.dart';
 import '../services/veo3_service.dart';
 import '../services/video_session_service.dart';
 import '../services/video_generation_service.dart';
@@ -44,9 +45,10 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
   }
 
   Future<void> _initializeService() async {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    if (settings.veo3ApiKey != null && settings.veo3ApiKey!.isNotEmpty) {
-      _veo3Service = Veo3Service(apiKey: settings.veo3ApiKey!);
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+    final veo3ApiKey = apiKeys.googleApiKey; // Video generation uses Google API key
+    if (veo3ApiKey != null && veo3ApiKey.isNotEmpty) {
+      _veo3Service = Veo3Service(apiKey: veo3ApiKey);
     }
   }
 
@@ -99,14 +101,15 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
       return;
     }
 
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    if (settings.veo3ApiKey == null || settings.veo3ApiKey!.isEmpty) {
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+    final veo3ApiKey = apiKeys.googleApiKey; // Video generation uses Google API key
+    if (veo3ApiKey == null || veo3ApiKey.isEmpty) {
       SnackBarUtils.showError(context, 'Please configure Veo3 API key in settings');
       return;
     }
 
     if (_veo3Service == null) {
-      _veo3Service = Veo3Service(apiKey: settings.veo3ApiKey!);
+      _veo3Service = Veo3Service(apiKey: veo3ApiKey);
     }
 
     setState(() {
