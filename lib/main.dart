@@ -3,6 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/settings_provider.dart';
+import 'providers/api_key_provider.dart';
+import 'providers/chat_model_provider.dart';
+import 'providers/image_model_provider.dart';
+import 'providers/video_model_provider.dart';
+import 'providers/search_provider.dart';
+import 'providers/unified_settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
@@ -38,9 +44,40 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
     final modelRegistry = ModelRegistry();
     return MultiProvider(
       providers: [
+        // Legacy SettingsProvider for backward compatibility
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(modelRegistry: modelRegistry),
         ),
+
+        // New specialized providers (Phase 1 refactoring)
+        ChangeNotifierProvider(
+          create: (_) => ApiKeyProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatModelProvider(modelRegistry: modelRegistry),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ImageModelProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => VideoModelProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SearchProvider(),
+        ),
+
+        // Unified Settings Provider (backward compatibility bridge)
+        ChangeNotifierProvider(
+          create: (context) => UnifiedSettingsProvider(
+            apiKeyProvider: context.read<ApiKeyProvider>(),
+            chatModelProvider: context.read<ChatModelProvider>(),
+            imageModelProvider: context.read<ImageModelProvider>(),
+            videoModelProvider: context.read<VideoModelProvider>(),
+            searchProvider: context.read<SearchProvider>(),
+          ),
+        ),
+
+        // Additional legacy providers
         ChangeNotifierProvider(
           create: (_) => SettingsModelsProvider(modelRegistry),
         ),
