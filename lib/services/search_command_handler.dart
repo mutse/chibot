@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/search_result.dart';
 import '../services/search_service_manager.dart';
-import '../providers/settings_provider.dart';
+import '../providers/search_provider.dart' as search_provider_lib;
 import '../models/chat_message.dart';
 
 class SearchCommandHandler {
@@ -33,9 +33,9 @@ class SearchCommandHandler {
     String query,
     bool isImage,
   ) async {
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    
-    if (!settings.googleSearchEnabled) {
+    final search = Provider.of<search_provider_lib.SearchProvider>(context, listen: false);
+
+    if (!search.googleSearchEnabled) {
       return [
         ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -46,7 +46,7 @@ class SearchCommandHandler {
       ];
     }
 
-    final searchService = await SearchServiceManager.getSearchService(settings);
+    final searchService = await SearchServiceManager.getSearchService(search);
     if (searchService == null) {
       return [
         ChatMessage(
@@ -60,8 +60,8 @@ class SearchCommandHandler {
 
     try {
       final searchResult = isImage
-          ? await searchService.searchImages(query, count: settings.googleSearchResultCount)
-          : await searchService.search(query, count: settings.googleSearchResultCount);
+          ? await searchService.searchImages(query, count: search.googleSearchResultCount)
+          : await searchService.search(query, count: search.googleSearchResultCount);
 
       return _formatSearchResults(searchResult, query, isImage);
     } catch (e) {

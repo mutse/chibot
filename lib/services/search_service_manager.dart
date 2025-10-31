@@ -1,42 +1,43 @@
 import 'google_search_service.dart';
 import '../models/search_result.dart';
-import '../providers/settings_provider.dart';
+import '../providers/search_provider.dart' as search_provider_lib;
+import '../models/search_result.dart' as search_result_lib;
 
 class SearchServiceManager {
   static GoogleSearchService? _googleSearchService;
 
-  static Future<GoogleSearchService?> getSearchService(SettingsProvider settings) async {
-    if (!settings.googleSearchEnabled) {
+  static Future<GoogleSearchService?> getSearchService(search_provider_lib.SearchProvider search) async {
+    if (!search.googleSearchEnabled) {
       return null;
     }
 
-    if (_googleSearchService == null || 
-        _googleSearchService!.apiKey != settings.googleSearchApiKey ||
-        _googleSearchService!.searchEngineId != settings.googleSearchEngineId) {
-      
-      if (settings.googleSearchApiKey == null || settings.googleSearchApiKey!.isEmpty ||
-          settings.googleSearchEngineId == null || settings.googleSearchEngineId!.isEmpty) {
+    if (_googleSearchService == null ||
+        _googleSearchService!.apiKey != search.googleSearchApiKey ||
+        _googleSearchService!.searchEngineId != search.googleSearchEngineId) {
+
+      if (search.googleSearchApiKey == null || search.googleSearchApiKey!.isEmpty ||
+          search.googleSearchEngineId == null || search.googleSearchEngineId!.isEmpty) {
         return null;
       }
 
       _googleSearchService = GoogleSearchService(
-        apiKey: settings.googleSearchApiKey!,
-        searchEngineId: settings.googleSearchEngineId!,
-        provider: settings.googleSearchProvider == 'googleCustomSearch' 
-            ? SearchProvider.googleCustomSearch 
-            : SearchProvider.programmableSearch,
+        apiKey: search.googleSearchApiKey!,
+        searchEngineId: search.googleSearchEngineId!,
+        provider: search.googleSearchProvider == 'googleCustomSearch'
+            ? search_result_lib.SearchProvider.googleCustomSearch
+            : search_result_lib.SearchProvider.programmableSearch,
       );
     }
 
     return _googleSearchService;
   }
 
-  static Future<bool> validateConfiguration(SettingsProvider settings) async {
-    if (!settings.googleSearchEnabled) {
+  static Future<bool> validateConfiguration(search_provider_lib.SearchProvider search) async {
+    if (!search.googleSearchEnabled) {
       return false;
     }
 
-    final service = await getSearchService(settings);
+    final service = await getSearchService(search);
     if (service == null) {
       return false;
     }
