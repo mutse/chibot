@@ -323,6 +323,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
       'google_api_key',
       'flux_kontext_api_key',
       'tavily_api_key',
+      'google_search_api_key',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {

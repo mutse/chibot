@@ -292,11 +292,36 @@ class ChatModelProvider with ChangeNotifier {
       _customModels = List<String>.from(data[_customModelsKey] ?? []);
     }
     if (data.containsKey(_customProvidersKey)) {
-      _customProviders = Map<String, List<String>>.from(
-        (data[_customProvidersKey] as Map).map(
-          (key, value) => MapEntry(key, List<String>.from(value)),
-        ),
-      );
+      final customProvidersData = data[_customProvidersKey];
+      if (customProvidersData != null) {
+        Map<String, List<String>> parsedProviders = {};
+
+        if (customProvidersData is String && customProvidersData.isNotEmpty) {
+          // Parse JSON string from XML export
+          try {
+            final decoded = json.decode(customProvidersData) as Map<String, dynamic>;
+            parsedProviders = Map<String, List<String>>.from(
+              decoded.map(
+                (key, value) => MapEntry(key, List<String>.from(value as List)),
+              ),
+            );
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error parsing custom providers JSON: $e');
+            }
+            parsedProviders = {};
+          }
+        } else if (customProvidersData is Map) {
+          // Already a Map from direct import
+          parsedProviders = Map<String, List<String>>.from(
+            (customProvidersData as Map).map(
+              (key, value) => MapEntry(key, List<String>.from(value)),
+            ),
+          );
+        }
+
+        _customProviders = parsedProviders;
+      }
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_selectedProviderKey, _selectedProvider);

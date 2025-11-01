@@ -1,15 +1,20 @@
 import 'encryption_utils.dart';
+import 'settings_exceptions.dart';
+import 'dart:convert' as json_lib;
 
 class SettingsXmlHandler {
+  // Current schema version for settings export format
+  static const int schemaVersion = 1;
   static String exportToXml(Map<String, dynamic> settings) {
     final buffer = StringBuffer();
     buffer.writeln('<?xml version="1.0" encoding="UTF-8"?>');
-    buffer.writeln('<settings>');
+    buffer.writeln('<settings version="$schemaVersion" exported="${DateTime.now().toIso8601String()}">');
 
     _writeApiKeys(buffer, settings);
     _writeProviderSettings(buffer, settings);
     _writeModelSettings(buffer, settings);
     _writeImageSettings(buffer, settings);
+    _writeVideoSettings(buffer, settings);
     _writeCustomSettings(buffer, settings);
     _writeWebSearchSettings(buffer, settings);
 
@@ -18,30 +23,64 @@ class SettingsXmlHandler {
   }
 
   static Map<String, dynamic> importFromXml(String xmlContent) {
-    final settings = <String, dynamic>{};
+    try {
+      // Validate XML structure
+      if (xmlContent.trim().isEmpty) {
+        throw InvalidSettingsException.malformedXml('The file is empty.');
+      }
 
-    // Remove XML declaration and root tags
-    String content = xmlContent.trim();
-    if (content.startsWith('<?xml')) {
-      content = content.substring(content.indexOf('>') + 1);
-    }
-    content = content.trim();
-    if (content.startsWith('<settings>')) {
-      content = content.substring(10);
-    }
-    if (content.endsWith('</settings>')) {
-      content = content.substring(0, content.length - 11);
-    }
+      if (!xmlContent.contains('<settings') || !xmlContent.contains('</settings>')) {
+        throw InvalidSettingsException.malformedXml(
+          'Missing required <settings> root element.',
+        );
+      }
 
-    // Parse sections
-    settings.addAll(_parseApiKeys(content));
-    settings.addAll(_parseProviderSettings(content));
-    settings.addAll(_parseModelSettings(content));
-    settings.addAll(_parseImageSettings(content));
-    settings.addAll(_parseCustomSettings(content));
-    settings.addAll(_parseWebSearchSettings(content));
+      // Extract and validate version
+      final versionMatch = RegExp(r'version="(\d+)"').firstMatch(xmlContent);
+      if (versionMatch != null) {
+        final exportedVersion = int.tryParse(versionMatch.group(1)!);
+        if (exportedVersion != null && exportedVersion > schemaVersion) {
+          throw SettingsVersionMismatchException(
+            exportedVersion: exportedVersion,
+            currentVersion: schemaVersion,
+          );
+        }
+      }
 
-    return settings;
+      final settings = <String, dynamic>{};
+
+      // Remove XML declaration and root tags
+      String content = xmlContent.trim();
+      if (content.startsWith('<?xml')) {
+        content = content.substring(content.indexOf('>') + 1);
+      }
+      content = content.trim();
+
+      // Remove opening tag preserving attributes
+      final openingTagMatch = RegExp(r'<settings[^>]*>').firstMatch(content);
+      if (openingTagMatch != null) {
+        content = content.substring(openingTagMatch.end);
+      }
+
+      if (content.endsWith('</settings>')) {
+        content = content.substring(0, content.length - 11);
+      }
+
+      // Parse sections
+      settings.addAll(_parseApiKeys(content));
+      settings.addAll(_parseProviderSettings(content));
+      settings.addAll(_parseModelSettings(content));
+      settings.addAll(_parseImageSettings(content));
+      settings.addAll(_parseVideoSettings(content));
+      settings.addAll(_parseCustomSettings(content));
+      settings.addAll(_parseWebSearchSettings(content));
+
+      return settings;
+    } on SettingsException {
+      rethrow;
+    } catch (e) {
+      throw InvalidSettingsException.malformedXml('$e');
+    }
   }
 
   static void _writeApiKeys(
@@ -59,6 +98,12 @@ class SettingsXmlHandler {
       buffer,
       'claude_api_key',
       settings['claude_api_key'],
+      4,
+    );
+    _writeEncryptedXmlTag(
+      buffer,
+      'google_api_key',
+      settings['google_api_key'],
       4,
     );
     _writeEncryptedXmlTag(
@@ -131,10 +176,15 @@ class SettingsXmlHandler {
       buffer.writeln('    </custom_models>');
     }
 
-    // Custom providers map
-    final customProviders = settings['custom_providers_map'] as String?;
-    if (customProviders != null && customProviders.isNotEmpty) {
-      _writeXmlTag(buffer, 'custom_providers', customProviders, 4);
+    // Custom providers map (stored as JSON string)
+    final customProviders = settings['custom_providers_map'];
+    if (customProviders != null) {
+      final customProvidersStr = customProviders is String
+          ? customProviders
+          : json_lib.json.encode(customProviders);
+      if (customProvidersStr.isNotEmpty && customProvidersStr != '{}') {
+        _writeXmlTag(buffer, 'custom_providers', customProvidersStr, 4);
+      }
     }
 
     buffer.writeln('  </model_settings>');
@@ -175,14 +225,56 @@ class SettingsXmlHandler {
       buffer.writeln('    </custom_image_models>');
     }
 
-    // Custom image providers map
-    final customImageProviders =
-        settings['custom_image_providers_map'] as String?;
-    if (customImageProviders != null && customImageProviders.isNotEmpty) {
-      _writeXmlTag(buffer, 'custom_image_providers', customImageProviders, 4);
+    // Custom image providers map (stored as JSON string)
+    final customImageProviders = settings['custom_image_providers_map'];
+    if (customImageProviders != null) {
+      final customImageProvidersStr = customImageProviders is String
+          ? customImageProviders
+          : json_lib.json.encode(customImageProviders);
+      if (customImageProvidersStr.isNotEmpty && customImageProvidersStr != '{}') {
+        _writeXmlTag(buffer, 'custom_image_providers', customImageProvidersStr, 4);
+      }
     }
 
     buffer.writeln('  </image_settings>');
+  }
+
+  static void _writeVideoSettings(
+    StringBuffer buffer,
+    Map<String, dynamic> settings,
+  ) {
+    buffer.writeln('  <video_settings>');
+    _writeXmlTag(
+      buffer,
+      'selected_video_provider',
+      settings['selected_video_provider'],
+      4,
+    );
+    _writeXmlTag(
+      buffer,
+      'video_resolution',
+      settings['video_resolution'],
+      4,
+    );
+    _writeXmlTag(
+      buffer,
+      'video_duration',
+      settings['video_duration'],
+      4,
+    );
+    _writeXmlTag(
+      buffer,
+      'video_quality',
+      settings['video_quality'],
+      4,
+    );
+    _writeXmlTag(
+      buffer,
+      'video_aspect_ratio',
+      settings['video_aspect_ratio'],
+      4,
+    );
+    buffer.writeln('  </video_settings>');
   }
 
   static void _writeCustomSettings(
@@ -283,6 +375,10 @@ class SettingsXmlHandler {
       settings['claude_api_key'] = _extractEncryptedTagValue(
         apiKeysContent,
         'claude_api_key',
+      );
+      settings['google_api_key'] = _extractEncryptedTagValue(
+        apiKeysContent,
+        'google_api_key',
       );
       settings['image_api_key'] = _extractEncryptedTagValue(
         apiKeysContent,
@@ -426,6 +522,40 @@ class SettingsXmlHandler {
     return settings;
   }
 
+  static Map<String, dynamic> _parseVideoSettings(String content) {
+    final settings = <String, dynamic>{};
+    final videoMatch = RegExp(
+      r'<video_settings>(.*?)</video_settings>',
+      dotAll: true,
+    ).firstMatch(content);
+
+    if (videoMatch != null) {
+      final videoContent = videoMatch.group(1)!;
+      settings['selected_video_provider'] = _extractTagValue(
+        videoContent,
+        'selected_video_provider',
+      );
+      settings['video_resolution'] = _extractTagValue(
+        videoContent,
+        'video_resolution',
+      );
+      settings['video_duration'] = _extractTagValue(
+        videoContent,
+        'video_duration',
+      );
+      settings['video_quality'] = _extractTagValue(
+        videoContent,
+        'video_quality',
+      );
+      settings['video_aspect_ratio'] = _extractTagValue(
+        videoContent,
+        'video_aspect_ratio',
+      );
+    }
+
+    return settings;
+  }
+
   static Map<String, dynamic> _parseCustomSettings(String content) {
     final settings = <String, dynamic>{};
     // Add parsing for any additional custom settings here
@@ -475,9 +605,16 @@ class SettingsXmlHandler {
       final encryptedValue = _unescapeXml(match.group(1)!.trim());
       if (encryptedValue.isEmpty) return null;
 
-      // 尝试AES解密，如果失败则尝试简单解密（向后兼容）
-      final decryptedValue = EncryptionUtils.aesDecrypt(encryptedValue);
-      return decryptedValue;
+      try {
+        // 尝试AES解密，如果失败则尝试简单解密（向后兼容）
+        final decryptedValue = EncryptionUtils.aesDecrypt(encryptedValue);
+        return decryptedValue;
+      } catch (e) {
+        // Log decryption error but don't fail import entirely
+        // This allows for partial recovery if some keys are corrupted
+        print('Warning: Failed to decrypt $tag: $e');
+        return null;
+      }
     }
     return null;
   }

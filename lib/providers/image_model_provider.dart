@@ -357,11 +357,36 @@ class ImageModelProvider with ChangeNotifier {
       _customImageModels = List<String>.from(data[_customImageModelsKey] ?? []);
     }
     if (data.containsKey(_customImageProvidersKey)) {
-      _customImageProviders = Map<String, List<String>>.from(
-        (data[_customImageProvidersKey] as Map).map(
-          (key, value) => MapEntry(key, List<String>.from(value)),
-        ),
-      );
+      final customImageProvidersData = data[_customImageProvidersKey];
+      if (customImageProvidersData != null) {
+        Map<String, List<String>> parsedProviders = {};
+
+        if (customImageProvidersData is String && customImageProvidersData.isNotEmpty) {
+          // Parse JSON string from XML export
+          try {
+            final decoded = json.decode(customImageProvidersData) as Map<String, dynamic>;
+            parsedProviders = Map<String, List<String>>.from(
+              decoded.map(
+                (key, value) => MapEntry(key, List<String>.from(value as List)),
+              ),
+            );
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error parsing custom image providers JSON: $e');
+            }
+            parsedProviders = {};
+          }
+        } else if (customImageProvidersData is Map) {
+          // Already a Map from direct import
+          parsedProviders = Map<String, List<String>>.from(
+            (customImageProvidersData as Map).map(
+              (key, value) => MapEntry(key, List<String>.from(value)),
+            ),
+          );
+        }
+
+        _customImageProviders = parsedProviders;
+      }
     }
     if (data.containsKey(_bflAspectRatioKey)) {
       _bflAspectRatio = data[_bflAspectRatioKey];

@@ -1483,7 +1483,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     try {
       // 强制同步最新模型到 ModelRegistry
-      unifiedSettings.syncModelsToRegistry();
+      await unifiedSettings.syncModelsToRegistry();
       print('Starting export process...');
       final xmlContent = await unifiedSettings.exportSettingsToXml();
       print('XML content generated: ${xmlContent.length} characters');
@@ -1563,6 +1563,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   '平台: $platformName',
                   style: const TextStyle(fontSize: 10, color: Colors.white60),
                 ),
+                Text(
+                  '文件大小: ${(xmlContent.length / 1024).toStringAsFixed(2)} KB',
+                  style: const TextStyle(fontSize: 10, color: Colors.white60),
+                ),
               ],
             ),
             backgroundColor: Colors.green,
@@ -1575,11 +1579,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       print('Export error: $e');
       if (context.mounted) {
+        String errorTitle = '导出失败';
+        String errorMessage = e.toString();
+
+        // Provide more helpful error messages
+        if (e is FileSystemException) {
+          errorTitle = '文件系统错误';
+          if (e.message.contains('Permission denied')) {
+            errorMessage = '权限不足: 无法写入该目录。请检查存储权限。';
+          } else if (e.message.contains('No space')) {
+            errorMessage = '磁盘空间不足。请清理存储空间。';
+          } else {
+            errorMessage = '文件操作失败: ${e.message}';
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('导出失败: $e'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('❌ $errorTitle'),
+                const SizedBox(height: 4),
+                Text(
+                  errorMessage,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 6),
           ),
         );
       }
@@ -1701,7 +1731,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final xmlContent = await file.readAsString();
       print('XML content read: ${xmlContent.length} characters from $fileName');
 
-      if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
+      if (xmlContent.trim().isEmpty || (!xmlContent.contains('<settings') && !xmlContent.contains('</settings>'))) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1807,29 +1837,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (confirmed == true) {
         print('User confirmed file picker import');
-        await unifiedSettings.importSettingsFromXml(xmlContent);
-        // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
-        setState(() {});
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('✅ 配置导入成功！'),
-                  const SizedBox(height: 4),
-                  Text('来源: $fileName', style: const TextStyle(fontSize: 12)),
-                  const Text(
-                    '方式: 文件选择器',
-                    style: TextStyle(fontSize: 11, color: Colors.white70),
-                  ),
-                ],
+        try {
+          await unifiedSettings.importSettingsFromXml(xmlContent);
+          // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
+          setState(() {});
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('✅ 配置导入成功！'),
+                    const SizedBox(height: 4),
+                    Text('来源: $fileName', style: const TextStyle(fontSize: 12)),
+                    const Text(
+                      '方式: 文件选择器',
+                      style: TextStyle(fontSize: 11, color: Colors.white70),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
               ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+            );
+          }
+        } catch (importError) {
+          print('Import validation error: $importError');
+          if (context.mounted) {
+            String errorMessage = '导入失败: 配置格式错误或不兼容';
+            if (importError.toString().contains('version')) {
+              errorMessage = '导入失败: 配置版本不兼容。此文件来自较新的应用版本。';
+            } else if (importError.toString().contains('Invalid')) {
+              errorMessage = '导入失败: 无效的配置文件。文件可能已损坏。';
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('❌ 导入失败'),
+                    const SizedBox(height: 4),
+                    Text(
+                      errorMessage,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 6),
+              ),
+            );
+          }
         }
       } else {
         print('User cancelled file picker import');
@@ -1847,9 +1908,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('导入失败: ${e.toString()}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('❌ 导入失败'),
+                const SizedBox(height: 4),
+                Text(
+                  e is FileSystemException
+                      ? '文件操作失败: ${e.message}'
+                      : '导入失败: ${e.toString()}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 6),
           ),
         );
       }
@@ -2052,7 +2126,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       // Validate XML content
-      if (xmlContent.trim().isEmpty || !xmlContent.contains('<settings>')) {
+      if (xmlContent.trim().isEmpty || (!xmlContent.contains('<settings') && !xmlContent.contains('</settings>'))) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -2161,34 +2235,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (confirmed == true) {
         print('User confirmed import');
-        await unifiedSettings.importSettingsFromXml(xmlContent);
-        // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
-        setState(() {});
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('✅ 配置导入成功！'),
-                  const SizedBox(height: 4),
-                  Text(
-                    '来源: ${path.basename(selectedFile.path)}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '位置: ${path.dirname(selectedFile.path)}',
-                    style: const TextStyle(fontSize: 11, color: Colors.white70),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+        try {
+          await unifiedSettings.importSettingsFromXml(xmlContent);
+          // 导入后强制刷新 SettingsProvider 和 SettingsModelsProvider
+          setState(() {});
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('✅ 配置导入成功！'),
+                    const SizedBox(height: 4),
+                    Text(
+                      '来源: ${path.basename(selectedFile.path)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      '位置: ${path.dirname(selectedFile.path)}',
+                      style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
               ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+            );
+          }
+        } catch (importError) {
+          print('Import validation error: $importError');
+          if (context.mounted) {
+            String errorMessage = '导入失败: 配置格式错误或不兼容';
+            if (importError.toString().contains('version')) {
+              errorMessage = '导入失败: 配置版本不兼容。此文件来自较新的应用版本。';
+            } else if (importError.toString().contains('Invalid')) {
+              errorMessage = '导入失败: 无效的配置文件。文件可能已损坏。';
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('❌ 导入失败'),
+                    const SizedBox(height: 4),
+                    Text(
+                      errorMessage,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 6),
+              ),
+            );
+          }
         }
       } else {
         print('User cancelled import');
@@ -2206,9 +2311,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('导入失败: ${e.toString()}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('❌ 导入失败'),
+                const SizedBox(height: 4),
+                Text(
+                  e is FileSystemException
+                      ? '文件操作失败: ${e.message}'
+                      : '导入失败: ${e.toString()}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 6),
           ),
         );
       }
