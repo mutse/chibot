@@ -17,6 +17,7 @@
   "selectModelType": "Select Model Type:",
   "textModel": "Text Model",
   "imageModel": "Image Model",
+  "videoModel": "Video Model",
   "addNewModelConfiguration": "Add New Model Configuration",
   "modelProvider": "Model Provider",
   "enterProviderName": "Enter Provider Name",

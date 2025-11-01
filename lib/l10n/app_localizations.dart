@@ -207,6 +207,12 @@ abstract class AppLocalizations {
   /// **'Image Model'**
   String get imageModel;
 
+  /// No description provided for @videoModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Model'**
+  String get videoModel;
+
   /// No description provided for @addNewModelConfiguration.
   ///
   /// In en, this message translates to:

@@ -1,4 +1,4 @@
-enum ModelType { text, image, customOpenAI }
+enum ModelType { text, image, video, customOpenAI }
 
 class AvailableModel {
   final String id;

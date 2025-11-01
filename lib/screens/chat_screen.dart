@@ -31,6 +31,7 @@ import 'package:flutter/services.dart'; // For Clipboard
 import 'package:chibot/services/search_service_manager.dart';
 import 'package:chibot/services/search_service_manager_v2.dart' as search_manager_v2;
 import 'package:chibot/models/available_model.dart' as available_model;
+import 'package:chibot/services/exceptions/missing_api_key_exception.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -390,31 +391,46 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          // Update the AI message placeholder with the error
-          final lastMessageIndex = _messages.length - 1;
-          if (lastMessageIndex >= 0 &&
-              _messages[lastMessageIndex].sender == MessageSender.ai) {
-            _messages[lastMessageIndex] = ChatMessage(
-              id: _messages[lastMessageIndex].id,
-              text: "Error: \\${e.toString()}",
-              sender: MessageSender.ai,
-              timestamp: _messages[lastMessageIndex].timestamp,
-              isLoading: false,
-            );
-          } else {
-            // If for some reason the placeholder wasn't added, add a new error message
-            _messages.add(
-              ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                text: "Error: \\${e.toString()}",
+        // Check if this is a missing API key exception
+        if (e is MissingApiKeyException) {
+          // Remove the placeholder AI message
+          setState(() {
+            final lastMessageIndex = _messages.length - 1;
+            if (lastMessageIndex >= 0 &&
+                _messages[lastMessageIndex].sender == MessageSender.ai) {
+              _messages.removeAt(lastMessageIndex);
+            }
+            _isLoading = false;
+          });
+          // Show the helpful dialog
+          _showMissingApiKeyDialog(e);
+        } else {
+          // Handle other exceptions
+          setState(() {
+            final lastMessageIndex = _messages.length - 1;
+            if (lastMessageIndex >= 0 &&
+                _messages[lastMessageIndex].sender == MessageSender.ai) {
+              _messages[lastMessageIndex] = ChatMessage(
+                id: _messages[lastMessageIndex].id,
+                text: "Error: ${e.toString()}",
                 sender: MessageSender.ai,
-                timestamp: DateTime.now(),
-              ),
-            );
-          }
-          _isLoading = false;
-        });
+                timestamp: _messages[lastMessageIndex].timestamp,
+                isLoading: false,
+              );
+            } else {
+              // If for some reason the placeholder wasn't added, add a new error message
+              _messages.add(
+                ChatMessage(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  text: "Error: ${e.toString()}",
+                  sender: MessageSender.ai,
+                  timestamp: DateTime.now(),
+                ),
+              );
+            }
+            _isLoading = false;
+          });
+        }
       }
       print("Error receiving stream: $e");
     } finally {
@@ -444,6 +460,36 @@ class _ChatScreenState extends State<ChatScreen> {
       await _sessionService.saveSession(currentSession);
       _loadChatSessions(); // Reload sessions to update sidebar
     }
+  }
+
+  /// 显示 API 密钥缺失错误对话框
+  void _showMissingApiKeyDialog(MissingApiKeyException exception) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('API Key Not Configured'),
+        content: SingleChildScrollView(
+          child: Text(exception.userFriendlyMessage),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Dismiss'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to settings screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            child: const Text('Go to Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {

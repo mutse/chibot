@@ -17,6 +17,7 @@
   "selectModelType": "選擇模型類型：",
   "textModel": "文字模型",
   "imageModel": "圖像模型",
+  "videoModel": "影片模型",
   "addNewModelConfiguration": "新增模型配置",
   "modelProvider": "模型提供者",
   "enterProviderName": "輸入提供者名稱",

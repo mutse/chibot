@@ -64,6 +64,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get imageModel => 'Bildmodell';
 
   @override
+  String get videoModel => 'Videomodell';
+
+  @override
   String get addNewModelConfiguration => 'Neue Modellkonfiguration hinzufügen';
 
   @override

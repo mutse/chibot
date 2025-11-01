@@ -64,6 +64,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get imageModel => '图像模型';
 
   @override
+  String get videoModel => '视频模型';
+
+  @override
   String get addNewModelConfiguration => '添加新的模型配置';
 
   @override
@@ -381,6 +384,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get imageModel => '圖像模型';
+
+  @override
+  String get videoModel => '影片模型';
 
   @override
   String get addNewModelConfiguration => '新增模型配置';

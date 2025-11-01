@@ -17,6 +17,7 @@
   "selectModelType": "モデルタイプを選択:",
   "textModel": "テキストモデル",
   "imageModel": "画像モデル",
+  "videoModel": "動画モデル",
   "addNewModelConfiguration": "新しいモデル設定を追加",
   "modelProvider": "モデルプロバイダー",
   "enterProviderName": "プロバイダー名を入力",

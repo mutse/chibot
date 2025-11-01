@@ -4,6 +4,7 @@ import '../providers/api_key_provider.dart';
 import 'openai_chat_service.dart';
 import 'gemini_chat_service.dart';
 import 'claude_chat_service.dart';
+import 'exceptions/missing_api_key_exception.dart';
 
 /// 聊天服务工厂 - 使用专职提供者创建聊天服务
 ///
@@ -36,7 +37,10 @@ class ChatServiceFactory {
     final baseUrl = chatModel.providerUrl;
 
     if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('API key not configured for provider: $provider');
+      throw MissingApiKeyException(
+        provider: provider,
+        availableProviders: getConfiguredProviders(apiKeys),
+      );
     }
 
     return create(
@@ -44,6 +48,21 @@ class ChatServiceFactory {
       apiKey: apiKey,
       baseUrl: baseUrl,
     );
+  }
+
+  /// 获取已配置 API Key 的提供商列表
+  static List<String> getConfiguredProviders(ApiKeyProvider apiKeys) {
+    final configured = <String>[];
+    if (apiKeys.openaiApiKey != null && apiKeys.openaiApiKey!.isNotEmpty) {
+      configured.add(openAI);
+    }
+    if (apiKeys.googleApiKey != null && apiKeys.googleApiKey!.isNotEmpty) {
+      configured.add(gemini);
+    }
+    if (apiKeys.claudeApiKey != null && apiKeys.claudeApiKey!.isNotEmpty) {
+      configured.add(claude);
+    }
+    return configured;
   }
 
   /// 传统方式创建聊天服务（保持向后兼容）

@@ -17,6 +17,7 @@
   "selectModelType": "Sélectionner le type de modèle :",
   "textModel": "Modèle de texte",
   "imageModel": "Modèle d'image",
+  "videoModel": "Modèle vidéo",
   "addNewModelConfiguration": "Ajouter une nouvelle configuration de modèle",
   "modelProvider": "Fournisseur de modèle",
   "enterProviderName": "Entrez le nom du fournisseur",

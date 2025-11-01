@@ -17,6 +17,7 @@
   "selectModelType": "选择模型类型:",
   "textModel": "文本模型",
   "imageModel": "图像模型",
+  "videoModel": "视频模型",
   "addNewModelConfiguration": "添加新的模型配置",
   "modelProvider": "模型提供商",
   "enterProviderName": "输入提供商名称",

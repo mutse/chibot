@@ -30,7 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _tavilyApiKeyController;
   late TextEditingController _googleSearchApiKeyController;
   late TextEditingController _googleSearchEngineIdController;
-  late TextEditingController _veo3ApiKeyController;
 
   @override
   void initState() {
@@ -38,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
     final chatModel = Provider.of<ChatModelProvider>(context, listen: false);
     final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
-    final videoModel = Provider.of<VideoModelProvider>(context, listen: false);
     final search = Provider.of<SearchProvider>(context, listen: false);
 
     _apiKeyController = TextEditingController(
@@ -59,9 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     _googleSearchEngineIdController = TextEditingController(
       text: search.googleSearchEngineId ?? '',
-    );
-    _veo3ApiKeyController = TextEditingController(
-      text: apiKeys.googleApiKey ?? '',
     );
   }
 
@@ -155,7 +150,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _tavilyApiKeyController.dispose();
     _googleSearchApiKeyController.dispose();
     _googleSearchEngineIdController.dispose();
-    _veo3ApiKeyController.dispose();
     super.dispose();
   }
 
@@ -176,7 +170,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final search = Provider.of<SearchProvider>(context);
 
     // 动态切换 API Key Controller 内容 - now provider-aware
-    final expectedApiKey = _getProviderApiKey(apiKeys, chatModel);
+    String expectedApiKey;
+    if (unifiedSettings.selectedModelType == available_model.ModelType.text) {
+      expectedApiKey = _getProviderApiKey(apiKeys, chatModel);
+    } else if (unifiedSettings.selectedModelType == available_model.ModelType.image) {
+      expectedApiKey = apiKeys.getImageApiKeyForProvider(imageModel.selectedImageProvider) ?? '';
+    } else if (unifiedSettings.selectedModelType == available_model.ModelType.video) {
+      expectedApiKey = apiKeys.googleApiKey ?? '';
+    } else {
+      expectedApiKey = _getProviderApiKey(apiKeys, chatModel);
+    }
     if (_apiKeyController.text != expectedApiKey) {
       _apiKeyController.text = expectedApiKey;
     }
@@ -219,6 +222,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (selected) {
                         unifiedSettings.setSelectedModelType(
                           available_model.ModelType.image,
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('视频模型'), // TODO: Use l10n.videoModel after localization regeneration
+                    selected:
+                        unifiedSettings.selectedModelType ==
+                        available_model.ModelType.video,
+                    onSelected: (selected) {
+                      if (selected) {
+                        unifiedSettings.setSelectedModelType(
+                          available_model.ModelType.video,
                         );
                       }
                     },
@@ -507,140 +524,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
                 SizedBox(height: 10),
 
-                // Video Generation Settings (Veo3)
-                const Divider(),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(Icons.videocam, size: 20),
-                    const SizedBox(width: 8),
-                    const Text('Video Generation Settings',
-                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 15),
-
-                // Veo3 API Key
-                Text(
-                  'Google Veo3 API Key',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _veo3ApiKeyController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          hintText: 'Enter your Google Veo3 API Key',
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Clear',
-                      onPressed: () {
-                        setState(() {
-                          _veo3ApiKeyController.clear();
-                        });
-                        apiKeys.setGoogleApiKey('');
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 15),
-
-                // Video Resolution
-                Text(
-                  'Video Resolution',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 5),
-                DropdownButton<String>(
-                  value: videoModel.videoResolution,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: '480p', child: Text('480p (854×480)')),
-                    DropdownMenuItem(value: '720p', child: Text('720p HD (1280×720)')),
-                    DropdownMenuItem(value: '1080p', child: Text('1080p Full HD (1920×1080)')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      videoModel.setVideoResolution(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                // Video Duration
-                Text(
-                  'Video Duration',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 5),
-                DropdownButton<String>(
-                  value: videoModel.videoDuration,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: '5s', child: Text('5 seconds')),
-                    DropdownMenuItem(value: '10s', child: Text('10 seconds')),
-                    DropdownMenuItem(value: '15s', child: Text('15 seconds')),
-                    DropdownMenuItem(value: '30s', child: Text('30 seconds')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      videoModel.setVideoDuration(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                // Video Quality
-                Text(
-                  'Video Quality',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 5),
-                DropdownButton<String>(
-                  value: videoModel.videoQuality,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: 'standard', child: Text('Standard Quality')),
-                    DropdownMenuItem(value: 'high', child: Text('High Quality')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      videoModel.setVideoQuality(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                // Video Aspect Ratio
-                Text(
-                  'Video Aspect Ratio',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 5),
-                DropdownButton<String>(
-                  value: videoModel.videoAspectRatio,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(value: '16:9', child: Text('16:9 (Landscape)')),
-                    DropdownMenuItem(value: '9:16', child: Text('9:16 (Portrait)')),
-                    DropdownMenuItem(value: '1:1', child: Text('1:1 (Square)')),
-                    DropdownMenuItem(value: '4:3', child: Text('4:3 (Traditional)')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      videoModel.setVideoAspectRatio(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-
                 if (chatModel.customModels.isNotEmpty)
                   Text(
                     l10n.yourCustomModels,
@@ -669,7 +552,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
-              ] else ...[
+              ] else if (unifiedSettings.selectedModelType ==
+                  available_model.ModelType.image) ...[
                 DropdownButton<String>(
                   value:
                       imageModel.allImageProviderNames.contains(
@@ -883,6 +767,162 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+              ] else if (unifiedSettings.selectedModelType ==
+                  available_model.ModelType.video) ...[
+                // Video Provider Selection
+                DropdownButton<String>(
+                  value: videoModel.selectedVideoProvider,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Google Veo3',
+                      child: Text('Google Veo3'),
+                    ),
+                  ],
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      videoModel.setSelectedVideoProvider(newValue);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+                
+                // Google Veo3 API Key
+                Text(
+                  'Google Veo3 API Key',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _apiKeyController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your Google Veo3 API Key',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: '清除',
+                      onPressed: () async {
+                        setState(() {
+                          _apiKeyController.clear();
+                        });
+                        await apiKeys.setGoogleApiKey('');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Video Resolution
+                Text('Video Resolution', style: const TextStyle(fontSize: 16)),
+                DropdownButton<String>(
+                  value: videoModel.videoResolution,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '480p',
+                      child: Text('480p (854×480)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '720p',
+                      child: Text('720p HD (1280×720)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '1080p',
+                      child: Text('1080p Full HD (1920×1080)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoResolution(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Video Duration
+                Text('Video Duration', style: const TextStyle(fontSize: 16)),
+                DropdownButton<String>(
+                  value: videoModel.videoDuration,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '5s',
+                      child: Text('5 seconds'),
+                    ),
+                    DropdownMenuItem(
+                      value: '10s',
+                      child: Text('10 seconds'),
+                    ),
+                    DropdownMenuItem(
+                      value: '30s',
+                      child: Text('30 seconds'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoDuration(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Video Quality
+                Text('Video Quality', style: const TextStyle(fontSize: 16)),
+                DropdownButton<String>(
+                  value: videoModel.videoQuality,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'standard',
+                      child: Text('Standard Quality'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'high',
+                      child: Text('High Quality'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoQuality(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Video Aspect Ratio
+                Text('Video Aspect Ratio', style: const TextStyle(fontSize: 16)),
+                DropdownButton<String>(
+                  value: videoModel.videoAspectRatio,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '16:9',
+                      child: Text('16:9 (Landscape)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '9:16',
+                      child: Text('9:16 (Portrait)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '1:1',
+                      child: Text('1:1 (Square)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '4:3',
+                      child: Text('4:3 (Traditional)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoAspectRatio(value);
+                    }
+                  },
+                ),
               ],
               const SizedBox(height: 30),
               // Export/Import Settings Section
@@ -938,16 +978,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           await search.setGoogleSearchEngineId(
                             _googleSearchEngineIdController.text.trim(),
                           );
-                          // Save Veo3 API key
-                          await apiKeys.setGoogleApiKey(
-                            _veo3ApiKeyController.text.trim(),
-                          );
-                        } else {
+                        } else if (unifiedSettings.selectedModelType ==
+                            available_model.ModelType.image) {
                           // Save image API key based on selected image provider
                           await _saveImageProviderApiKey(apiKeys, imageModel, apiKeyText);
                           imageModel.setImageProviderUrl(
                             _imageProviderUrlController.text.trim(),
                           );
+                        } else if (unifiedSettings.selectedModelType ==
+                            available_model.ModelType.video) {
+                          // Save video API key (Google Veo3 uses Google API key)
+                          await apiKeys.setGoogleApiKey(apiKeyText);
                         }
 
                         // 保存后同步模型到内存注册表
@@ -1088,7 +1129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     try {
       // 强制同步最新模型到 ModelRegistry
-      unifiedSettings.syncModelsToRegistry?.call();
+      unifiedSettings.syncModelsToRegistry();
       print('Starting export process...');
       final xmlContent = await unifiedSettings.exportSettingsToXml();
       print('XML content generated: ${xmlContent.length} characters');

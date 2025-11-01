@@ -65,6 +65,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get imageModel => 'Modèle d\'image';
 
   @override
+  String get videoModel => 'Modèle vidéo';
+
+  @override
   String get addNewModelConfiguration =>
       'Ajouter une nouvelle configuration de modèle';
 

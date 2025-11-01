@@ -64,6 +64,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get imageModel => '画像モデル';
 
   @override
+  String get videoModel => '動画モデル';
+
+  @override
   String get addNewModelConfiguration => '新しいモデル設定を追加';
 
   @override

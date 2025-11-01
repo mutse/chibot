@@ -6,12 +6,12 @@ import '../models/video_message.dart';
 import '../models/video_session.dart';
 import '../models/chat_message.dart';
 import '../providers/api_key_provider.dart';
-import '../providers/video_model_provider.dart';
 import '../services/veo3_service.dart';
 import '../services/video_session_service.dart';
 import '../services/video_generation_service.dart';
 import '../widgets/video_player_widget.dart';
 import '../utils/snackbar_utils.dart';
+import 'video_generation_settings_screen.dart';
 
 class VideoGenerationScreen extends StatefulWidget {
   const VideoGenerationScreen({Key? key}) : super(key: key);
@@ -348,13 +348,30 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                 'Video Settings',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    _showSettings = false;
-                  });
-                },
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    tooltip: 'Open detailed settings',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const VideoGenerationSettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _showSettings = false;
+                      });
+                    },
+                  ),
+                ],
               ),
             ],
           ),
