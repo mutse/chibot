@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/search_result.dart';
-import '../services/search_service_manager.dart';
+import '../services/search_service_factory.dart';
 import '../providers/search_provider.dart' as search_provider_lib;
+import '../providers/api_key_provider.dart';
 import '../models/chat_message.dart';
 
 class SearchCommandHandler {
@@ -34,24 +35,13 @@ class SearchCommandHandler {
     bool isImage,
   ) async {
     final search = Provider.of<search_provider_lib.SearchProvider>(context, listen: false);
+    final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
 
-    if (!search.googleSearchEnabled) {
+    if (!SearchServiceFactory.hasSearchEngineConfigured(search: search, apiKeys: apiKeys)) {
       return [
         ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: 'Google 搜索功能未启用。请在设置中启用搜索功能并配置 API 密钥。',
-          sender: MessageSender.ai,
-          timestamp: DateTime.now(),
-        ),
-      ];
-    }
-
-    final searchService = await SearchServiceManager.getSearchService(search);
-    if (searchService == null) {
-      return [
-        ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: '搜索服务配置不完整。请检查 API Key 和 Search Engine ID 是否正确配置。',
+          text: '搜索功能未启用。请在设置中启用搜索功能并配置 API 密钥。',
           sender: MessageSender.ai,
           timestamp: DateTime.now(),
         ),
@@ -59,6 +49,11 @@ class SearchCommandHandler {
     }
 
     try {
+      final searchService = SearchServiceFactory.createGoogleSearchService(
+        search: search,
+        apiKeys: apiKeys,
+      );
+
       final searchResult = isImage
           ? await searchService.searchImages(query, count: search.googleSearchResultCount)
           : await searchService.search(query, count: search.googleSearchResultCount);

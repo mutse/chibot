@@ -1,28 +1,37 @@
+import 'package:flutter/foundation.dart';
 import '../providers/search_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'google_search_service.dart';
+import '../models/search_result.dart' as search_result_lib;
 
-/// 搜索服务管理器 - 使用专职提供者创建搜索服务
+/// 搜索服务工厂 - 统一搜索服务的创建和管理
 ///
-/// 改进：
-/// - 使用 SearchProvider 和 ApiKeyProvider 代替 SettingsProvider
-/// - 统一的搜索服务创建和验证
-/// - 支持多个搜索提供商（Google, Tavily）
+/// 职责：
+/// - 创建搜索服务实例
+/// - 验证搜索配置
+/// - 管理支持的搜索提供商
+/// - 构建搜索参数
+///
+/// 支持的搜索提供商：
+/// - Google Custom Search
+/// - Tavily (计划中)
 ///
 /// 使用示例：
 /// ```dart
-/// final manager = SearchServiceManager();
-/// if (SearchServiceManager.isGoogleSearchConfigured(
+/// if (SearchServiceFactory.isGoogleSearchConfigured(
 ///   search: searchProvider,
 ///   apiKeys: apiKeyProvider,
 /// )) {
-///   final service = SearchServiceManager.createGoogleSearchService(
+///   final service = SearchServiceFactory.createGoogleSearchService(
 ///     search: searchProvider,
 ///     apiKeys: apiKeyProvider,
 ///   );
 /// }
 /// ```
-class SearchServiceManager {
+class SearchServiceFactory {
+  static const String google = 'google';
+  static const String tavily = 'tavily';
+
   /// 检查 Google Custom Search 是否已完全配置
   ///
   /// 检查项：
@@ -64,23 +73,24 @@ class SearchServiceManager {
   /// 获取当前活跃的搜索提供商
   ///
   /// 返回 'google', 'tavily' 或 null（如果都未启用）
+  /// 优先级：Tavily > Google
   static String? getActiveSearchProvider({
     required SearchProvider search,
     required ApiKeyProvider apiKeys,
   }) {
     if (isTavilySearchConfigured(search: search, apiKeys: apiKeys)) {
-      return 'tavily';
+      return tavily;
     }
     if (isGoogleSearchConfigured(search: search, apiKeys: apiKeys)) {
-      return 'google';
+      return google;
     }
     return null;
   }
 
-  /// 创建并验证 Google Custom Search 服务
+  /// 创建 Google Custom Search 服务
   ///
   /// 抛出异常如果配置不完整
-  static GoogleSearchService createAndValidateGoogleSearchService({
+  static GoogleSearchService createGoogleSearchService({
     required SearchProvider search,
     required ApiKeyProvider apiKeys,
   }) {
@@ -91,10 +101,37 @@ class SearchServiceManager {
       );
     }
 
+    if (kDebugMode) {
+      print('[SearchServiceFactory] Creating Google Search Service');
+      print('[SearchServiceFactory] Engine ID: ${search.googleSearchEngineId}');
+    }
+
     return GoogleSearchService(
       apiKey: apiKeys.googleSearchApiKey!,
       searchEngineId: search.googleSearchEngineId!,
+      provider: search.googleSearchProvider == 'googleCustomSearch'
+          ? search_result_lib.SearchProvider.googleCustomSearch
+          : search_result_lib.SearchProvider.programmableSearch,
     );
+  }
+
+  /// 创建搜索服务（根据活跃提供商）
+  ///
+  /// 返回当前配置的搜索服务，如果没有配置任何搜索引擎则返回 null
+  static dynamic createSearchService({
+    required SearchProvider search,
+    required ApiKeyProvider apiKeys,
+  }) {
+    final provider = getActiveSearchProvider(search: search, apiKeys: apiKeys);
+
+    if (provider == google) {
+      return createGoogleSearchService(search: search, apiKeys: apiKeys);
+    } else if (provider == tavily) {
+      // TODO: 实现 Tavily 服务创建
+      throw UnimplementedError('Tavily search service is not yet implemented');
+    } else {
+      return null;
+    }
   }
 
   /// 验证 Google Custom Search 配置并获取搜索参数
@@ -139,6 +176,32 @@ class SearchServiceManager {
     };
   }
 
+  /// 验证搜索配置
+  ///
+  /// 异步验证方法，用于彻底检查搜索服务的可用性
+  static Future<bool> validateConfiguration({
+    required SearchProvider search,
+    required ApiKeyProvider apiKeys,
+  }) async {
+    try {
+      final service = createSearchService(search: search, apiKeys: apiKeys);
+      if (service == null) {
+        return false;
+      }
+
+      if (service is GoogleSearchService) {
+        return await service.validateConfiguration();
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('[SearchServiceFactory] Validation error: $e');
+      }
+      return false;
+    }
+  }
+
   /// 获取当前活跃搜索引擎的配置状态描述
   ///
   /// 用于 UI 展示
@@ -156,7 +219,7 @@ class SearchServiceManager {
   }
 
   /// 获取所有支持的搜索提供商
-  static List<String> get supportedSearchProviders => [
+  static List<String> get supportedProviders => [
     'Google Custom Search',
     'Tavily',
   ];

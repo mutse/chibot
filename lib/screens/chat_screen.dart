@@ -28,8 +28,7 @@ import 'package:chibot/services/web_search_service.dart' as web_service;
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
-import 'package:chibot/services/search_service_manager.dart';
-import 'package:chibot/services/search_service_manager_v2.dart' as search_manager_v2;
+import 'package:chibot/services/search_service_factory.dart';
 import 'package:chibot/models/available_model.dart' as available_model;
 import 'package:chibot/services/exceptions/missing_api_key_exception.dart';
 
@@ -178,8 +177,7 @@ class _ChatScreenState extends State<ChatScreen> {
           (searchProvider.googleSearchEngineId != null &&
               searchProvider.googleSearchEngineId!.isNotEmpty)) {
         try {
-          final googleService = search_manager_v2.SearchServiceManager
-              .createAndValidateGoogleSearchService(
+          final googleService = SearchServiceFactory.createGoogleSearchService(
             search: searchProvider,
             apiKeys: apiKeys,
           );

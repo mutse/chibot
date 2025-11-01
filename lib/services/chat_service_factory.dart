@@ -5,6 +5,7 @@ import 'openai_chat_service.dart';
 import 'gemini_chat_service.dart';
 import 'claude_chat_service.dart';
 import 'exceptions/missing_api_key_exception.dart';
+import 'service_model_registry.dart';
 
 /// 聊天服务工厂 - 使用专职提供者创建聊天服务
 ///
@@ -92,19 +93,17 @@ class ChatServiceFactory {
   static bool isSupported(String provider) =>
       supportedProviders.contains(provider);
 
+  /// 获取指定提供商支持的模型列表 (使用注册表，无需创建虚拟实例)
   static List<String> getModelsForProvider(String provider) {
-    switch (provider) {
-      case openAI:
-        return OpenAIService(apiKey: 'dummy').supportedModels;
+    return ServiceModelRegistry.getChatModelsForProvider(provider);
+  }
 
-      case gemini:
-        return GeminiService(apiKey: 'dummy').supportedModels;
-
-      case claude:
-        return ClaudeService(apiKey: 'dummy').supportedModels;
-
-      default:
-        return [];
-    }
+  /// 获取所有可用的提供商和模型
+  static Map<String, List<String>> getAllProvidersAndModels() {
+    return {
+      for (final provider in supportedProviders)
+        provider: getModelsForProvider(provider),
+    };
   }
 }
+
