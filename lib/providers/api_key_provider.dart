@@ -58,7 +58,8 @@ class ApiKeyProvider with ChangeNotifier {
       case 'claude':
         return _claudeApiKey;
       default:
-        return null;
+        // 自定义提供商使用 OpenAI 兼容接口，返回 OpenAI API Key
+        return _openaiApiKey;
     }
   }
 

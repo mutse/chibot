@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
@@ -24,6 +25,264 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late AppLocalizations l10n;
   late TextEditingController _apiKeyController;
+
+  // 玻璃态UI辅助方法
+  Widget _buildGlassCard({
+    required Widget child,
+    EdgeInsets? padding,
+    EdgeInsets? margin,
+    double borderRadius = 16.0,
+  }) {
+    return Container(
+      margin: margin ?? const EdgeInsets.only(bottom: 16.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: padding ?? const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.white.withOpacity(0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String hintText,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    VoidCallback? onClear,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.0,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: TextField(
+              controller: controller,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              style: const TextStyle(color: Colors.black87),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 14.0,
+                ),
+                suffixIcon: onClear != null
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        onPressed: onClear,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassChip({
+    required String label,
+    required bool selected,
+    required ValueChanged<bool> onSelected,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(
+          color: selected
+              ? Colors.white.withOpacity(0.5)
+              : Colors.white.withOpacity(0.2),
+          width: selected ? 1.5 : 1.0,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.0),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: selected
+                  ? Colors.white.withOpacity(0.35)
+                  : Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: ChoiceChip(
+              label: Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.black87 : Colors.black54,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              selected: selected,
+              onSelected: onSelected,
+              backgroundColor: Colors.transparent,
+              selectedColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassDropdown<T>({
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    String? hintText,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.0,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<T>(
+              value: value,
+              items: items,
+              onChanged: onChanged,
+              hint: hintText != null ? Text(hintText) : null,
+              isExpanded: true,
+              underline: Container(),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.black.withOpacity(0.6),
+              ),
+              style: const TextStyle(color: Colors.black87),
+              dropdownColor: Colors.white.withOpacity(0.95),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassButton({
+    required String label,
+    required VoidCallback onPressed,
+    required IconData icon,
+    Color? backgroundColor,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.0),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: backgroundColor != null
+                    ? [
+                        backgroundColor.withOpacity(0.8),
+                        backgroundColor.withOpacity(0.6),
+                      ]
+                    : [
+                        Colors.white.withOpacity(0.25),
+                        Colors.white.withOpacity(0.15),
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: ElevatedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, color: Colors.black87),
+              label: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   late TextEditingController _providerUrlController;
   late TextEditingController _imageProviderUrlController;
   late TextEditingController _customModelController;
@@ -185,220 +444,296 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settings)),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: [
-                  Text(
-                    l10n.selectModelType,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(width: 16),
-                  ChoiceChip(
-                    label: Text(l10n.textModel),
-                    selected:
-                        unifiedSettings.selectedModelType ==
-                        available_model.ModelType.text,
-                    onSelected: (selected) {
-                      if (selected) {
-                        unifiedSettings.setSelectedModelType(
-                          available_model.ModelType.text,
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text(l10n.imageModel),
-                    selected:
-                        unifiedSettings.selectedModelType ==
-                        available_model.ModelType.image,
-                    onSelected: (selected) {
-                      if (selected) {
-                        unifiedSettings.setSelectedModelType(
-                          available_model.ModelType.image,
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('视频模型'), // TODO: Use l10n.videoModel after localization regeneration
-                    selected:
-                        unifiedSettings.selectedModelType ==
-                        available_model.ModelType.video,
-                    onSelected: (selected) {
-                      if (selected) {
-                        unifiedSettings.setSelectedModelType(
-                          available_model.ModelType.video,
-                        );
-                      }
-                    },
-                  ),
-                ],
+      appBar: AppBar(
+        title: Text(l10n.settings),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.25),
+                    Colors.white.withOpacity(0.15),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.selectModelProvider,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-              TextButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.add),
-                    onPressed: () {
-                      _showAddProviderAndModelDialog(
-                        context,
-                        unifiedSettings,
-                        unifiedSettings.selectedModelType,
-                      );
-                    },
-                  ),
-                ],
-              ),
-              if (unifiedSettings.selectedModelType ==
-                  available_model.ModelType.text) ...[
-                DropdownButton<String>(
-                  value:
-                      chatModel.allProviderNames.contains(
-                            chatModel.selectedProvider,
-                          )
-                          ? chatModel.selectedProvider
-                          : (chatModel.allProviderNames.isNotEmpty
-                              ? chatModel.allProviderNames.first
-                              : null),
-                  isExpanded: true,
-                  items:
-                      chatModel.allProviderNames.map((String provider) {
-                        final isCustom =
-                            !ChatModelProvider.defaultBaseUrls.keys.contains(
-                              provider,
-                            );
-                        return DropdownMenuItem<String>(
-                          value: provider,
-                          child: Text(
-                            isCustom
-                                ? ' $provider (OpenAI Compatible)'
-                                : provider,
-                          ),
-                        );
-                      }).toList(),
-                  onChanged: (String? newValue) async {
-                    if (newValue != null) {
-                      await chatModel.setSelectedProvider(newValue);
-                      _providerUrlController.text =
-                          chatModel.rawProviderUrl ?? '';
-                      _apiKeyController.text = _getProviderApiKey(apiKeys, chatModel);
-                      // 只显示该供应商下的模型
-                      setState(() {});
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.modelProviderURLOptional,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  l10n.defaultUrl(
-                    ChatModelProvider.defaultBaseUrls['OpenAI'] ?? '',
-                  ),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-                TextField(
-                  controller: _providerUrlController,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g., http://localhost:11434/v1',
-                  ),
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  _getApiKeyLabel(chatModel, imageModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Row(
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.withOpacity(0.05),
+              Colors.purple.withOpacity(0.05),
+              Colors.pink.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+              _buildGlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _apiKeyController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          hintText: _getApiKeyHint(chatModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
-                        ),
+                    Text(
+                      l10n.selectModelType,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: '清除',
-                      onPressed: () async {
-                        setState(() {
-                          _apiKeyController.clear();
-                        });
-                        // 清空 provider 的 API key
-                        await _saveProviderApiKey(apiKeys, chatModel, '');
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildGlassChip(
+                          label: l10n.textModel,
+                          selected: unifiedSettings.selectedModelType ==
+                              available_model.ModelType.text,
+                          onSelected: (selected) {
+                            if (selected) {
+                              unifiedSettings.setSelectedModelType(
+                                available_model.ModelType.text,
+                              );
+                            }
+                          },
+                        ),
+                        _buildGlassChip(
+                          label: l10n.imageModel,
+                          selected: unifiedSettings.selectedModelType ==
+                              available_model.ModelType.image,
+                          onSelected: (selected) {
+                            if (selected) {
+                              unifiedSettings.setSelectedModelType(
+                                available_model.ModelType.image,
+                              );
+                            }
+                          },
+                        ),
+                        _buildGlassChip(
+                          label: '视频模型', // TODO: Use l10n.videoModel after localization regeneration
+                          selected: unifiedSettings.selectedModelType ==
+                              available_model.ModelType.video,
+                          onSelected: (selected) {
+                            if (selected) {
+                              unifiedSettings.setSelectedModelType(
+                                available_model.ModelType.video,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              _buildGlassCard(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.selectModelProvider,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    _buildGlassButton(
+                      label: l10n.add,
+                      icon: Icons.add,
+                      onPressed: () {
+                        _showAddProviderAndModelDialog(
+                          context,
+                          unifiedSettings,
+                          unifiedSettings.selectedModelType,
+                        );
                       },
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Text(l10n.selectModel, style: const TextStyle(fontSize: 16)),
-                DropdownButton<String>(
-                  value:
-                      settingsModels.textModels
-                              .where(
-                                (m) => m.provider == chatModel.selectedProvider,
-                              )
-                              .any((m) => m.id == chatModel.selectedModel)
-                          ? chatModel.selectedModel
-                          : (settingsModels.textModels
-                                  .where(
-                                    (m) =>
-                                        m.provider == chatModel.selectedProvider,
-                                  )
-                                  .isNotEmpty
-                              ? settingsModels.textModels
-                                  .where(
-                                    (m) =>
-                                        m.provider == chatModel.selectedProvider,
-                                  )
-                                  .first
-                                  .id
-                              : null),
-                  isExpanded: true,
-                  items:
-                      settingsModels.textModels
-                          .where(
-                            (model) =>
-                                model.provider == chatModel.selectedProvider,
-                          )
-                          .map((model) {
-                            return DropdownMenuItem<String>(
-                              value: model.id,
-                              child: Text(model.name),
-                            );
-                          })
-                          .toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      chatModel.setSelectedModel(newValue);
-                    }
-                  },
-                  hint:
-                      settingsModels.textModels
-                              .where(
-                                (m) => m.provider == chatModel.selectedProvider,
-                              )
-                              .isEmpty
-                          ? Text(l10n.noModelsAvailable)
-                          : null,
+              ),
+              if (unifiedSettings.selectedModelType ==
+                  available_model.ModelType.text) ...[
+                _buildGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.selectModelProvider,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildGlassDropdown<String>(
+                        value: chatModel.allProviderNames.contains(
+                              chatModel.selectedProvider,
+                            )
+                            ? chatModel.selectedProvider
+                            : (chatModel.allProviderNames.isNotEmpty
+                                ? chatModel.allProviderNames.first
+                                : null),
+                        items: chatModel.allProviderNames.map((String provider) {
+                          final isCustom =
+                              !ChatModelProvider.defaultBaseUrls.keys.contains(
+                                provider,
+                              );
+                          return DropdownMenuItem<String>(
+                            value: provider,
+                            child: Text(
+                              isCustom
+                                  ? ' $provider (OpenAI Compatible)'
+                                  : provider,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) async {
+                          if (newValue != null) {
+                            await chatModel.setSelectedProvider(newValue);
+                            _providerUrlController.text =
+                                chatModel.rawProviderUrl ?? '';
+                            _apiKeyController.text = _getProviderApiKey(apiKeys, chatModel);
+                            setState(() {});
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                _buildGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.modelProviderURLOptional,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.defaultUrl(
+                          ChatModelProvider.defaultBaseUrls['OpenAI'] ?? '',
+                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.5)),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildGlassTextField(
+                        controller: _providerUrlController,
+                        hintText: 'e.g., http://localhost:11434/v1',
+                        keyboardType: TextInputType.url,
+                      ),
+                    ],
+                  ),
+                ),
+                _buildGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getApiKeyLabel(chatModel, imageModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildGlassTextField(
+                        controller: _apiKeyController,
+                        hintText: _getApiKeyHint(chatModel, unifiedSettings.selectedModelType == available_model.ModelType.image),
+                        obscureText: true,
+                        onClear: () async {
+                          setState(() {
+                            _apiKeyController.clear();
+                          });
+                          await _saveProviderApiKey(apiKeys, chatModel, '');
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                _buildGlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.selectModel,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildGlassDropdown<String>(
+                        value: settingsModels.textModels
+                                .where(
+                                  (m) => m.provider == chatModel.selectedProvider,
+                                )
+                                .any((m) => m.id == chatModel.selectedModel)
+                            ? chatModel.selectedModel
+                            : (settingsModels.textModels
+                                    .where(
+                                      (m) =>
+                                          m.provider == chatModel.selectedProvider,
+                                    )
+                                    .isNotEmpty
+                                ? settingsModels.textModels
+                                    .where(
+                                      (m) =>
+                                          m.provider == chatModel.selectedProvider,
+                                    )
+                                    .first
+                                    .id
+                                : null),
+                        items: settingsModels.textModels
+                            .where(
+                              (model) =>
+                                  model.provider == chatModel.selectedProvider,
+                            )
+                            .map((model) {
+                              return DropdownMenuItem<String>(
+                                value: model.id,
+                                child: Text(model.name),
+                              );
+                            })
+                            .toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            chatModel.setSelectedModel(newValue);
+                          }
+                        },
+                        hintText: settingsModels.textModels
+                                .where(
+                                  (m) => m.provider == chatModel.selectedProvider,
+                                )
+                                .isEmpty
+                            ? l10n.noModelsAvailable
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(l10n.customModels, style: const TextStyle(fontSize: 16)),
@@ -926,35 +1261,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               const SizedBox(height: 30),
               // Export/Import Settings Section
-              const Divider(),
-              const SizedBox(height: 20),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _exportSettings(context, unifiedSettings),
-                      icon: const Icon(Icons.file_upload),
-                      label: Text(l10n.exportConfig),
-                      style: ElevatedButton.styleFrom(
+              _buildGlassCard(
+                margin: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildGlassButton(
+                        label: l10n.exportConfig,
+                        icon: Icons.file_upload,
                         backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                        onPressed: () => _exportSettings(context, unifiedSettings),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => _showImportOptions(context, unifiedSettings),
-                      icon: const Icon(Icons.file_download),
-                      label: Text(l10n.importConfig),
-                      style: ElevatedButton.styleFrom(
+                      _buildGlassButton(
+                        label: l10n.importConfig,
+                        icon: Icons.file_download,
                         backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                        onPressed: () => _showImportOptions(context, unifiedSettings),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: () async {
+                      _buildGlassButton(
+                        label: l10n.saveSettings,
+                        icon: Icons.save,
+                        backgroundColor: Colors.purple,
+                        onPressed: () async {
                         final apiKeyText = _apiKeyController.text.trim();
 
                         if (unifiedSettings.selectedModelType ==
@@ -994,20 +1325,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // 保存后同步模型到内存注册表
                         chatModel.syncModelsToRegistry();
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.settingsSaved)),
-                        );
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Text(l10n.saveSettings),
-                    ),
-                  ],
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.settingsSaved),
+                              backgroundColor: Colors.black.withOpacity(0.7),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -1086,6 +1425,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // Save API key based on provider type
                       await _saveProviderApiKey(apiKeys, chatModel, apiKey);
                     }
+
+                    // 更新文本模型对应的参数显示
+                    _providerUrlController.text = chatModel.rawProviderUrl ?? '';
+                    _apiKeyController.text = _getProviderApiKey(apiKeys, chatModel);
                   } else if (modelType == available_model.ModelType.image) {
                     // Add custom image provider with the model to ImageModelProvider
                     final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
@@ -1102,6 +1445,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // Save image API key based on provider type
                       await _saveImageProviderApiKey(apiKeys, imageModel, apiKey);
                     }
+
+                    // 更新图像模型对应的参数显示
+                    _imageProviderUrlController.text = imageModel.rawImageProviderUrl ?? '';
+                    _apiKeyController.text = apiKeys.getImageApiKeyForProvider(imageModel.selectedImageProvider) ?? '';
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(l10n.providerAndModelAdded)),

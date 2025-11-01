@@ -76,13 +76,49 @@ class ChatModelProvider with ChangeNotifier {
   }
 
   /// 获取提供商 URL（优先使用自定义，否则使用默认）
+  /// 对于自定义提供商（OpenAI兼容接口），规范化URL格式
   String get providerUrl {
     String baseUrl = _providerUrl?.trim() ??
         defaultBaseUrls[_selectedProvider] ??
         defaultBaseUrls['OpenAI']!;
+    
+    // 移除尾部斜杠
     if (baseUrl.endsWith('/')) {
       baseUrl = baseUrl.substring(0, baseUrl.length - 1);
     }
+    
+    // 对于自定义提供商（OpenAI兼容接口），规范化URL
+    if (!defaultBaseUrls.containsKey(_selectedProvider)) {
+      // 移除可能的API端点路径（如 /chat/completions, /v1/chat/completions 等）
+      baseUrl = baseUrl.replaceAll(RegExp(r'/chat/completions.*$'), '');
+      baseUrl = baseUrl.replaceAll(RegExp(r'/models(?!/v\d+).*$'), '');
+      
+      // 移除尾部斜杠（再次处理，因为可能移除了路径）
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+      }
+      
+      // 解析URL以检查路径
+      try {
+        final uri = Uri.parse(baseUrl);
+        final path = uri.path;
+        
+        // 检查是否已包含版本号路径（如 /v1, /v1beta, /v1alpha）
+        final hasVersionPath = RegExp(r'/(v\d+|v\d+beta|v\d+alpha)$').hasMatch(path);
+        
+        // 如果URL不包含版本号路径，且路径为空或只有根路径，添加 /v1（OpenAI兼容标准）
+        if (!hasVersionPath && (path.isEmpty || path == '/')) {
+          baseUrl = '${uri.scheme}://${uri.host}${uri.port != 80 && uri.port != 443 ? ':${uri.port}' : ''}/v1';
+        }
+      } catch (e) {
+        // 如果URL解析失败，保持原样（可能是格式错误的URL，让调用方处理）
+        // 但如果看起来像是基础域名，尝试添加 /v1
+        if (!baseUrl.contains('/v') && !baseUrl.contains('/api/')) {
+          baseUrl = '$baseUrl/v1';
+        }
+      }
+    }
+    
     return baseUrl;
   }
 
