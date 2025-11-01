@@ -1433,18 +1433,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // Add custom image provider with the model to ImageModelProvider
                     final imageModel = Provider.of<ImageModelProvider>(context, listen: false);
                     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
+                    final settingsModels = Provider.of<SettingsModelsProvider>(context, listen: false);
 
-                    await imageModel.addCustomImageProvider(providerName, [modelName]);
-                    await imageModel.setSelectedImageProvider(providerName);
-                    await imageModel.setSelectedImageModel(modelName);
-
+                    // 先设置 URL（如果有），然后再添加提供商和同步模型，确保注册表中的模型有正确的 baseUrl
                     if (providerUrl.isNotEmpty) {
                       await imageModel.setImageProviderUrl(providerUrl);
                     }
+                    
+                    // 添加自定义提供商（会自动同步到 ModelRegistry）
+                    await imageModel.addCustomImageProvider(providerName, [modelName]);
+                    await imageModel.setSelectedImageProvider(providerName);
+                    await imageModel.setSelectedImageModel(modelName);
+                    
                     if (apiKey.isNotEmpty) {
                       // Save image API key based on provider type
                       await _saveImageProviderApiKey(apiKeys, imageModel, apiKey);
                     }
+
+                    // 刷新 SettingsModelsProvider 以便 UI 更新
+                    settingsModels.refreshModels();
 
                     // 更新图像模型对应的参数显示
                     _imageProviderUrlController.text = imageModel.rawImageProviderUrl ?? '';

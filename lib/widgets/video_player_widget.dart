@@ -23,7 +23,7 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _initialized = false;
   bool _isPlaying = false;
   bool _showControls = true;
@@ -52,13 +52,18 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         return;
       }
 
-      await _controller.initialize();
-      _controller.addListener(_videoListener);
+      // Check if controller was successfully created
+      if (_controller == null) {
+        return;
+      }
+
+      await _controller!.initialize();
+      _controller!.addListener(_videoListener);
 
       if (mounted) {
         setState(() {
           _initialized = true;
-          _duration = _controller.value.duration;
+          _duration = _controller!.value.duration;
         });
       }
     } catch (e) {
@@ -67,43 +72,53 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   void _videoListener() {
-    if (_controller.value.position != _position) {
+    if (_controller == null) return;
+
+    if (_controller!.value.position != _position) {
       setState(() {
-        _position = _controller.value.position;
+        _position = _controller!.value.position;
       });
     }
 
-    if (_controller.value.isPlaying != _isPlaying) {
+    if (_controller!.value.isPlaying != _isPlaying) {
       setState(() {
-        _isPlaying = _controller.value.isPlaying;
+        _isPlaying = _controller!.value.isPlaying;
       });
     }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_videoListener);
-    _controller.dispose();
+    if (_controller != null) {
+      _controller!.removeListener(_videoListener);
+      _controller!.dispose();
+    }
     super.dispose();
   }
 
   void _togglePlayPause() {
-    if (_controller.value.isPlaying) {
-      _controller.pause();
+    if (_controller == null) return;
+
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
     } else {
-      _controller.play();
+      _controller!.play();
     }
   }
 
   void _toggleMute() {
+    if (_controller == null) return;
+
     setState(() {
       _volume = _volume > 0 ? 0 : 1.0;
-      _controller.setVolume(_volume);
+      _controller!.setVolume(_volume);
     });
   }
 
   void _seekTo(Duration position) {
-    _controller.seekTo(position);
+    if (_controller == null) return;
+
+    _controller!.seekTo(position);
   }
 
   String _formatDuration(Duration duration) {
@@ -198,6 +213,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   }
 
   Widget _buildVideoPlayer() {
+    if (_controller == null) {
+      return const Center(
+        child: Text('No video source available'),
+      );
+    }
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -209,8 +230,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         children: [
           // Video Player
           AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
           ),
 
           // Controls Overlay

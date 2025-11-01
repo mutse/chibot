@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../models/model_registry.dart';
+import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 
 /// 负责图像生成相关的模型配置
 /// 职责：选择图像生成模型、配置提供商、管理 Aspect Ratio
 class ImageModelProvider with ChangeNotifier {
+  final ModelRegistry? modelRegistry;
   // 当前选定的图像生成提供商
   String _selectedImageProvider = 'OpenAI';
   static const String _selectedImageProviderKey = 'selected_image_provider';
@@ -97,7 +100,7 @@ class ImageModelProvider with ChangeNotifier {
 
   // ==================== 初始化 ====================
 
-  ImageModelProvider() {
+  ImageModelProvider({this.modelRegistry}) {
     _loadSettings();
   }
 
@@ -137,6 +140,8 @@ class ImageModelProvider with ChangeNotifier {
     }
 
     _validateSelectedImageModelForProvider();
+    // 初始化时同步模型到注册表
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
@@ -229,6 +234,8 @@ class ImageModelProvider with ChangeNotifier {
       _customImageProvidersKey,
       json.encode(_customImageProviders),
     );
+    // 同步到 ModelRegistry
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
@@ -254,6 +261,68 @@ class ImageModelProvider with ChangeNotifier {
       } else {
         _selectedImageProvider = 'OpenAI';
         _selectedImageModel = 'dall-e-3';
+      }
+    }
+  }
+
+  // ==================== 模型同步 ====================
+
+  /// 将图像模型同步到模型注册表
+  Future<void> syncModelsToRegistry() async {
+    if (modelRegistry != null) {
+      // 1. 注册预设图像模型
+      for (var provider in _categorizedPresetImageModels.keys) {
+        for (var model in _categorizedPresetImageModels[provider]!) {
+          modelRegistry!.registerModel(
+            AvailableModel(
+              id: model,
+              name: model,
+              provider: provider,
+              type: available_model.ModelType.image,
+              supportsStreaming: false,
+              capabilities: {},
+              baseUrl: defaultImageBaseUrls[provider],
+            ),
+          );
+        }
+      }
+      // 2. 注册自定义图像提供商及其模型
+      for (var provider in _customImageProviders.keys) {
+        for (var model in _customImageProviders[provider]!) {
+          // 对于自定义提供商，如果当前选定的提供商是它，使用 _imageProviderUrl
+          // 否则使用默认 URL 或 null（因为每个自定义提供商可能有自己的 URL，但目前只存储一个全局的）
+          final baseUrl = (provider == _selectedImageProvider && _imageProviderUrl != null)
+              ? _imageProviderUrl
+              : defaultImageBaseUrls[provider];
+          modelRegistry!.registerModel(
+            AvailableModel(
+              id: model,
+              name: model,
+              provider: provider,
+              type: available_model.ModelType.image,
+              supportsStreaming: false,
+              capabilities: {},
+              baseUrl: baseUrl,
+            ),
+          );
+        }
+      }
+      // 3. 注册自定义图像模型（属于当前选定的提供商）
+      for (var model in _customImageModels) {
+        final baseUrl = _imageProviderUrl ??
+            defaultImageBaseUrls[_selectedImageProvider] ??
+            defaultImageBaseUrls['OpenAI']!;
+        modelRegistry!.registerModel(
+          AvailableModel(
+            id: model,
+            name: model,
+            provider: _selectedImageProvider,
+            type: available_model.ModelType.image,
+            supportsStreaming: false,
+            capabilities: {},
+            baseUrl: baseUrl,
+          ),
+        );
       }
     }
   }

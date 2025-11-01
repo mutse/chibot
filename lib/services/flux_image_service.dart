@@ -35,9 +35,9 @@ class FluxKontextImageService {
         safetyTolerance: safetyTolerance,
       );
 
-      // Step 2: Poll for result
+      // Step 2: Poll for result using polling_url
       final imageUrl = await _pollForResult(
-        requestId: submitResponse.id,
+        pollingUrl: submitResponse.pollingUrl,
         maxWaitTime: maxWaitTime,
         pollInterval: pollInterval,
       );
@@ -57,10 +57,15 @@ class FluxKontextImageService {
     String? outputFormat,
     int? safetyTolerance,
   }) async {
+    if (apiKey.isEmpty) {
+      throw Exception('FLUX.1 API key is empty. Please configure your API key in settings.');
+    }
+
     final url = Uri.parse('$baseUrl/flux-kontext-pro');
     final headers = {
+      'accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
+      'x-key': apiKey,
     };
 
     final body = {
@@ -77,35 +82,58 @@ class FluxKontextImageService {
       body: jsonEncode(body),
     );
 
-    print(jsonEncode(body));
+    print('[FluxKontextImageService] Request body: ${jsonEncode(body)}');
+    print('[FluxKontextImageService] Response status: ${response.statusCode}');
+    print('[FluxKontextImageService] Response body: ${response.body}');
+
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       return FluxSubmitResponse.fromJson(jsonResponse);
     } else {
-      print('FLUX.1 API error: ${response.statusCode} - ${response.body}');
       String errorMessage;
       try {
         final errorBody = jsonDecode(response.body);
         errorMessage =
             errorBody['error']?['message'] ??
             errorBody['message'] ??
+            errorBody['errors'] ??
             getDetailedError(response.statusCode, response.body);
+
+        // Handle different error formats
+        if (errorBody['error'] is String) {
+          errorMessage = errorBody['error'];
+        }
       } catch (e) {
         errorMessage = getDetailedError(response.statusCode, response.body);
       }
+
+      // Add status code context
+      if (response.statusCode == 401) {
+        errorMessage = 'Authentication failed (401). Please verify your API key is valid and active.';
+      } else if (response.statusCode == 403) {
+        errorMessage = 'Access forbidden (403). Your API key may not have permission for FLUX.1 models.';
+      } else if (response.statusCode == 429) {
+        errorMessage = 'Rate limit exceeded (429). Please wait before making more requests.';
+      } else if (response.statusCode == 400) {
+        errorMessage = 'Bad request (400). Invalid prompt or parameters: $errorMessage';
+      }
+
       throw Exception('FLUX.1 Kontext API error: $errorMessage');
     }
   }
 
   /// Poll for result completion
   Future<String> _pollForResult({
-    required String requestId,
+    required String pollingUrl,
     required Duration maxWaitTime,
     required Duration pollInterval,
   }) async {
     final stopwatch = Stopwatch()..start();
-    final url = Uri.parse('$baseUrl/get_result?id=$requestId');
-    final headers = {'Authorization': 'Bearer $apiKey'};
+    final url = Uri.parse(pollingUrl);
+    final headers = {
+      'accept': 'application/json',
+      'x-key': apiKey,
+    };
 
     while (stopwatch.elapsed < maxWaitTime) {
       try {
@@ -115,23 +143,26 @@ class FluxKontextImageService {
           final jsonResponse = jsonDecode(response.body);
           final result = FluxPollResponse.fromJson(jsonResponse);
 
-          if (result.status == 'ready') {
+          // Check status according to API documentation (case-insensitive)
+          final status = result.status.toLowerCase();
+          if (status == 'ready') {
             if (result.sampleUrl != null && result.sampleUrl!.isNotEmpty) {
               return result.sampleUrl!;
             } else {
               throw Exception('FLUX.1 returned no image URL');
             }
-          } else if (result.status == 'failed') {
+          } else if (status == 'error' || status == 'failed') {
             throw Exception(
               'FLUX.1 generation failed: ${result.error ?? "Unknown error"}',
             );
-          } else if (result.status == 'pending' ||
-              result.status == 'processing') {
+          } else if (status == 'pending' || status == 'processing') {
             // Continue polling
             await Future.delayed(pollInterval);
             continue;
           } else {
-            throw Exception('Unexpected FLUX.1 status: ${result.status}');
+            // Unknown status, continue polling
+            await Future.delayed(pollInterval);
+            continue;
           }
         } else {
           throw Exception(
@@ -158,8 +189,9 @@ class FluxKontextImageService {
     try {
       final url = Uri.parse('$baseUrl/flux-kontext-pro');
       final headers = {
+        'accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
+        'x-key': apiKey,
       };
       final body = {'prompt': 'test', 'aspect_ratio': '1:1'};
 
@@ -205,7 +237,7 @@ class FluxKontextImageService {
       );
 
       final imageUrlResult = await _pollForResult(
-        requestId: submitResponse.id,
+        pollingUrl: submitResponse.pollingUrl,
         maxWaitTime: maxWaitTime,
         pollInterval: pollInterval,
       );
@@ -227,8 +259,9 @@ class FluxKontextImageService {
   }) async {
     final url = Uri.parse('$baseUrl/flux-kontext-pro');
     final headers = {
+      'accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
+      'x-key': apiKey,
     };
 
     final body = {

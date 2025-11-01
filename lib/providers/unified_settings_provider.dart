@@ -136,6 +136,9 @@ class UnifiedSettingsProvider with ChangeNotifier {
       chatModelProvider.removeCustomProvider(provider);
   Future<void> syncModelsToRegistry() =>
       chatModelProvider.syncModelsToRegistry();
+  
+  Future<void> syncImageModelsToRegistry() =>
+      imageModelProvider.syncModelsToRegistry();
 
   // ==================== 图像生成相关的向后兼容 API ====================
 

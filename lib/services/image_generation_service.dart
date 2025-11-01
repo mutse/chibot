@@ -47,45 +47,42 @@ class ImageGenerationService {
         // 'response_format': 'url', // or 'b64_json'
       };
     } else if (providerBaseUrl.contains('stability.ai')) {
-      // Determine the Stability AI model from the generic model string if needed
-      // For example, if 'model' is 'stable-diffusion-v1-6', use it directly.
-      // The Stability AI API path often includes the engine ID.
-      // Example: https://api.stability.ai/v1/generation/{engine_id}/text-to-image
-      // We'll use a common engine, but this might need to be configurable or derived from `model`
-      String engineId =
-          model; // Assuming model is the engine ID like 'stable-diffusion-v1-6'
-      // Stability AI image generation endpoint is typically v1/generation/{engine_id}/text-to-image
-      // The error URL `https://api.stability.ai/v2beta/chat/completions` seems to be for chat models.
-      // We need to ensure the correct image generation endpoint is used.
-      // For Stability AI, the base URL should be something like 'https://api.stability.ai'.
-      // The full endpoint for image generation is usually 'https://api.stability.ai/v1/generation/{engine_id}/text-to-image'
-      // If the model is 'dall-e-3' or 'dall-e-2', it's an OpenAI model, not Stability AI.
-      // The model 'command-r-plus' is a text model, not an image model.
-      // It seems there's a mismatch in the model type being used for image generation.
-      // Assuming the user intends to use a Stability AI image model, the endpoint should be:
+      // Stability AI text-to-image endpoint
+      // Reference: https://platform.stability.ai/docs/api-reference#tag/SDXL-1.0/operation/textToImage
+      // Endpoint format: POST /v1/generation/{engine_id}/text-to-image
+      String engineId = model; // Model should be the engine ID like 'stable-diffusion-xl-1024-v1-0'
+
       endpointUri = Uri.parse(
         '$providerBaseUrl/v1/generation/$engineId/text-to-image',
       );
-      headers['Accept'] = 'application/json';
-      headers['Authorization'] =
-          apiKey; // Stability AI API key is often passed directly as 'key <API_KEY>' or just '<API_KEY>'
-      // The 'Bearer' prefix is usually for OAuth tokens.
-      // For Stability, it's often just the key itself or prefixed with 'key '.
-      // Let's assume the key is passed directly as per some common patterns.
-      // If it requires 'key ', the user should include it in their API key setting.
+
+      // Stability AI requires Bearer token authentication
+      headers['Authorization'] = 'Bearer $apiKey';
+
+      // Parse openAISize to extract width and height
+      // Format is typically '1024x1024', '1152x896', etc.
+      int width = 1024;
+      int height = 1024;
+      if (openAISize.contains('x')) {
+        final parts = openAISize.split('x');
+        if (parts.length == 2) {
+          width = int.tryParse(parts[0]) ?? 1024;
+          height = int.tryParse(parts[1]) ?? 1024;
+        }
+      }
 
       body = {
         'text_prompts': [
-          {'text': prompt, 'weight': 1.0},
+          {'text': prompt},
         ],
-        'cfg_scale': 7, // Default, can be adjusted
-        'height': 1024, // Default, can be adjusted
-        'width': 1024, // Default, can be adjusted
-        'samples': n, // Number of images to generate
-        'steps':
-            30, // Default, can be adjusted. More steps can mean better quality but longer time.
-        // 'style_preset': 'enhance', // Optional: e.g., 'photographic', 'digital-art', etc.
-        // 'seed': 0, // Optional: for reproducibility
+        'height': height,
+        'width': width,
+        'samples': n,
+        'steps': 30,
+        'cfg_scale': 7.0,
+        // Optional parameters that can be added:
+        // 'style_preset': 'digital-art',
+        // 'seed': 0,
       };
     } else if (providerBaseUrl.contains('generativelanguage.googleapis.com') || 
                providerBaseUrl.contains('google')) {

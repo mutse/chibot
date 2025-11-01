@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           create: (_) => ChatModelProvider(modelRegistry: modelRegistry),
         ),
         ChangeNotifierProvider(
-          create: (_) => ImageModelProvider(),
+          create: (_) => ImageModelProvider(modelRegistry: modelRegistry),
         ),
         ChangeNotifierProvider(
           create: (_) => VideoModelProvider(),

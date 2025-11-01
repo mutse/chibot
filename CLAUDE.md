@@ -37,21 +37,60 @@ This is a **cross-platform AI chatbot application** built with Flutter that supp
 ### Key Components
 
 #### State Management (`lib/providers/`)
-- `SettingsProvider`: Manages app configuration, API keys, model selection, and provider settings
-- Supports multiple AI providers with customizable base URLs
-- Persistent settings storage using SharedPreferences
+The app uses a specialized provider architecture with both legacy and new providers:
+
+**Specialized Providers (Phase 1+ Refactoring)**:
+- `ApiKeyProvider`: Centralized management of API keys for all providers
+- `ChatModelProvider`: Manages chat model selection and configuration with ModelRegistry
+- `ImageModelProvider`: Handles image generation model selection and settings
+- `VideoModelProvider`: Manages video generation model selection
+- `SearchProvider`: Manages search configuration and settings
+- `UnifiedSettingsProvider`: Bridge provider combining all specialized providers for backward compatibility
+
+**Legacy Providers**:
+- `SettingsProvider`: Original monolithic settings provider (maintained for backward compatibility)
+- `SettingsModelsProvider`: Provides access to ModelRegistry
+
+All settings persist across app restarts using SharedPreferences.
 
 #### Services (`lib/services/`)
+**Chat Services**:
 - `BaseApiService`: Abstract base class with retry logic, error handling, and streaming
 - `OpenAIService`: Handles OpenAI GPT models with streaming responses
 - `GeminiService`: Manages Google Gemini API calls
 - `ClaudeService`: Integrates Anthropic Claude models with streaming support
 - `ChatServiceFactory`: Factory for creating appropriate chat services
-- `ServiceManager`: Helper for managing service creation with settings
-- `ImageGenerationService`: Manages image generation requests
-- `ChatSessionService` & `ImageSessionService`: Handle session persistence
-- `WebSearchService`: Integrates web search capabilities (Tavily/Bing)
+
+**Image Generation Services**:
+- `ImageGenerationService`: Main image generation orchestrator with provider switching
+- `ImageGenerationServiceManager`: Manages image service creation and configuration
+- `FluxImageService`: FLUX.1 image generation via Black Forest Labs
+- `FluxKreaService`: FLUX.1 generation via Krea platform
+- `FluxKontextService`: FLUX.1 generation via Kontext platform
+- `GoogleImageService`: Google's image generation models
+- `Veo3Service`: Google Veo3 video-to-image model
+
+**Video Generation Services**:
+- `VideoGenerationService`: Main video generation service
+- `VideoGenerationServiceManager`: Manages video service configuration and creation
+
+**Session & Data Services**:
+- `ChatSessionService`: Manages chat session persistence and history
+- `ImageSessionService`: Manages image session persistence
+- `VideoSessionService`: Manages video session persistence
 - `ImageSaveService`: Handles image saving to device storage
+
+**Search Services**:
+- `WebSearchService`: Base web search interface
+- `GoogleSearchService`: Google Search integration
+- `SearchServiceManager`: Legacy search service manager
+- `SearchServiceManagerV2`: Enhanced search service management
+- `SearchCommandHandler`: Processes search commands in chat
+
+**Utility Services**:
+- `ServiceManager`: Helper for managing service creation with settings
+- `MarkdownExportService`: Exports chat sessions to Markdown format
+- `UpdateService`: Handles app update checking
 
 #### Models (`lib/models/`)
 - `ChatMessage`: Core message structure with sender, timestamp, loading states
@@ -61,14 +100,31 @@ This is a **cross-platform AI chatbot application** built with Flutter that supp
 #### Screens (`lib/screens/`)
 - `ChatScreen`: Main chat interface with sidebar for session management
 - `SettingsScreen`: Configuration UI for API keys, models, and providers
+- `VideoGenerationScreen`: Video generation interface with model selection
+- `VideoGenerationSettingsScreen`: Settings for video generation parameters
 - `AboutScreen`: App information and credits
+- `UpdateDialog`: Dialog for app update notifications
 
 ### Multi-Provider Support
-The app supports multiple AI providers through a unified interface:
+The app supports multiple AI providers through unified interfaces:
+
+**Chat Models**:
 - **OpenAI**: GPT-4, GPT-4o, GPT-4-turbo models with streaming responses
 - **Google Gemini**: Gemini 2.0 Flash, Gemini 2.5 Pro with API compatibility
 - **Anthropic Claude**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus with streaming support
 - **Custom Providers**: Configurable base URLs for additional providers
+
+**Image Generation Models**:
+- **FLUX.1**: Via Black Forest Labs (FluxImageService), Krea (FluxKreaService), and Kontext (FluxKontextService) platforms
+- **Google Gemini**: Image generation via Google's models
+- **Veo3**: Google's advanced video-to-image model
+
+**Video Generation Models**:
+- Support for multiple video generation backends with model-specific settings
+
+**Web Search**:
+- **Google Search**: Primary web search integration
+- **Fallback Support**: Additional search backends for redundancy
 
 ### Desktop Integration
 - **Window Management**: Custom window sizing and positioning for desktop platforms
@@ -108,27 +164,69 @@ The app supports multiple AI providers through a unified interface:
 
 ## Important Implementation Details
 
+### Refactored Provider Architecture
+The app has been migrated from a monolithic `SettingsProvider` to specialized providers:
+
+- **Phase 1**: Decomposed into `ApiKeyProvider`, `ChatModelProvider`, `ImageModelProvider`, `VideoModelProvider`, `SearchProvider`
+- **Phase 2**: Services updated to use specialized providers instead of monolithic `SettingsProvider`
+- **Phase 3**: UI screens (VideoGenerationScreen, ChatScreen) migrated to specialized providers
+- **Phase 4**: Search services migrated to specialized providers
+- **Current**: SettingsScreen and remaining components using unified approach
+
+The `UnifiedSettingsProvider` bridges old and new code for gradual migration.
+
 ### Settings Management
-- API keys are stored per provider (OpenAI, Claude, Gemini, Image generation, etc.)
-- Model selection validates against provider capabilities
-- Custom providers and models can be added through the UI
-- Settings persist across app restarts
+- API keys stored per provider via `ApiKeyProvider` with SharedPreferences
+- Model selection per category (Chat, Image, Video) using specialized providers
+- Custom providers and models supported with ModelRegistry
+- Settings validated before API calls
+- All settings persist across app restarts
 
 ### Chat Session Management
-- Sessions are automatically saved with conversation history
-- Support for both text and image generation sessions
-- Session metadata includes timestamps and model information
+- Automatic session persistence with conversation history
+- Support for text chat, image generation, and video generation sessions
+- Session metadata includes timestamps, model information, and provider details
+- `ChatSessionService`, `ImageSessionService`, `VideoSessionService` handle persistence
+- Sessions can be exported to Markdown format via `MarkdownExportService`
+
+### Image Generation Management
+- Multiple image providers (FLUX.1 via BFL/Krea/Kontext, Google Gemini, Veo3)
+- `ImageGenerationService` orchestrates provider selection based on model
+- `ImageGenerationServiceManager` creates and configures image services
+- Streaming responses for supported providers
+- Image saving with metadata via `ImageSaveService`
+
+### Video Generation Management
+- Dedicated `VideoGenerationService` and `VideoGenerationServiceManager`
+- Model-specific settings and parameters
+- Session persistence for video generation history
+- Integration with video playback via `VideoPlayerWidget`
 
 ### Streaming Implementation
 - OpenAI-compatible APIs use server-sent events for streaming
 - Claude API supports streaming with proper event handling
-- Gemini API responses are delivered as complete messages
-- UI updates in real-time as responses are received
+- Gemini API responses delivered as complete messages
+- Real-time UI updates as responses are received
+- Fallback to non-streaming when needed
 
 ### Error Handling
-- Network errors are caught and displayed to users
-- API key validation occurs before requests
+- Network errors caught and displayed with user-friendly messages
+- API key validation before service creation via `MissingApiKeyException`
 - Graceful fallbacks for unsupported features
+- Comprehensive error logging for debugging
+- Retry logic in `BaseApiService`
+
+### Search Integration
+- Web search via `GoogleSearchService` for enhanced chat capabilities
+- `SearchProvider` manages search settings and preferences
+- `SearchCommandHandler` processes search commands in chat messages
+- `SearchServiceManagerV2` creates appropriate search service based on configuration
+
+### ModelRegistry
+- Centralized model definitions for all providers
+- Type-safe model selection with validation
+- Support for custom models and providers
+- Used by `ChatModelProvider`, `ImageModelProvider`, and `VideoModelProvider`
 
 ## Development Environment Setup
 
@@ -149,25 +247,43 @@ The app supports multiple AI providers through a unified interface:
 
 ## Common Tasks
 
-- **Adding new AI provider**: Extend `ChatServiceFactory` and create new service class extending `BaseApiService`
-- **New message types**: Create models and update chat UI components
-- **Session management**: Work with existing repository pattern
-- **UI customization**: Modify theme in `main.dart` and component styling
-- **Localization**: Add new strings to `lib/l10n/app_*.arb` files
+### Using Specialized Providers
+The refactored architecture uses specialized providers for better separation of concerns:
 
-### Using the New Architecture
+1. **Accessing Chat Models**: Use `ChatModelProvider` instead of `SettingsProvider.selectedChatModel`
+2. **Managing API Keys**: Use `ApiKeyProvider` for centralized API key management
+3. **Image Generation Settings**: Use `ImageModelProvider` for image model configuration
+4. **Video Generation**: Use `VideoModelProvider` for video settings
+5. **Search Configuration**: Use `SearchProvider` for search-related settings
 
-The refactored architecture provides:
-- `ChatServiceFactory.create()` for service instantiation
-- `ServiceManager.createChatService()` for integrated service creation
-- Repository pattern for data persistence
-- Proper error handling with custom exceptions
-- Comprehensive logging system
+### Adding New Providers
+- Create service class extending `BaseApiService` (for chat services)
+- Implement appropriate service interface
+- Add to relevant service factory or manager
+- Update specialized providers with new settings
+- Add configuration UI in SettingsScreen
 
-### Example: Adding a New Provider
+### Adding Image Generation Provider
+1. Create service class (e.g., `NewImageService`) extending `BaseApiService`
+2. Add model list to `ImageModelProvider`
+3. Update `ImageGenerationService` to include the new provider
+4. Add API key field in `ApiKeyProvider`
+5. Update settings UI for configuration
 
+### Adding Video Generation Provider
 1. Create service class extending `BaseApiService`
-2. Implement `ChatService` interface
-3. Add to `ChatServiceFactory`
-4. Update `SettingsProvider` with new models
-5. Add API key support in settings
+2. Add to `VideoGenerationServiceManager`
+3. Update `VideoModelProvider` with new models
+4. Add API key and configuration in settings
+
+### Session Management
+- Use `ChatSessionService` for text chat persistence
+- Use `ImageSessionService` for image generation history
+- Use `VideoSessionService` for video generation history
+- Repository pattern handles all data persistence
+
+### Search Integration
+- Use `SearchProvider` to manage search settings
+- `SearchServiceManagerV2` handles service creation
+- `SearchCommandHandler` processes search commands in chat
+- Configure search API keys in settings

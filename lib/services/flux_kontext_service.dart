@@ -63,17 +63,24 @@ class FluxKontextResponse {
 }
 
 class FluxKontextResult {
-  final String sampleUrl;
+  final String? sampleUrl;
   final String? prompt;
   final Map<String, dynamic>? metadata;
+  final String status;
 
-  FluxKontextResult({required this.sampleUrl, this.prompt, this.metadata});
+  FluxKontextResult({
+    this.sampleUrl,
+    this.prompt,
+    this.metadata,
+    required this.status,
+  });
 
   factory FluxKontextResult.fromJson(Map<String, dynamic> json) {
     return FluxKontextResult(
-      sampleUrl: json['result']?['sample'] ?? '',
+      sampleUrl: json['result']?['sample'],
       prompt: json['result']?['prompt'],
       metadata: json['result']?['metadata'],
+      status: json['status'] ?? 'pending',
     );
   }
 }
@@ -115,34 +122,64 @@ class FluxKontextService extends BaseApiService {
         'x-key': apiKey,
       };
 
+      if (apiKey.isEmpty) {
+        throw Exception('FLUX.1 API key is empty. Please configure your API key in settings.');
+      }
+
       final response = await http.post(
         url,
         headers: headers,
         body: jsonEncode(request.toJson()),
       );
 
-      print(jsonEncode(request.toJson()));
+      print('[FluxKontextService] Request body: ${jsonEncode(request.toJson())}');
+      print('[FluxKontextService] Response status: ${response.statusCode}');
+      print('[FluxKontextService] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         return FluxKontextResponse.fromJson(jsonResponse);
       } else {
-        final errorBody = jsonDecode(response.body);
-        final errorMessage =
-            errorBody['error']?['message'] ??
-            errorBody['message'] ??
-            'Unknown error';
+        String errorMessage = 'HTTP ${response.statusCode}';
+        try {
+          final errorBody = jsonDecode(response.body);
+          errorMessage =
+              errorBody['error']?['message'] ??
+              errorBody['message'] ??
+              errorBody['errors'] ??
+              'Unknown error from API';
+
+          // Handle different error formats
+          if (errorBody['error'] is String) {
+            errorMessage = errorBody['error'];
+          }
+        } catch (e) {
+          // If body is not JSON, use the raw body
+          errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+        }
+
+        // Add status code context
+        if (response.statusCode == 401) {
+          errorMessage = 'Authentication failed (401). Please verify your API key is valid and active.';
+        } else if (response.statusCode == 403) {
+          errorMessage = 'Access forbidden (403). Your API key may not have permission for FLUX.1 models.';
+        } else if (response.statusCode == 429) {
+          errorMessage = 'Rate limit exceeded (429). Please wait before making more requests.';
+        } else if (response.statusCode == 400) {
+          errorMessage = 'Bad request (400). Invalid prompt or parameters: $errorMessage';
+        }
+
         throw Exception('FLUX.1 Kontext API error: $errorMessage');
       }
     } catch (e) {
-      print('Error submitting FLUX.1 request: $e');
+      print('[FluxKontextService] Error submitting request: $e');
       rethrow;
     }
   }
 
-  Future<FluxKontextResult> pollResult(String requestId) async {
+  Future<FluxKontextResult> pollResult(String pollingUrl) async {
     try {
-      final url = Uri.parse('$baseUrl/get_result?id=$requestId');
+      final url = Uri.parse(pollingUrl);
       final headers = <String, String>{
         'accept': 'application/json',
         'x-key': apiKey,
@@ -180,7 +217,7 @@ class FluxKontextService extends BaseApiService {
     );
 
     final response = await _submitRequest(request);
-    return await _waitForResult(response.id, maxWaitTime, pollInterval);
+    return await _waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
   }
 
   /// Generate image with OpenAI-style size parameter
@@ -230,11 +267,11 @@ class FluxKontextService extends BaseApiService {
     );
 
     final response = await _submitRequest(request);
-    return await _waitForResult(response.id, maxWaitTime, pollInterval);
+    return await _waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
   }
 
   Future<String> _waitForResult(
-    String requestId,
+    String pollingUrl,
     Duration maxWaitTime,
     Duration pollInterval,
   ) async {
@@ -242,16 +279,41 @@ class FluxKontextService extends BaseApiService {
 
     while (stopwatch.elapsed < maxWaitTime) {
       try {
-        final result = await pollResult(requestId);
-        if (result.sampleUrl.isNotEmpty) {
-          return result.sampleUrl;
+        final result = await pollResult(pollingUrl);
+        
+        // Check status according to API documentation
+        if (result.status.toLowerCase() == 'ready') {
+          if (result.sampleUrl != null && result.sampleUrl!.isNotEmpty) {
+            return result.sampleUrl!;
+          } else {
+            throw Exception('FLUX.1 returned no image URL');
+          }
+        } else if (result.status.toLowerCase() == 'error' || 
+                   result.status.toLowerCase() == 'failed') {
+          throw Exception(
+            'FLUX.1 generation failed with status: ${result.status}',
+          );
+        } else if (result.status.toLowerCase() == 'pending' ||
+                   result.status.toLowerCase() == 'processing') {
+          // Continue polling
+          await Future.delayed(pollInterval);
+          continue;
+        } else {
+          // Unknown status, continue polling
+          await Future.delayed(pollInterval);
+          continue;
         }
       } catch (e) {
+        // If it's a failure error, rethrow it
+        if (e.toString().contains('failed') || 
+            e.toString().contains('error') ||
+            e.toString().contains('FLUX.1 returned')) {
+          rethrow;
+        }
         // Continue polling on transient errors
         print('Polling error, retrying: $e');
+        await Future.delayed(pollInterval);
       }
-
-      await Future.delayed(pollInterval);
     }
 
     throw Exception(

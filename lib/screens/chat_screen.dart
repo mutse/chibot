@@ -1555,11 +1555,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _scrollToBottom();
 
-    // Check for both general and image-specific API keys
-    if (apiKeys.apiKey == null ||
-        apiKeys.apiKey!.isEmpty ||
-        apiKeys.googleApiKey == null ||
-        apiKeys.googleApiKey!.isEmpty) {
+    // Check for image-specific API key based on selected provider
+    final imageApiKey = apiKeys.getImageApiKeyForProvider(
+      imageModelProvider.selectedImageProvider,
+    );
+    if (imageApiKey == null || imageApiKey.isEmpty) {
       if (mounted) {
         setState(() {
           // Try to update the loading ImageMessage with an error
@@ -1606,7 +1606,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final imageUrl = await _imageGenerationService.generateImage(
-        apiKey: apiKeys.googleApiKey!, // Use image API key
+        apiKey: imageApiKey, // Use correct image API key for selected provider
         prompt: prompt,
         model: imageModelProvider.selectedImageModel,
         providerBaseUrl: imageModelProvider.imageProviderUrl,
