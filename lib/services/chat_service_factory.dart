@@ -6,6 +6,7 @@ import 'gemini_chat_service.dart';
 import 'claude_chat_service.dart';
 import 'exceptions/missing_api_key_exception.dart';
 import 'service_model_registry.dart';
+import 'service_config_validator.dart';
 
 /// 聊天服务工厂 - 使用专职提供者创建聊天服务
 ///
@@ -34,33 +35,34 @@ class ChatServiceFactory {
     required ApiKeyProvider apiKeys,
   }) {
     final provider = chatModel.selectedProvider;
-    final apiKey = apiKeys.getApiKeyForProvider(provider);
+    final rawApiKey = apiKeys.getApiKeyForProvider(provider);
     final baseUrl = chatModel.providerUrl;
 
-    if (apiKey == null || apiKey.isEmpty) {
+    if (!ServiceConfigValidator.hasText(rawApiKey)) {
       throw MissingApiKeyException(
         provider: provider,
         availableProviders: getConfiguredProviders(apiKeys),
       );
     }
 
-    return create(
-      provider: provider,
-      apiKey: apiKey,
-      baseUrl: baseUrl,
+    final apiKey = ServiceConfigValidator.requireText(
+      rawApiKey,
+      'API key not configured for $provider provider.',
     );
+
+    return create(provider: provider, apiKey: apiKey, baseUrl: baseUrl);
   }
 
   /// 获取已配置 API Key 的提供商列表
   static List<String> getConfiguredProviders(ApiKeyProvider apiKeys) {
     final configured = <String>[];
-    if (apiKeys.openaiApiKey != null && apiKeys.openaiApiKey!.isNotEmpty) {
+    if (ServiceConfigValidator.hasText(apiKeys.openaiApiKey)) {
       configured.add(openAI);
     }
-    if (apiKeys.googleApiKey != null && apiKeys.googleApiKey!.isNotEmpty) {
+    if (ServiceConfigValidator.hasText(apiKeys.googleApiKey)) {
       configured.add(gemini);
     }
-    if (apiKeys.claudeApiKey != null && apiKeys.claudeApiKey!.isNotEmpty) {
+    if (ServiceConfigValidator.hasText(apiKeys.claudeApiKey)) {
       configured.add(claude);
     }
     return configured;
@@ -106,4 +108,3 @@ class ChatServiceFactory {
     };
   }
 }
-

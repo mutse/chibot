@@ -11,8 +11,8 @@ class SearchCommandHandler {
   static const String searchImageCommand = '/search_image';
 
   static bool isSearchCommand(String message) {
-    return message.trim().startsWith(searchCommand) || 
-           message.trim().startsWith(searchImageCommand);
+    return message.trim().startsWith(searchCommand) ||
+        message.trim().startsWith(searchImageCommand);
   }
 
   static String extractSearchQuery(String message) {
@@ -34,10 +34,16 @@ class SearchCommandHandler {
     String query,
     bool isImage,
   ) async {
-    final search = Provider.of<search_provider_lib.SearchProvider>(context, listen: false);
+    final search = Provider.of<search_provider_lib.SearchProvider>(
+      context,
+      listen: false,
+    );
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
 
-    if (!SearchServiceFactory.hasSearchEngineConfigured(search: search, apiKeys: apiKeys)) {
+    if (!SearchServiceFactory.isSearchFunctionalityAvailable(
+      search: search,
+      apiKeys: apiKeys,
+    )) {
       return [
         ChatMessage(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -48,15 +54,59 @@ class SearchCommandHandler {
       ];
     }
 
+    final activeProvider = SearchServiceFactory.getActiveSearchProvider(
+      search: search,
+      apiKeys: apiKeys,
+    );
+
+    if (isImage &&
+        !SearchServiceFactory.isGoogleSearchConfigured(
+          search: search,
+          apiKeys: apiKeys,
+        )) {
+      return [
+        ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: '图片搜索当前仅支持 Google Search。请在设置中启用并配置 Google 搜索。',
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+        ),
+      ];
+    }
+
     try {
+      if (!isImage && activeProvider == SearchBackend.tavily) {
+        final summary = await SearchServiceFactory.searchWebAsPromptContext(
+          search: search,
+          apiKeys: apiKeys,
+          query: query,
+        );
+
+        return [
+          ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            text: 'Tavily 搜索结果摘要：\n$summary',
+            sender: MessageSender.ai,
+            timestamp: DateTime.now(),
+            metadata: {'type': 'system'},
+          ),
+        ];
+      }
+
       final searchService = SearchServiceFactory.createGoogleSearchService(
         search: search,
         apiKeys: apiKeys,
       );
-
-      final searchResult = isImage
-          ? await searchService.searchImages(query, count: search.googleSearchResultCount)
-          : await searchService.search(query, count: search.googleSearchResultCount);
+      final searchResult =
+          isImage
+              ? await searchService.searchImages(
+                query,
+                count: search.googleSearchResultCount,
+              )
+              : await searchService.search(
+                query,
+                count: search.googleSearchResultCount,
+              );
 
       return _formatSearchResults(searchResult, query, isImage);
     } catch (e) {
@@ -77,28 +127,33 @@ class SearchCommandHandler {
     bool isImage,
   ) {
     final messages = <ChatMessage>[];
-    
+
     // Add search summary
-    messages.add(ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      text: '为您找到 ${searchResult.items.length} 条关于 "${query}" 的${isImage ? "图片" : "网页"}搜索结果：',
-      sender: MessageSender.ai,
-      timestamp: DateTime.now(),
-      metadata: {'type': 'system'},
-    ));
+    messages.add(
+      ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            '为您找到 ${searchResult.items.length} 条关于 "${query}" 的${isImage ? "图片" : "网页"}搜索结果：',
+        sender: MessageSender.ai,
+        timestamp: DateTime.now(),
+        metadata: {'type': 'system'},
+      ),
+    );
 
     // Add search results
     for (var i = 0; i < searchResult.items.length; i++) {
       final item = searchResult.items[i];
       final content = _formatSearchItem(item, i + 1, isImage);
-      
-      messages.add(ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: content,
-        sender: MessageSender.ai,
-        timestamp: DateTime.now(),
-        metadata: {'type': 'system'},
-      ));
+
+      messages.add(
+        ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: content,
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+          metadata: {'type': 'system'},
+        ),
+      );
     }
 
     return messages;
@@ -109,11 +164,11 @@ class SearchCommandHandler {
     buffer.writeln('$index. **${item.title}**');
     buffer.writeln('   ${item.snippet}');
     buffer.writeln('   🔗 ${item.link}');
-    
+
     if (isImage && item.imageUrl != null) {
       buffer.writeln('   🖼️ ${item.imageUrl}');
     }
-    
+
     return buffer.toString().trim();
   }
 
@@ -136,8 +191,9 @@ class SearchCommandHandler {
 - 最多显示20条结果（可在设置中调整）
 
 ⚙️ 使用前请确保：
-1. 已在设置中启用 Google 搜索功能
-2. 已配置有效的 API Key 和 Search Engine ID
+1. 已在设置中启用搜索功能
+2. 网页搜索可使用 Tavily 或 Google
+3. 图片搜索需要配置 Google Search API Key 和 Search Engine ID
 
 如遇到问题，请检查设置中的搜索配置。
     '''.trim();
@@ -156,10 +212,7 @@ class SearchCommandHandler {
         children: [
           Icon(Icons.search, color: Colors.blue, size: 16),
           SizedBox(height: 4),
-          Text(
-            message.text,
-            style: TextStyle(fontSize: 14),
-          ),
+          Text(message.text, style: TextStyle(fontSize: 14)),
         ],
       ),
     );

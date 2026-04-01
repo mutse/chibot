@@ -50,31 +50,31 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         ),
 
         // New specialized providers (Phase 1 refactoring)
-        ChangeNotifierProvider(
-          create: (_) => ApiKeyProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => ApiKeyProvider()),
         ChangeNotifierProvider(
           create: (_) => ChatModelProvider(modelRegistry: modelRegistry),
         ),
         ChangeNotifierProvider(
           create: (_) => ImageModelProvider(modelRegistry: modelRegistry),
         ),
+        ChangeNotifierProvider(create: (_) => VideoModelProvider()),
         ChangeNotifierProvider(
-          create: (_) => VideoModelProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SearchProvider(),
+          create:
+              (context) => SearchProvider(
+                apiKeyProvider: context.read<ApiKeyProvider>(),
+              ),
         ),
 
         // Unified Settings Provider (backward compatibility bridge)
         ChangeNotifierProvider(
-          create: (context) => UnifiedSettingsProvider(
-            apiKeyProvider: context.read<ApiKeyProvider>(),
-            chatModelProvider: context.read<ChatModelProvider>(),
-            imageModelProvider: context.read<ImageModelProvider>(),
-            videoModelProvider: context.read<VideoModelProvider>(),
-            searchProvider: context.read<SearchProvider>(),
-          ),
+          create:
+              (context) => UnifiedSettingsProvider(
+                apiKeyProvider: context.read<ApiKeyProvider>(),
+                chatModelProvider: context.read<ChatModelProvider>(),
+                imageModelProvider: context.read<ImageModelProvider>(),
+                videoModelProvider: context.read<VideoModelProvider>(),
+                searchProvider: context.read<SearchProvider>(),
+              ),
         ),
 
         // Additional legacy providers

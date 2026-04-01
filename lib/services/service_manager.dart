@@ -3,6 +3,7 @@ import '../providers/chat_model_provider.dart';
 import '../providers/api_key_provider.dart';
 import '../providers/unified_settings_provider.dart';
 import 'chat_service_factory.dart';
+import 'service_config_validator.dart';
 
 /// 服务管理器 - 使用专职提供者创建和验证服务
 ///
@@ -66,7 +67,7 @@ class ServiceManager {
     required String provider,
   }) {
     final apiKey = apiKeys.getApiKeyForProvider(provider);
-    return apiKey != null && apiKey.isNotEmpty;
+    return ServiceConfigValidator.hasText(apiKey);
   }
 
   /// 获取所有已配置的提供商列表
@@ -76,14 +77,12 @@ class ServiceManager {
   /// final available = ServiceManager.getAvailableProviders(apiKeys: apiKeys);
   /// // 结果: ['OpenAI', 'Google'] (如果仅这两个已配置)
   /// ```
-  static List<String> getAvailableProviders({
-    required ApiKeyProvider apiKeys,
-  }) {
+  static List<String> getAvailableProviders({required ApiKeyProvider apiKeys}) {
     return ChatServiceFactory.supportedProviders
-        .where((provider) => isProviderConfigured(
-          apiKeys: apiKeys,
-          provider: provider,
-        ))
+        .where(
+          (provider) =>
+              isProviderConfigured(apiKeys: apiKeys, provider: provider),
+        )
         .toList();
   }
 
@@ -141,9 +140,6 @@ class ServiceManager {
     }
 
     // 创建服务
-    return createChatService(
-      chatModel: chatModel,
-      apiKeys: apiKeys,
-    );
+    return createChatService(chatModel: chatModel, apiKeys: apiKeys);
   }
 }

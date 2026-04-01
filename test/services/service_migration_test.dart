@@ -1,22 +1,37 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
 import 'package:chibot/providers/image_model_provider.dart';
 import 'package:chibot/providers/video_model_provider.dart';
 import 'package:chibot/providers/search_provider.dart';
+import 'package:chibot/models/search_result.dart' as search_models;
 import 'package:chibot/services/chat_service_factory.dart';
 import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/services/image_generation_service_manager.dart';
 import 'package:chibot/services/video_generation_service_manager.dart';
+import 'package:chibot/services/service_config_validator.dart';
+import 'package:chibot/services/search_service_factory.dart';
+import 'package:chibot/services/web_search_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<void> resetMockPreferences() async {
+    SharedPreferences.setMockInitialValues({});
+    await Future<void>.delayed(Duration.zero);
+  }
+
   group('ChatServiceFactory with New Providers', () {
     late ApiKeyProvider apiKeys;
     late ChatModelProvider chatModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
       chatModel = ChatModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('createFromProviders 应该抛出异常如果 API Key 未配置', () async {
@@ -60,7 +75,7 @@ void main() {
         chatModel: chatModel,
         apiKeys: apiKeys,
       );
-      expect(service.providerName, equals('Google'));
+      expect(service.providerName, equals('Google Gemini'));
 
       // 切换到 Anthropic
       await chatModel.setSelectedProvider('Anthropic');
@@ -69,7 +84,7 @@ void main() {
         chatModel: chatModel,
         apiKeys: apiKeys,
       );
-      expect(service.providerName, equals('Claude'));
+      expect(service.providerName, equals('Anthropic Claude'));
     });
   });
 
@@ -77,9 +92,11 @@ void main() {
     late ApiKeyProvider apiKeys;
     late ChatModelProvider chatModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
       chatModel = ChatModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('isProviderConfigured 检查 API Key 配置', () async {
@@ -103,6 +120,18 @@ void main() {
       );
     });
 
+    test('isProviderConfigured 将空白 API Key 视为未配置', () async {
+      await apiKeys.setOpenaiApiKey('   ');
+
+      expect(
+        ServiceManager.isProviderConfigured(
+          apiKeys: apiKeys,
+          provider: 'OpenAI',
+        ),
+        isFalse,
+      );
+    });
+
     test('getAvailableProviders 返回已配置的提供商', () async {
       // 没有提供商被配置
       var available = ServiceManager.getAvailableProviders(apiKeys: apiKeys);
@@ -122,30 +151,21 @@ void main() {
     test('isChatConfigured 验证完整配置', () async {
       // 未配置
       expect(
-        ServiceManager.isChatConfigured(
-          chatModel: chatModel,
-          apiKeys: apiKeys,
-        ),
+        ServiceManager.isChatConfigured(chatModel: chatModel, apiKeys: apiKeys),
         isFalse,
       );
 
       // 仅设置 API Key
       await apiKeys.setOpenaiApiKey('test-key');
       expect(
-        ServiceManager.isChatConfigured(
-          chatModel: chatModel,
-          apiKeys: apiKeys,
-        ),
+        ServiceManager.isChatConfigured(chatModel: chatModel, apiKeys: apiKeys),
         isTrue, // 因为 chatModel 有默认模型
       );
 
       // 清空模型
       await chatModel.setSelectedModel('');
       expect(
-        ServiceManager.isChatConfigured(
-          chatModel: chatModel,
-          apiKeys: apiKeys,
-        ),
+        ServiceManager.isChatConfigured(chatModel: chatModel, apiKeys: apiKeys),
         isFalse,
       );
     });
@@ -183,9 +203,11 @@ void main() {
     late ApiKeyProvider apiKeys;
     late ImageModelProvider imageModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
       imageModel = ImageModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('isImageGenerationConfigured 检查完整配置', () async {
@@ -199,7 +221,7 @@ void main() {
       );
 
       // 仅设置 API Key
-      await apiKeys.setGoogleApiKey('google-key');
+      await apiKeys.setOpenaiApiKey('openai-key');
       expect(
         ImageGenerationServiceManager.isImageGenerationConfigured(
           imageModel: imageModel,
@@ -210,8 +232,7 @@ void main() {
     });
 
     test('getAvailableImageModels 返回可用模型', () async {
-      final models =
-          ImageGenerationServiceManager.getAvailableImageModels(
+      final models = ImageGenerationServiceManager.getAvailableImageModels(
         imageModel: imageModel,
       );
       expect(models.isNotEmpty, isTrue);
@@ -240,13 +261,97 @@ void main() {
     });
   });
 
+  group('ServiceConfigValidator', () {
+    test('hasText 忽略 null、空字符串和空白字符串', () {
+      expect(ServiceConfigValidator.hasText(null), isFalse);
+      expect(ServiceConfigValidator.hasText(''), isFalse);
+      expect(ServiceConfigValidator.hasText('   '), isFalse);
+      expect(ServiceConfigValidator.hasText(' value '), isTrue);
+    });
+  });
+
+  group('SearchServiceFactory', () {
+    late ApiKeyProvider apiKeys;
+    late SearchProvider search;
+
+    setUp(() async {
+      await resetMockPreferences();
+      apiKeys = ApiKeyProvider();
+      search = SearchProvider(apiKeyProvider: apiKeys);
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test('createSearchService 支持 Tavily', () async {
+      await search.setTavilyApiKey('tavily-key');
+      await search.setTavilySearchEnabled(true);
+
+      final service = SearchServiceFactory.createSearchService(
+        search: search,
+        apiKeys: apiKeys,
+      );
+
+      expect(service, isNotNull);
+      expect(service!.provider, equals(SearchBackend.tavily));
+      expect(service.tavilyService, isA<WebSearchService>());
+    });
+
+    test('formatGoogleSearchResult 在空结果时返回兜底文案', () {
+      final result = search_models.SearchResult(
+        items: const [],
+        query: search_models.SearchQuery(query: 'test'),
+        timestamp: DateTime.now(),
+        totalResults: 0,
+      );
+
+      expect(
+        SearchServiceFactory.formatGoogleSearchResult(result),
+        equals('未找到相关搜索结果。'),
+      );
+    });
+
+    test('Tavily 响应优先使用 answer 摘要', () {
+      final summary = WebSearchService.summarizeResponse('test', {
+        'answer': 'direct answer',
+        'results': [
+          {
+            'title': 'Ignored',
+            'content': 'Ignored content',
+            'url': 'https://a',
+          },
+        ],
+      });
+
+      expect(summary, equals('direct answer'));
+    });
+
+    test('Tavily 响应可以归一化为 SearchResult', () {
+      final result = WebSearchService.parseSearchResult('test', {
+        'results': [
+          {
+            'title': 'Example',
+            'content': 'Example snippet',
+            'url': 'https://example.com',
+          },
+        ],
+      });
+
+      expect(result.items, hasLength(1));
+      expect(result.items.first.title, equals('Example'));
+      expect(result.items.first.snippet, equals('Example snippet'));
+      expect(result.items.first.link, equals('https://example.com'));
+      expect(result.query.query, equals('test'));
+    });
+  });
+
   group('VideoGenerationServiceManager with New Providers', () {
     late ApiKeyProvider apiKeys;
     late VideoModelProvider videoModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
       videoModel = VideoModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('isVideoGenerationConfigured 检查完整配置', () async {
@@ -287,8 +392,8 @@ void main() {
     test('getVideoConfigDescription 返回配置描述', () async {
       final description =
           VideoGenerationServiceManager.getVideoConfigDescription(
-        videoModel: videoModel,
-      );
+            videoModel: videoModel,
+          );
       expect(description, isNotNull);
       expect(description.contains('720p'), isTrue);
       expect(description.contains('10s'), isTrue);

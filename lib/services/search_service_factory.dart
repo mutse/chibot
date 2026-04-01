@@ -3,6 +3,23 @@ import '../providers/search_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'google_search_service.dart';
 import '../models/search_result.dart' as search_result_lib;
+import 'service_config_validator.dart';
+import 'web_search_service.dart';
+
+enum SearchBackend { google, tavily }
+
+class ActiveSearchService {
+  final SearchBackend provider;
+  final Object service;
+
+  const ActiveSearchService({required this.provider, required this.service});
+
+  GoogleSearchService? get googleService =>
+      service is GoogleSearchService ? service as GoogleSearchService : null;
+
+  WebSearchService? get tavilyService =>
+      service is WebSearchService ? service as WebSearchService : null;
+}
 
 /// 搜索服务工厂 - 统一搜索服务的创建和管理
 ///
@@ -29,9 +46,6 @@ import '../models/search_result.dart' as search_result_lib;
 /// }
 /// ```
 class SearchServiceFactory {
-  static const String google = 'google';
-  static const String tavily = 'tavily';
-
   /// 检查 Google Custom Search 是否已完全配置
   ///
   /// 检查项：
@@ -43,8 +57,8 @@ class SearchServiceFactory {
     required ApiKeyProvider apiKeys,
   }) {
     return search.isGoogleSearchConfigured() &&
-        apiKeys.googleSearchApiKey != null &&
-        apiKeys.googleSearchApiKey!.isNotEmpty;
+        ServiceConfigValidator.hasText(apiKeys.googleSearchApiKey) &&
+        ServiceConfigValidator.hasText(search.googleSearchEngineId);
   }
 
   /// 检查 Tavily Search 是否已完全配置
@@ -57,8 +71,7 @@ class SearchServiceFactory {
     required ApiKeyProvider apiKeys,
   }) {
     return search.isTavilySearchConfigured() &&
-        apiKeys.tavilyApiKey != null &&
-        apiKeys.tavilyApiKey!.isNotEmpty;
+        ServiceConfigValidator.hasText(apiKeys.tavilyApiKey);
   }
 
   /// 检查是否至少配置了一个搜索引擎
@@ -74,15 +87,15 @@ class SearchServiceFactory {
   ///
   /// 返回 'google', 'tavily' 或 null（如果都未启用）
   /// 优先级：Tavily > Google
-  static String? getActiveSearchProvider({
+  static SearchBackend? getActiveSearchProvider({
     required SearchProvider search,
     required ApiKeyProvider apiKeys,
   }) {
     if (isTavilySearchConfigured(search: search, apiKeys: apiKeys)) {
-      return tavily;
+      return SearchBackend.tavily;
     }
     if (isGoogleSearchConfigured(search: search, apiKeys: apiKeys)) {
-      return google;
+      return SearchBackend.google;
     }
     return null;
   }
@@ -107,30 +120,106 @@ class SearchServiceFactory {
     }
 
     return GoogleSearchService(
-      apiKey: apiKeys.googleSearchApiKey!,
-      searchEngineId: search.googleSearchEngineId!,
-      provider: search.googleSearchProvider == 'googleCustomSearch'
-          ? search_result_lib.SearchProvider.googleCustomSearch
-          : search_result_lib.SearchProvider.programmableSearch,
+      apiKey: ServiceConfigValidator.requireText(
+        apiKeys.googleSearchApiKey,
+        'Google Custom Search API key is not configured.',
+      ),
+      searchEngineId: ServiceConfigValidator.requireText(
+        search.googleSearchEngineId,
+        'Google Custom Search Engine ID is not configured.',
+      ),
+      provider:
+          search.googleSearchProvider == 'googleCustomSearch'
+              ? search_result_lib.SearchProvider.googleCustomSearch
+              : search_result_lib.SearchProvider.programmableSearch,
+    );
+  }
+
+  /// 创建 Tavily 搜索服务
+  static WebSearchService createTavilySearchService({
+    required SearchProvider search,
+    required ApiKeyProvider apiKeys,
+  }) {
+    if (!isTavilySearchConfigured(search: search, apiKeys: apiKeys)) {
+      throw Exception(
+        'Tavily Search is not properly configured. '
+        'Please set API key and enable search in settings.',
+      );
+    }
+
+    return WebSearchService(
+      apiKey: ServiceConfigValidator.requireText(
+        apiKeys.tavilyApiKey,
+        'Tavily API key is not configured.',
+      ),
     );
   }
 
   /// 创建搜索服务（根据活跃提供商）
   ///
   /// 返回当前配置的搜索服务，如果没有配置任何搜索引擎则返回 null
-  static dynamic createSearchService({
+  static ActiveSearchService? createSearchService({
     required SearchProvider search,
     required ApiKeyProvider apiKeys,
   }) {
     final provider = getActiveSearchProvider(search: search, apiKeys: apiKeys);
 
-    if (provider == google) {
-      return createGoogleSearchService(search: search, apiKeys: apiKeys);
-    } else if (provider == tavily) {
-      // TODO: 实现 Tavily 服务创建
-      throw UnimplementedError('Tavily search service is not yet implemented');
-    } else {
-      return null;
+    switch (provider) {
+      case SearchBackend.google:
+        return ActiveSearchService(
+          provider: provider!,
+          service: createGoogleSearchService(search: search, apiKeys: apiKeys),
+        );
+      case SearchBackend.tavily:
+        return ActiveSearchService(
+          provider: provider!,
+          service: createTavilySearchService(search: search, apiKeys: apiKeys),
+        );
+      case null:
+        return null;
+    }
+  }
+
+  /// 将 Google 搜索结果格式化为可注入 prompt 的纯文本
+  static String formatGoogleSearchResult(
+    search_result_lib.SearchResult result,
+  ) {
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < result.items.length; i++) {
+      final item = result.items[i];
+      buffer.writeln('${i + 1}. ${item.title}');
+      buffer.writeln(item.snippet);
+      buffer.writeln(item.link);
+      buffer.writeln();
+    }
+
+    final formatted = buffer.toString().trim();
+    return formatted.isEmpty ? '未找到相关搜索结果。' : formatted;
+  }
+
+  /// 使用当前活跃搜索引擎执行网页搜索，并返回可直接拼入 prompt 的文本
+  static Future<String> searchWebAsPromptContext({
+    required SearchProvider search,
+    required ApiKeyProvider apiKeys,
+    required String query,
+  }) async {
+    final provider = getActiveSearchProvider(search: search, apiKeys: apiKeys);
+
+    switch (provider) {
+      case SearchBackend.tavily:
+        return createTavilySearchService(
+          search: search,
+          apiKeys: apiKeys,
+        ).searchWeb(query);
+      case SearchBackend.google:
+        final result = await createGoogleSearchService(
+          search: search,
+          apiKeys: apiKeys,
+        ).search(query, count: search.googleSearchResultCount);
+        return formatGoogleSearchResult(result);
+      default:
+        throw Exception('No search engine configured.');
     }
   }
 
@@ -149,8 +238,14 @@ class SearchServiceFactory {
     }
 
     return {
-      'apiKey': apiKeys.googleSearchApiKey!,
-      'engineId': search.googleSearchEngineId!,
+      'apiKey': ServiceConfigValidator.requireText(
+        apiKeys.googleSearchApiKey,
+        'Google Custom Search API key is not configured.',
+      ),
+      'engineId': ServiceConfigValidator.requireText(
+        search.googleSearchEngineId,
+        'Google Custom Search Engine ID is not configured.',
+      ),
       'query': query,
       'resultCount': search.googleSearchResultCount,
     };
@@ -165,13 +260,14 @@ class SearchServiceFactory {
     required String query,
   }) {
     if (!isTavilySearchConfigured(search: search, apiKeys: apiKeys)) {
-      throw Exception(
-        'Tavily API key is not configured.',
-      );
+      throw Exception('Tavily API key is not configured.');
     }
 
     return {
-      'apiKey': apiKeys.tavilyApiKey!,
+      'apiKey': ServiceConfigValidator.requireText(
+        apiKeys.tavilyApiKey,
+        'Tavily API key is not configured.',
+      ),
       'query': query,
     };
   }
@@ -184,13 +280,16 @@ class SearchServiceFactory {
     required ApiKeyProvider apiKeys,
   }) async {
     try {
-      final service = createSearchService(search: search, apiKeys: apiKeys);
-      if (service == null) {
+      final activeService = createSearchService(
+        search: search,
+        apiKeys: apiKeys,
+      );
+      if (activeService == null) {
         return false;
       }
 
-      if (service is GoogleSearchService) {
-        return await service.validateConfiguration();
+      if (activeService.googleService != null) {
+        return await activeService.googleService!.validateConfiguration();
       }
 
       return true;

@@ -1,17 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
 import 'package:chibot/providers/image_model_provider.dart';
 import 'package:chibot/providers/video_model_provider.dart';
 import 'package:chibot/providers/search_provider.dart';
 import 'package:chibot/providers/unified_settings_provider.dart';
+import 'package:chibot/models/available_model.dart' as available_model;
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<void> resetMockPreferences() async {
+    SharedPreferences.setMockInitialValues({});
+    await Future<void>.delayed(Duration.zero);
+  }
+
   group('ApiKeyProvider', () {
     late ApiKeyProvider apiKeys;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('初始化时 API 密钥为空', () {
@@ -34,8 +46,10 @@ void main() {
   group('ChatModelProvider', () {
     late ChatModelProvider chatModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       chatModel = ChatModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('初始化时使用默认模型', () {
@@ -65,7 +79,7 @@ void main() {
         containsAll([
           'gemini-2.0-flash',
           'gemini-2.5-pro-preview-06-05',
-          'gemini-2.5-flash-preview-05-20'
+          'gemini-2.5-flash-preview-05-20',
         ]),
       );
     });
@@ -74,8 +88,10 @@ void main() {
   group('ImageModelProvider', () {
     late ImageModelProvider imageModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       imageModel = ImageModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('初始化时使用 OpenAI DALL-E-3', () {
@@ -104,8 +120,10 @@ void main() {
   group('VideoModelProvider', () {
     late VideoModelProvider videoModel;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       videoModel = VideoModelProvider();
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('初始化时使用默认视频设置', () {
@@ -149,10 +167,14 @@ void main() {
   });
 
   group('SearchProvider', () {
+    late ApiKeyProvider apiKeys;
     late SearchProvider search;
 
-    setUp(() {
-      search = SearchProvider();
+    setUp(() async {
+      await resetMockPreferences();
+      apiKeys = ApiKeyProvider();
+      search = SearchProvider(apiKeyProvider: apiKeys);
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('初始化时搜索功能被禁用', () {
@@ -183,6 +205,16 @@ void main() {
       expect(search.hasSearchEngineConfigured, isTrue);
     });
 
+    test('搜索 API Key 由 ApiKeyProvider 统一持有', () async {
+      await search.setGoogleSearchApiKey('google-search-key');
+      await search.setTavilyApiKey('tavily-key');
+
+      expect(apiKeys.googleSearchApiKey, equals('google-search-key'));
+      expect(apiKeys.tavilyApiKey, equals('tavily-key'));
+      expect(search.googleSearchApiKey, equals('google-search-key'));
+      expect(search.tavilyApiKey, equals('tavily-key'));
+    });
+
     test('googleSearchResultCount 验证', () async {
       await search.setGoogleSearchResultCount(50);
       expect(search.googleSearchResultCount, equals(50));
@@ -201,12 +233,13 @@ void main() {
     late SearchProvider search;
     late UnifiedSettingsProvider settings;
 
-    setUp(() {
+    setUp(() async {
+      await resetMockPreferences();
       apiKeys = ApiKeyProvider();
       chatModel = ChatModelProvider();
       imageModel = ImageModelProvider();
       videoModel = VideoModelProvider();
-      search = SearchProvider();
+      search = SearchProvider(apiKeyProvider: apiKeys);
       settings = UnifiedSettingsProvider(
         apiKeyProvider: apiKeys,
         chatModelProvider: chatModel,
@@ -214,6 +247,7 @@ void main() {
         videoModelProvider: videoModel,
         searchProvider: search,
       );
+      await Future<void>.delayed(Duration.zero);
     });
 
     test('提供向后兼容的 API', () async {
@@ -233,6 +267,36 @@ void main() {
 
       // 测试搜索 API
       expect(settings.googleSearchEnabled, isFalse);
+    });
+
+    test('selectedModelType 可以切换并持久化', () async {
+      expect(
+        settings.selectedModelType,
+        equals(available_model.ModelType.text),
+      );
+
+      await settings.setSelectedModelType(available_model.ModelType.video);
+
+      expect(
+        settings.selectedModelType,
+        equals(available_model.ModelType.video),
+      );
+
+      final reloaded = UnifiedSettingsProvider(
+        apiKeyProvider: apiKeys,
+        chatModelProvider: chatModel,
+        imageModelProvider: imageModel,
+        videoModelProvider: videoModel,
+        searchProvider: search,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        reloaded.selectedModelType,
+        equals(available_model.ModelType.video),
+      );
+
+      reloaded.dispose();
     });
 
     test('导入导出工作正常', () async {

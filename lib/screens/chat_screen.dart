@@ -24,7 +24,6 @@ import 'package:chibot/l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'video_generation_screen.dart';
-import 'package:chibot/services/web_search_service.dart' as web_service;
 import 'update_dialog.dart';
 import '../services/update_service.dart';
 import 'package:flutter/services.dart'; // For Clipboard
@@ -82,7 +81,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewChat() {
-    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(
+      context,
+      listen: false,
+    );
     settings.setSelectedModelType(available_model.ModelType.text);
     setState(() {
       _messages.clear();
@@ -102,7 +104,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewImageSession() {
-    final settings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final settings = Provider.of<UnifiedSettingsProvider>(
+      context,
+      listen: false,
+    );
     settings.setSelectedModelType(available_model.ModelType.image);
     setState(() {
       _messages.clear();
@@ -121,11 +126,305 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
   }
 
+  Future<String?> _buildPromptWithWebSearch({
+    required String text,
+    required SearchProvider searchProvider,
+    required ApiKeyProvider apiKeys,
+  }) async {
+    if (!_enableWebSearch) {
+      return text;
+    }
+
+    if (!SearchServiceFactory.isSearchFunctionalityAvailable(
+      search: searchProvider,
+      apiKeys: apiKeys,
+    )) {
+      _appendAiMessage('未启用任何网络搜索功能，请在设置中开启 Tavily 或 Google 搜索。');
+      return null;
+    }
+
+    try {
+      final webResult = await SearchServiceFactory.searchWebAsPromptContext(
+        search: searchProvider,
+        apiKeys: apiKeys,
+        query: text,
+      );
+      return AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
+    } catch (e) {
+      _appendAiMessage(
+        AppLocalizations.of(context)!.webSearchFailed(e.toString()),
+      );
+      return null;
+    }
+  }
+
+  void _appendAiMessage(String text) {
+    if (!mounted) return;
+
+    setState(() {
+      _messages.add(
+        ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: text,
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+        ),
+      );
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _ensureCurrentSession(
+    ChatMessage userMessage,
+    String prompt,
+  ) async {
+    if (_currentSessionId != null) {
+      return;
+    }
+
+    _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+    final newSession = ChatSession(
+      id: _currentSessionId!,
+      title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+      messages: [userMessage],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await _sessionService.saveSession(newSession);
+    _loadChatSessions();
+  }
+
+  ChatMessage _createAiPlaceholderMessage() {
+    return ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      text: '',
+      sender: MessageSender.ai,
+      timestamp: DateTime.now(),
+      isLoading: true,
+    );
+  }
+
+  void _replaceLastAiMessage({required String text, required bool isLoading}) {
+    if (!mounted) return;
+
+    setState(() {
+      final lastMessageIndex = _messages.length - 1;
+      if (lastMessageIndex >= 0 &&
+          _messages[lastMessageIndex].sender == MessageSender.ai) {
+        _messages[lastMessageIndex] = ChatMessage(
+          id: _messages[lastMessageIndex].id,
+          text: text,
+          sender: MessageSender.ai,
+          timestamp: _messages[lastMessageIndex].timestamp,
+          isLoading: isLoading,
+        );
+      }
+    });
+  }
+
+  ChatSession? _buildCurrentSessionSnapshot() {
+    if (_currentSessionId == null) {
+      return null;
+    }
+
+    final existingSession = _chatSessions.firstWhere(
+      (s) => s.id == _currentSessionId!,
+    );
+
+    return ChatSession(
+      id: _currentSessionId!,
+      title: existingSession.title,
+      messages: List.from(_messages),
+      createdAt: existingSession.createdAt,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  Future<void> _saveCurrentSessionSnapshot({
+    bool reloadSessions = false,
+  }) async {
+    final currentSession = _buildCurrentSessionSnapshot();
+    if (currentSession == null) {
+      return;
+    }
+
+    await _sessionService.saveSession(currentSession);
+    if (reloadSessions) {
+      _loadChatSessions();
+    }
+  }
+
+  List<ChatMessage> _buildAiContextMessages(String prompt) {
+    final aiMessages = List<ChatMessage>.from(_messages);
+    if (_enableWebSearch && aiMessages.isNotEmpty) {
+      aiMessages.removeLast();
+      aiMessages.add(
+        ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: prompt,
+          sender: MessageSender.user,
+          timestamp: DateTime.now(),
+        ),
+      );
+    }
+
+    return aiMessages.where((msg) => msg.sender != MessageSender.user).toList();
+  }
+
+  void _handleMissingApiKeyError() {
+    if (!mounted) return;
+
+    setState(() {
+      final lastMessageIndex = _messages.length - 1;
+      if (lastMessageIndex >= 0 &&
+          _messages[lastMessageIndex].sender == MessageSender.ai) {
+        _messages.removeAt(lastMessageIndex);
+      }
+      _isLoading = false;
+    });
+  }
+
+  void _handleGenericStreamError(Object error) {
+    if (!mounted) return;
+
+    setState(() {
+      final lastMessageIndex = _messages.length - 1;
+      if (lastMessageIndex >= 0 &&
+          _messages[lastMessageIndex].sender == MessageSender.ai) {
+        _messages[lastMessageIndex] = ChatMessage(
+          id: _messages[lastMessageIndex].id,
+          text: 'Error: ${error.toString()}',
+          sender: MessageSender.ai,
+          timestamp: _messages[lastMessageIndex].timestamp,
+          isLoading: false,
+        );
+      } else {
+        _messages.add(
+          ChatMessage(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            text: 'Error: ${error.toString()}',
+            sender: MessageSender.ai,
+            timestamp: DateTime.now(),
+          ),
+        );
+      }
+      _isLoading = false;
+    });
+  }
+
+  int _findLoadingImageMessageIndex(String prompt) {
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      if (_messages[i] is ImageMessage &&
+          (_messages[i] as ImageMessage).text == prompt &&
+          ((_messages[i] as ImageMessage).isLoading ?? false)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  void _updateLoadingImageMessage({
+    required String prompt,
+    required String imageUrl,
+    String? error,
+  }) {
+    final imageMessageIndex = _findLoadingImageMessageIndex(prompt);
+    if (imageMessageIndex == -1) {
+      return;
+    }
+
+    final currentMessage = _messages[imageMessageIndex] as ImageMessage;
+    _messages[imageMessageIndex] = ImageMessage(
+      id: currentMessage.id,
+      text: prompt,
+      imageUrl: imageUrl,
+      sender: MessageSender.ai,
+      timestamp: currentMessage.timestamp,
+      isLoading: false,
+      error: error,
+    );
+  }
+
+  Future<void> _saveImageSession({
+    required String prompt,
+    required ImageModelProvider imageModelProvider,
+  }) async {
+    if (_currentImageSessionId == null) {
+      _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      final newSession = ImageSession(
+        id: _currentImageSessionId!,
+        title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
+        messages: _messages.whereType<ImageMessage>().toList(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        model: imageModelProvider.selectedImageModel,
+      );
+      await _imageSessionService.saveSession(newSession);
+      _loadImageSessions();
+      return;
+    }
+
+    ImageSession? existingSession;
+    try {
+      existingSession = _imageSessions.firstWhere(
+        (s) => s.id == _currentImageSessionId,
+      );
+    } catch (e) {
+      print(
+        'Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e',
+      );
+      _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+    }
+
+    final updatedSession = ImageSession(
+      id: _currentImageSessionId!,
+      title:
+          existingSession?.title ??
+          (prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt),
+      messages: _messages.whereType<ImageMessage>().toList(),
+      createdAt: existingSession?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+      model: imageModelProvider.selectedImageModel,
+    );
+    await _imageSessionService.saveSession(updatedSession);
+    _loadImageSessions();
+  }
+
+  void _addImageGenerationPlaceholders(String prompt) {
+    if (!mounted) return;
+
+    setState(() {
+      _messages.add(
+        ChatMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: '/imagine $prompt',
+          sender: MessageSender.user,
+          timestamp: DateTime.now(),
+        ),
+      );
+      _messages.add(
+        ImageMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          text: prompt,
+          imageUrl: '',
+          sender: MessageSender.ai,
+          timestamp: DateTime.now(),
+          isLoading: true,
+        ),
+      );
+      _isLoading = true;
+    });
+  }
+
   void _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(
+      context,
+      listen: false,
+    );
     final searchProvider = Provider.of<SearchProvider>(context, listen: false);
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
 
@@ -136,101 +435,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _textController.clear();
-
-    String prompt = text;
-    if (_enableWebSearch) {
-      bool didSearch = false;
-      // 1. Tavily
-      if (searchProvider.tavilySearchEnabled &&
-          (apiKeys.tavilyApiKey != null &&
-              apiKeys.tavilyApiKey!.isNotEmpty)) {
-        try {
-          final webResult = await web_service.WebSearchService(
-            apiKey: apiKeys.tavilyApiKey!,
-          ).searchWeb(text);
-          prompt = AppLocalizations.of(
-            context,
-          )!.webSearchPrompt(webResult, text);
-          didSearch = true;
-        } catch (e) {
-          setState(() {
-            _messages.add(
-              ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                text: AppLocalizations.of(
-                  context,
-                )!.webSearchFailed(e.toString()),
-                sender: MessageSender.ai,
-                timestamp: DateTime.now(),
-              ),
-            );
-            _isLoading = false;
-          });
-          _scrollToBottom();
-          return;
-        }
-      }
-      // 2. Google
-      else if (searchProvider.googleSearchEnabled &&
-          (apiKeys.googleSearchApiKey != null &&
-              apiKeys.googleSearchApiKey!.isNotEmpty) &&
-          (searchProvider.googleSearchEngineId != null &&
-              searchProvider.googleSearchEngineId!.isNotEmpty)) {
-        try {
-          final googleService = SearchServiceFactory.createGoogleSearchService(
-            search: searchProvider,
-            apiKeys: apiKeys,
-          );
-          final result = await googleService.search(
-            text,
-            count: searchProvider.googleSearchResultCount,
-          );
-          // 格式化结果为字符串
-          String webResult = '';
-          for (var i = 0; i < result.items.length; i++) {
-            final item = result.items[i];
-            webResult +=
-                '${i + 1}. ${item.title}\n${item.snippet}\n${item.link}\n\n';
-          }
-          if (webResult.isEmpty) {
-            webResult = '未找到相关搜索结果。';
-          }
-          prompt = AppLocalizations.of(
-            context,
-          )!.webSearchPrompt(webResult, text);
-          didSearch = true;
-        } catch (e) {
-          setState(() {
-            _messages.add(
-              ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                text: 'Google 搜索失败：${e.toString()}',
-                sender: MessageSender.ai,
-                timestamp: DateTime.now(),
-              ),
-            );
-            _isLoading = false;
-          });
-          _scrollToBottom();
-          return;
-        }
-      }
-      // 3. Neither enabled
-      else {
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              text: '未启用任何网络搜索功能，请在设置中开启 Tavily 或 Google 搜索。',
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ),
-          );
-          _isLoading = false;
-        });
-        _scrollToBottom();
-        return;
-      }
+    final prompt = await _buildPromptWithWebSearch(
+      text: text,
+      searchProvider: searchProvider,
+      apiKeys: apiKeys,
+    );
+    if (prompt == null) {
+      return;
     }
 
     final userMessage = ChatMessage(
@@ -247,50 +458,15 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
 
-    // If it's a new chat, create a session ID and save the initial message
-    if (_currentSessionId == null) {
-      _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
-      final newSession = ChatSession(
-        id: _currentSessionId!,
-        title:
-            prompt.length > 30
-                ? '${prompt.substring(0, 30)}...'
-                : prompt, // Use first part of message as title
-        messages: [userMessage],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await _sessionService.saveSession(newSession);
-      _loadChatSessions(); // Reload sessions to update sidebar
-    }
+    await _ensureCurrentSession(userMessage, prompt);
     _scrollToBottom();
 
     if (apiKeys.apiKey == null || apiKeys.apiKey!.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              text: AppLocalizations.of(context)!.apiKeyNotSetError,
-              sender: MessageSender.ai,
-              timestamp: DateTime.now(),
-            ),
-          );
-          _isLoading = false;
-        });
-      }
-      _scrollToBottom();
+      _appendAiMessage(AppLocalizations.of(context)!.apiKeyNotSetError);
       return;
     }
 
-    // Create a placeholder for the AI's message
-    final aiMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      text: "", // Start with empty text
-      sender: MessageSender.ai,
-      timestamp: DateTime.now(),
-      isLoading: true, // Add a flag to indicate this message is loading
-    );
+    final aiMessage = _createAiPlaceholderMessage();
 
     if (mounted) {
       setState(() {
@@ -300,18 +476,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final aiUserMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: prompt,
-        sender: MessageSender.user,
-        timestamp: DateTime.now(),
+      final chatModelProvider = Provider.of<ChatModelProvider>(
+        context,
+        listen: false,
       );
-      final List<ChatMessage> aiMessages = List.from(_messages);
-      if (_enableWebSearch) {
-        aiMessages.removeLast(); // Remove the original user message
-        aiMessages.add(aiUserMessage); // Add the prompt with web search
-      }
-      final chatModelProvider = Provider.of<ChatModelProvider>(context, listen: false);
 
       final chatService = ServiceManager.createChatService(
         chatModel: chatModelProvider,
@@ -319,38 +487,17 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       final stream = chatService.generateResponse(
         prompt: prompt,
-        context:
-            aiMessages
-                .where((msg) => msg.sender != MessageSender.user)
-                .toList(),
+        context: _buildAiContextMessages(prompt),
         model: chatModelProvider.selectedModel,
       );
 
       String fullResponse = "";
       await for (final chunk in stream) {
         fullResponse += chunk;
-        if (mounted) {
-          setState(() {
-            // Update the last message (which is the AI's message placeholder)
-            final lastMessageIndex = _messages.length - 1;
-            if (lastMessageIndex >= 0 &&
-                _messages[lastMessageIndex].sender == MessageSender.ai) {
-              _messages[lastMessageIndex] = ChatMessage(
-                id: _messages[lastMessageIndex].id,
-                text: fullResponse,
-                sender: MessageSender.ai,
-                timestamp:
-                    _messages[lastMessageIndex]
-                        .timestamp, // Keep original timestamp
-                isLoading: true, // Still loading until stream is done
-              );
-            }
-          });
-        }
+        _replaceLastAiMessage(text: fullResponse, isLoading: true);
         _scrollToBottom();
       }
 
-      // Stream finished, update the isLoading flag for the AI message
       if (mounted) {
         setState(() {
           final lastMessageIndex = _messages.length - 1;
@@ -366,68 +513,18 @@ class _ChatScreenState extends State<ChatScreen> {
               timestamp: _messages[lastMessageIndex].timestamp,
               isLoading: false, // Done loading
             );
-            // Save the updated session
-            if (_currentSessionId != null) {
-              final updatedSession = ChatSession(
-                id: _currentSessionId!,
-                title:
-                    _chatSessions
-                        .firstWhere((s) => s.id == _currentSessionId!)
-                        .title, // Keep original title
-                messages: List.from(_messages),
-                createdAt:
-                    _chatSessions
-                        .firstWhere((s) => s.id == _currentSessionId!)
-                        .createdAt,
-                updatedAt: DateTime.now(),
-              );
-              _sessionService.saveSession(updatedSession);
-            }
           }
           _isLoading = false; // Overall loading state for the input field
         });
       }
+      await _saveCurrentSessionSnapshot();
     } catch (e) {
       if (mounted) {
-        // Check if this is a missing API key exception
         if (e is MissingApiKeyException) {
-          // Remove the placeholder AI message
-          setState(() {
-            final lastMessageIndex = _messages.length - 1;
-            if (lastMessageIndex >= 0 &&
-                _messages[lastMessageIndex].sender == MessageSender.ai) {
-              _messages.removeAt(lastMessageIndex);
-            }
-            _isLoading = false;
-          });
-          // Show the helpful dialog
+          _handleMissingApiKeyError();
           _showMissingApiKeyDialog(e);
         } else {
-          // Handle other exceptions
-          setState(() {
-            final lastMessageIndex = _messages.length - 1;
-            if (lastMessageIndex >= 0 &&
-                _messages[lastMessageIndex].sender == MessageSender.ai) {
-              _messages[lastMessageIndex] = ChatMessage(
-                id: _messages[lastMessageIndex].id,
-                text: "Error: ${e.toString()}",
-                sender: MessageSender.ai,
-                timestamp: _messages[lastMessageIndex].timestamp,
-                isLoading: false,
-              );
-            } else {
-              // If for some reason the placeholder wasn't added, add a new error message
-              _messages.add(
-                ChatMessage(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  text: "Error: ${e.toString()}",
-                  sender: MessageSender.ai,
-                  timestamp: DateTime.now(),
-                ),
-              );
-            }
-            _isLoading = false;
-          });
+          _handleGenericStreamError(e);
         }
       }
       print("Error receiving stream: $e");
@@ -440,53 +537,39 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       _scrollToBottom();
     }
-    // After sending message, save the session
-    if (_currentSessionId != null) {
-      final currentSession = ChatSession(
-        id: _currentSessionId!,
-        title:
-            _chatSessions
-                .firstWhere((s) => s.id == _currentSessionId!)
-                .title, // Keep original title
-        messages: List.from(_messages),
-        createdAt:
-            _chatSessions
-                .firstWhere((s) => s.id == _currentSessionId!)
-                .createdAt,
-        updatedAt: DateTime.now(),
-      );
-      await _sessionService.saveSession(currentSession);
-      _loadChatSessions(); // Reload sessions to update sidebar
-    }
+    await _saveCurrentSessionSnapshot(reloadSessions: true);
   }
 
   /// 显示 API 密钥缺失错误对话框
   void _showMissingApiKeyDialog(MissingApiKeyException exception) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('API Key Not Configured'),
-        content: SingleChildScrollView(
-          child: Text(exception.userFriendlyMessage),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Dismiss'),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: const Text('API Key Not Configured'),
+            content: SingleChildScrollView(
+              child: Text(exception.userFriendlyMessage),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Dismiss'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate to settings screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Go to Settings'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to settings screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-            child: const Text('Go to Settings'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -500,6 +583,178 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  Future<bool> _confirmDelete({
+    required String message,
+    required Color errorColor,
+    required Color onErrorColor,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: errorColor,
+                  foregroundColor: onErrorColor,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    return confirmed == true;
+  }
+
+  Future<void> _deleteChatSession(ChatSession session, ThemeData theme) async {
+    final confirmed = await _confirmDelete(
+      message: 'Delete this chat history?',
+      errorColor: theme.colorScheme.error,
+      onErrorColor: theme.colorScheme.onError,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await _sessionService.deleteSession(session.id);
+    if (_currentSessionId == session.id) {
+      setState(() {
+        _messages.clear();
+        _currentSessionId = null;
+      });
+    }
+    _loadChatSessions();
+  }
+
+  Future<void> _deleteImageSession(
+    ImageSession session,
+    ThemeData theme,
+  ) async {
+    final confirmed = await _confirmDelete(
+      message: 'Delete this image session?',
+      errorColor: theme.colorScheme.error,
+      onErrorColor: theme.colorScheme.onError,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await _imageSessionService.deleteSession(session.id);
+    if (_currentImageSessionId == session.id) {
+      setState(() {
+        _messages.clear();
+        _currentImageSessionId = null;
+      });
+    }
+    _loadImageSessions();
+  }
+
+  Widget _buildSidebarSectionHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Text(
+        title,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatSessionsSection(BuildContext context, ThemeData theme) {
+    if (_chatSessions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSidebarSectionHeader(context, 'Recent Chats'),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _chatSessions.length,
+              itemBuilder: (context, index) {
+                final session = _chatSessions[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: _buildSidebarItem(
+                    context,
+                    Icons.chat_outlined,
+                    session.title,
+                    isSelected: _currentSessionId == session.id,
+                    onTap: () => _loadSession(session),
+                    onExport: () async {
+                      await MarkdownExportService.exportToMarkdown(
+                        session,
+                        context,
+                      );
+                    },
+                    onDelete: () => _deleteChatSession(session, theme),
+                    exportLabel: AppLocalizations.of(context)!.exportToMarkdown,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSessionsSection(BuildContext context, ThemeData theme) {
+    if (_imageSessions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSidebarSectionHeader(context, 'Image Sessions'),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _imageSessions.length,
+              itemBuilder: (context, index) {
+                final session = _imageSessions[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: _buildSidebarItem(
+                    context,
+                    Icons.image_outlined,
+                    session.title,
+                    isSelected: _currentImageSessionId == session.id,
+                    onTap: () => _loadImageSession(session),
+                    onExport: () async {
+                      await ImageSaveService.exportImageHistory(
+                        session,
+                        context,
+                      );
+                    },
+                    onDelete: () => _deleteImageSession(session, theme),
+                    exportLabel: AppLocalizations.of(context)!.exportToImg,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSidebar(BuildContext context) {
@@ -637,186 +892,8 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_chatSessions.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'Recent Chats',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _chatSessions.length,
-                      itemBuilder: (context, index) {
-                        final session = _chatSessions[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildSidebarItem(
-                            context,
-                            Icons.chat_outlined,
-                            session.title,
-                            isSelected: _currentSessionId == session.id,
-                            onTap: () => _loadSession(session),
-                            onExport: () async {
-                              await MarkdownExportService.exportToMarkdown(
-                                session,
-                                context,
-                              );
-                            },
-                            onDelete: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Delete'),
-                                      content: const Text(
-                                        'Delete this chat history?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.of(ctx).pop(false),
-                                          child: Text(
-                                            AppLocalizations.of(
-                                                  context,
-                                                )?.cancel ??
-                                                'Cancel',
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(true),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                theme.colorScheme.error,
-                                            foregroundColor:
-                                                theme.colorScheme.onError,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                await _sessionService.deleteSession(session.id);
-                                if (_currentSessionId == session.id) {
-                                  setState(() {
-                                    _messages.clear();
-                                    _currentSessionId = null;
-                                  });
-                                }
-                                _loadChatSessions();
-                              }
-                            },
-                            exportLabel:
-                                AppLocalizations.of(context)!.exportToMarkdown,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-
-                // Image sessions section
-                if (_imageSessions.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'Image Sessions',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _imageSessions.length,
-                      itemBuilder: (context, index) {
-                        final session = _imageSessions[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildSidebarItem(
-                            context,
-                            Icons.image_outlined,
-                            session.title,
-                            isSelected: _currentImageSessionId == session.id,
-                            onTap: () => _loadImageSession(session),
-                            onExport: () async {
-                              await ImageSaveService.exportImageHistory(
-                                session,
-                                context,
-                              );
-                            },
-                            onDelete: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Delete'),
-                                      content: const Text(
-                                        'Delete this image session?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.of(ctx).pop(false),
-                                          child: Text(
-                                            AppLocalizations.of(
-                                                  context,
-                                                )?.cancel ??
-                                                'Cancel',
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(true),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                theme.colorScheme.error,
-                                            foregroundColor:
-                                                theme.colorScheme.onError,
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                await _imageSessionService.deleteSession(
-                                  session.id,
-                                );
-                                if (_currentImageSessionId == session.id) {
-                                  setState(() {
-                                    _messages.clear();
-                                    _currentImageSessionId = null;
-                                  });
-                                }
-                                _loadImageSessions();
-                              }
-                            },
-                            exportLabel:
-                                AppLocalizations.of(context)!.exportToImg,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                _buildChatSessionsSection(context, theme),
+                _buildImageSessionsSection(context, theme),
               ],
             ),
           ),
@@ -1288,10 +1365,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (value == 'save_image') {
                     final imageSource = message.bestImageSource;
                     if (imageSource != null && imageSource.isNotEmpty) {
-                      await ImageSaveService.saveImage(
-                        imageSource,
-                        context,
-                      );
+                      await ImageSaveService.saveImage(imageSource, context);
                     }
                   } else if (value == 'save_prompt') {
                     await Clipboard.setData(
@@ -1523,67 +1597,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _generateImage(String prompt) async {
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
-    final imageModelProvider = Provider.of<ImageModelProvider>(context, listen: false);
-    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(context, listen: false);
+    final imageModelProvider = Provider.of<ImageModelProvider>(
+      context,
+      listen: false,
+    );
+    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(
+      context,
+      listen: false,
+    );
 
-    if (mounted) {
-      setState(() {
-        // Add user's /imagine message first
-        _messages.add(
-          ChatMessage(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            text: '/imagine $prompt',
-            sender: MessageSender.user,
-            timestamp: DateTime.now(),
-          ),
-        );
-        // Then add the AI's placeholder message for the image
-        _messages.add(
-          ImageMessage(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            text: prompt, // Assign prompt to text
-            imageUrl: '',
-            sender: MessageSender.ai,
-            timestamp: DateTime.now(),
-            isLoading: true,
-          ),
-        );
-        _isLoading = true; // For the general input field loader
-      });
-    }
+    _addImageGenerationPlaceholders(prompt);
     _scrollToBottom();
 
-    // Check for image-specific API key based on selected provider
     final imageApiKey = apiKeys.getImageApiKeyForProvider(
       imageModelProvider.selectedImageProvider,
     );
     if (imageApiKey == null || imageApiKey.isEmpty) {
       if (mounted) {
         setState(() {
-          // Try to update the loading ImageMessage with an error
-          int imageMessageIndex = -1;
-          for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage &&
-                (_messages[i] as ImageMessage).text == prompt &&
-                ((_messages[i] as ImageMessage).isLoading ?? false)) {
-              imageMessageIndex = i;
-              break;
-            }
-          }
-
+          final imageMessageIndex = _findLoadingImageMessageIndex(prompt);
           if (imageMessageIndex != -1) {
-            _messages[imageMessageIndex] = ImageMessage(
-              id: (_messages[imageMessageIndex] as ImageMessage).id,
-              text: prompt, // Assign prompt to text
+            _updateLoadingImageMessage(
+              prompt: prompt,
               imageUrl: '',
-              sender: MessageSender.ai,
-              timestamp:
-                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
-              isLoading: false,
-              error:
-                  AppLocalizations.of(
-                    context,
-                  )!.apiKeyNotSetError, // More specific error
+              error: AppLocalizations.of(context)!.apiKeyNotSetError,
             );
           } else {
             _messages.add(
@@ -1616,120 +1653,35 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (mounted) {
         setState(() {
-          // Find the correct ImageMessage to update
-          int imageMessageIndex = -1;
-          for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage &&
-                (_messages[i] as ImageMessage).text == prompt &&
-                ((_messages[i] as ImageMessage).isLoading ?? false)) {
-              imageMessageIndex = i;
-              break;
-            }
-          }
-
+          final imageMessageIndex = _findLoadingImageMessageIndex(prompt);
           if (imageMessageIndex != -1) {
             if (imageUrl == null || imageUrl.isEmpty) {
-              _messages[imageMessageIndex] = ImageMessage(
-                id: (_messages[imageMessageIndex] as ImageMessage).id,
-                text: prompt, // Assign prompt to text
+              _updateLoadingImageMessage(
+                prompt: prompt,
                 imageUrl: '',
-                sender: MessageSender.ai,
-                timestamp:
-                    (_messages[imageMessageIndex] as ImageMessage).timestamp,
-                isLoading: false,
                 error: AppLocalizations.of(context)!.failedToGenerateImageNoUrl,
               );
             } else {
-              _messages[imageMessageIndex] = ImageMessage(
-                id: (_messages[imageMessageIndex] as ImageMessage).id,
-                text: prompt, // Assign prompt to text
-                imageUrl: imageUrl,
-                sender: MessageSender.ai,
-                timestamp:
-                    (_messages[imageMessageIndex] as ImageMessage).timestamp,
-                isLoading: false,
-                error: null,
-              );
-              // Corrected session saving logic
-              if (_currentImageSessionId == null) {
-                // This is the first message in a new image session
-                _currentImageSessionId =
-                    DateTime.now().millisecondsSinceEpoch.toString();
-                final newSession = ImageSession(
-                  id: _currentImageSessionId!,
-                  title:
-                      prompt.length > 30
-                          ? '${prompt.substring(0, 30)}...'
-                          : prompt,
-                  messages: _messages.whereType<ImageMessage>().toList(),
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                  model: imageModelProvider.selectedImageModel,
-                );
-                _imageSessionService.saveSession(newSession);
-                _loadImageSessions(); // Reload sidebar
-              } else {
-                // Update existing image session
-                // Find the existing session to preserve its original title and creation time
-                ImageSession? existingSession;
-                try {
-                  existingSession = _imageSessions.firstWhere(
-                    (s) => s.id == _currentImageSessionId,
-                  );
-                } catch (e) {
-                  // If for some reason the session is not found (e.g., deleted externally),
-                  // treat it as a new session. This is a fallback.
-                  print(
-                    "Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e",
-                  );
-                  _currentImageSessionId =
-                      DateTime.now().millisecondsSinceEpoch
-                          .toString(); // Generate a new ID for the new session
-                }
-
-                final updatedSession = ImageSession(
-                  id: _currentImageSessionId!, // Use the current or newly generated ID
-                  title:
-                      existingSession?.title ??
-                      (prompt.length > 30
-                          ? '${prompt.substring(0, 30)}...'
-                          : prompt), // Keep original title or use prompt
-                  messages: _messages.whereType<ImageMessage>().toList(),
-                  createdAt:
-                      existingSession?.createdAt ??
-                      DateTime.now(), // Keep original creation time or use now
-                  updatedAt: DateTime.now(),
-                  model: imageModelProvider.selectedImageModel,
-                );
-                _imageSessionService.saveSession(updatedSession);
-                _loadImageSessions(); // Reload sidebar
-              }
+              _updateLoadingImageMessage(prompt: prompt, imageUrl: imageUrl);
             }
           }
           _isLoading = false;
         });
       }
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        await _saveImageSession(
+          prompt: prompt,
+          imageModelProvider: imageModelProvider,
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
-          int imageMessageIndex = -1;
-          for (int i = _messages.length - 1; i >= 0; i--) {
-            if (_messages[i] is ImageMessage &&
-                (_messages[i] as ImageMessage).text == prompt &&
-                ((_messages[i] as ImageMessage).isLoading ?? false)) {
-              imageMessageIndex = i;
-              break;
-            }
-          }
+          final imageMessageIndex = _findLoadingImageMessageIndex(prompt);
           if (imageMessageIndex != -1) {
-            _messages[imageMessageIndex] = ImageMessage(
-              id: (_messages[imageMessageIndex] as ImageMessage).id,
-              text: prompt,
+            _updateLoadingImageMessage(
+              prompt: prompt,
               imageUrl: '',
-              sender: MessageSender.ai,
-              timestamp:
-                  (_messages[imageMessageIndex] as ImageMessage).timestamp,
-              isLoading: false,
               error: AppLocalizations.of(
                 context,
               )!.errorGeneratingImage(e.toString()),
@@ -1760,10 +1712,15 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Widget _buildImageWidget(ImageMessage message, double width, double height, AppLocalizations localizations) {
+  Widget _buildImageWidget(
+    ImageMessage message,
+    double width,
+    double height,
+    AppLocalizations localizations,
+  ) {
     // Use the bestImageSource to get the most appropriate image source
     final imageSource = message.bestImageSource;
-    
+
     if (imageSource == null) {
       return Container(
         width: width,
@@ -1865,10 +1822,11 @@ class _ChatScreenState extends State<ChatScreen> {
             height: height,
             child: Center(
               child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
+                value:
+                    loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
               ),
             ),
           );

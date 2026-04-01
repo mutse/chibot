@@ -51,7 +51,7 @@ abstract class ChatService extends AIService {
     required String model,
     Map<String, dynamic>? parameters,
   });
-  
+
   Future<String> generateTitle(List<ChatMessage> messages);
 }
 
@@ -61,7 +61,7 @@ abstract class ImageGenerationService extends AIService {
     required String model,
     Map<String, dynamic>? parameters,
   });
-  
+
   Future<List<String>> generateImages({
     required String prompt,
     required String model,
@@ -70,23 +70,23 @@ abstract class ImageGenerationService extends AIService {
   });
 }
 
-abstract class WebSearchService extends AIService {
-  Future<List<SearchResult>> search({
+abstract class SearchService extends AIService {
+  Future<List<SearchDocument>> search({
     required String query,
     int maxResults = 10,
     Map<String, dynamic>? parameters,
   });
 }
 
-// Search result model
-class SearchResult {
+// Search document model used by repository/service contracts.
+class SearchDocument {
   final String title;
   final String url;
   final String snippet;
   final DateTime? publishedDate;
   final Map<String, dynamic>? metadata;
 
-  const SearchResult({
+  const SearchDocument({
     required this.title,
     required this.url,
     required this.snippet,
@@ -95,22 +95,23 @@ class SearchResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'url': url,
-        'snippet': snippet,
-        'publishedDate': publishedDate?.toIso8601String(),
-        'metadata': metadata,
-      };
+    'title': title,
+    'url': url,
+    'snippet': snippet,
+    'publishedDate': publishedDate?.toIso8601String(),
+    'metadata': metadata,
+  };
 
-  factory SearchResult.fromJson(Map<String, dynamic> json) => SearchResult(
-        title: json['title'] as String,
-        url: json['url'] as String,
-        snippet: json['snippet'] as String,
-        publishedDate: json['publishedDate'] != null
+  factory SearchDocument.fromJson(Map<String, dynamic> json) => SearchDocument(
+    title: json['title'] as String,
+    url: json['url'] as String,
+    snippet: json['snippet'] as String,
+    publishedDate:
+        json['publishedDate'] != null
             ? DateTime.parse(json['publishedDate'] as String)
             : null,
-        metadata: json['metadata'] as Map<String, dynamic>?,
-      );
+    metadata: json['metadata'] as Map<String, dynamic>?,
+  );
 }
 
 // Settings repository interface
@@ -120,7 +121,7 @@ abstract class SettingsRepository {
   Future<void> removeValue(String key);
   Future<bool> containsKey(String key);
   Future<void> clear();
-  
+
   // Typed getters for common settings
   Future<String?> getApiKey(String provider);
   Future<void> setApiKey(String provider, String key);

@@ -1,6 +1,7 @@
 import '../providers/image_model_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'image_generation_service.dart';
+import 'service_config_validator.dart';
 
 /// 图像生成服务管理器 - 使用专职提供者创建图像生成服务
 ///
@@ -36,7 +37,7 @@ class ImageGenerationServiceManager {
     final apiKey = apiKeys.getImageApiKeyForProvider(provider);
     final hasModel = imageModel.selectedImageModel.isNotEmpty;
 
-    return apiKey != null && apiKey.isNotEmpty && hasModel;
+    return ServiceConfigValidator.hasText(apiKey) && hasModel;
   }
 
   /// 验证并创建图像生成服务（带更详细的错误信息）
@@ -50,7 +51,7 @@ class ImageGenerationServiceManager {
     final provider = imageModel.selectedImageProvider;
     final apiKey = apiKeys.getImageApiKeyForProvider(provider);
 
-    if (apiKey == null || apiKey.isEmpty) {
+    if (!ServiceConfigValidator.hasText(apiKey)) {
       throw Exception(
         'API key not configured for $provider image provider. '
         'Please configure it in settings.',
@@ -94,7 +95,7 @@ class ImageGenerationServiceManager {
     required String provider,
   }) {
     final apiKey = apiKeys.getImageApiKeyForProvider(provider);
-    return apiKey != null && apiKey.isNotEmpty;
+    return ServiceConfigValidator.hasText(apiKey);
   }
 
   /// 获取所有已配置的图像生成提供商列表
@@ -102,10 +103,10 @@ class ImageGenerationServiceManager {
     required ApiKeyProvider apiKeys,
   }) {
     return supportedImageProviders
-        .where((provider) => isImageProviderConfigured(
-          apiKeys: apiKeys,
-          provider: provider,
-        ))
+        .where(
+          (provider) =>
+              isImageProviderConfigured(apiKeys: apiKeys, provider: provider),
+        )
         .toList();
   }
 
@@ -118,7 +119,11 @@ class ImageGenerationServiceManager {
     required String prompt,
   }) {
     final provider = imageModel.selectedImageProvider;
-    final apiKey = apiKeys.getImageApiKeyForProvider(provider)!;
+    final apiKey = ServiceConfigValidator.requireText(
+      apiKeys.getImageApiKeyForProvider(provider),
+      'API key not configured for $provider image provider. '
+      'Please configure it in settings.',
+    );
 
     return {
       'apiKey': apiKey,

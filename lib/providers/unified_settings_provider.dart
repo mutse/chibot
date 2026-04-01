@@ -33,8 +33,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
   final SearchProvider searchProvider;
 
   // 跟踪当前选定的模型类型（文本、图像、视频）
-  available_model.ModelType _selectedModelType =
-      available_model.ModelType.text;
+  available_model.ModelType _selectedModelType = available_model.ModelType.text;
   static const String _selectedModelTypeKey = 'selected_model_type';
 
   UnifiedSettingsProvider({
@@ -55,15 +54,14 @@ class UnifiedSettingsProvider with ChangeNotifier {
 
   Future<void> _loadSelectedModelType() async {
     final prefs = await SharedPreferences.getInstance();
-    _selectedModelType = available_model.ModelType.values[
-        prefs.getInt(_selectedModelTypeKey) ??
+    _selectedModelType =
+        available_model.ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
             available_model.ModelType.text.index];
   }
 
   available_model.ModelType get selectedModelType => _selectedModelType;
 
-  Future<void> setSelectedModelType(
-      available_model.ModelType newType) async {
+  Future<void> setSelectedModelType(available_model.ModelType newType) async {
     if (_selectedModelType != newType) {
       _selectedModelType = newType;
       final prefs = await SharedPreferences.getInstance();
@@ -93,7 +91,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
   String? get claudeApiKey => apiKeyProvider.claudeApiKey;
   String? get tavilyApiKey => apiKeyProvider.tavilyApiKey;
   String? get fluxKontextApiKey => apiKeyProvider.fluxKontextApiKey;
-  String? get googleSearchApiKey => searchProvider.googleSearchApiKey;
+  String? get googleSearchApiKey => apiKeyProvider.googleSearchApiKey;
   String? get googleSearchEngineId => searchProvider.googleSearchEngineId;
 
   String? getApiKeyForProvider(String provider) {
@@ -136,7 +134,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
       chatModelProvider.removeCustomProvider(provider);
   Future<void> syncModelsToRegistry() =>
       chatModelProvider.syncModelsToRegistry();
-  
+
   Future<void> syncImageModelsToRegistry() =>
       imageModelProvider.syncModelsToRegistry();
 
@@ -197,7 +195,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
   bool get tavilySearchEnabled => searchProvider.tavilySearchEnabled;
 
   Future<void> setGoogleSearchApiKey(String? key) =>
-      searchProvider.setGoogleSearchApiKey(key);
+      apiKeyProvider.setGoogleSearchApiKey(key);
   Future<void> setGoogleSearchEngineId(String? id) =>
       searchProvider.setGoogleSearchEngineId(id);
   Future<void> setGoogleSearchEnabled(bool enabled) =>

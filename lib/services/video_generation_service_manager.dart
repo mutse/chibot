@@ -2,6 +2,7 @@ import '../providers/video_model_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'video_generation_service.dart';
 import 'veo3_service.dart';
+import 'service_config_validator.dart';
 
 /// 视频生成服务管理器 - 使用专职提供者创建视频生成服务
 ///
@@ -37,9 +38,10 @@ class VideoGenerationServiceManager {
     required VideoModelProvider videoModel,
     required ApiKeyProvider apiKeys,
   }) {
-    final apiKey = apiKeys.googleApiKey; // Video generation currently uses Google API
+    final apiKey =
+        apiKeys.googleApiKey; // Video generation currently uses Google API
 
-    return apiKey != null && apiKey.isNotEmpty;
+    return ServiceConfigValidator.hasText(apiKey);
   }
 
   /// 验证并创建视频生成服务（带更详细的错误信息）
@@ -50,23 +52,18 @@ class VideoGenerationServiceManager {
     required ApiKeyProvider apiKeys,
   }) {
     // 检查 API Key (当前使用 Google API)
-    final apiKey = apiKeys.googleApiKey;
-
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception(
-        'API key not configured for video generation. '
-        'Please configure Google API key in settings.',
-      );
-    }
+    final apiKey = ServiceConfigValidator.requireText(
+      apiKeys.googleApiKey,
+      'API key not configured for video generation. '
+      'Please configure Google API key in settings.',
+    );
 
     // 返回已验证配置的服务
     return Veo3Service(apiKey: apiKey);
   }
 
   /// 获取所有支持的视频生成提供商
-  static List<String> get supportedVideoProviders => [
-    veo3Provider,
-  ];
+  static List<String> get supportedVideoProviders => [veo3Provider];
 
   /// 检查特定视频提供商是否已配置
   ///
@@ -78,7 +75,7 @@ class VideoGenerationServiceManager {
     switch (provider) {
       case veo3Provider:
         // Veo3 uses Google API
-        return apiKeys.googleApiKey != null && apiKeys.googleApiKey!.isNotEmpty;
+        return ServiceConfigValidator.hasText(apiKeys.googleApiKey);
       default:
         return false;
     }
@@ -89,10 +86,10 @@ class VideoGenerationServiceManager {
     required ApiKeyProvider apiKeys,
   }) {
     return supportedVideoProviders
-        .where((provider) => isVideoProviderConfigured(
-          apiKeys: apiKeys,
-          provider: provider,
-        ))
+        .where(
+          (provider) =>
+              isVideoProviderConfigured(apiKeys: apiKeys, provider: provider),
+        )
         .toList();
   }
 
@@ -104,7 +101,11 @@ class VideoGenerationServiceManager {
     required ApiKeyProvider apiKeys,
     required String prompt,
   }) {
-    final apiKey = apiKeys.googleApiKey!;
+    final apiKey = ServiceConfigValidator.requireText(
+      apiKeys.googleApiKey,
+      'API key not configured for video generation. '
+      'Please configure Google API key in settings.',
+    );
 
     return {
       'apiKey': apiKey,
@@ -120,9 +121,7 @@ class VideoGenerationServiceManager {
   /// 验证视频参数是否有效
   ///
   /// 检查所有视频配置参数是否被支持
-  static bool validateVideoParams({
-    required VideoModelProvider videoModel,
-  }) {
+  static bool validateVideoParams({required VideoModelProvider videoModel}) {
     return videoModel.isValidResolution(videoModel.videoResolution) &&
         videoModel.isValidDuration(videoModel.videoDuration) &&
         videoModel.isValidQuality(videoModel.videoQuality) &&
