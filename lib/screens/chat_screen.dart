@@ -21,6 +21,7 @@ import 'package:chibot/services/image_generation_service.dart'
 import 'package:chibot/services/image_save_service.dart';
 import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:chibot/widgets/chat_markdown.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'video_generation_screen.dart';
@@ -1218,14 +1219,12 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     } else {
-      messageContent = SelectableText(
-        message.text,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color:
-              isUserMessage
-                  ? theme.colorScheme.onPrimaryContainer
-                  : theme.colorScheme.onSurfaceVariant,
-        ),
+      messageContent = ChatMarkdown(
+        text: message.text,
+        textColor:
+            isUserMessage
+                ? theme.colorScheme.onPrimaryContainer
+                : theme.colorScheme.onSurfaceVariant,
       );
     }
 

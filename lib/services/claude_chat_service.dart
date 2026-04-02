@@ -41,7 +41,7 @@ class ClaudeService extends BaseApiService implements ChatService {
   @override
   void validateResponse(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleErrorResponse(response.statusCode, response.body);
+      handleErrorResponse(response.statusCode, response.body);
     }
   }
 
@@ -243,7 +243,8 @@ class ClaudeService extends BaseApiService implements ChatService {
     return jsonEncode(request);
   }
 
-  void _handleErrorResponse(int statusCode, String responseBody) {
+  @override
+  void handleErrorResponse(int statusCode, String responseBody) {
     String errorMessage = 'Claude API request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;

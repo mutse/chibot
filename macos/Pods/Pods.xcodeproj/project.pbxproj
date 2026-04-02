@@ -5243,6 +5243,50 @@
 			};
 			name = Profile;
 		};
+		021AED2E5B70E30AC74ACB92BCDF5A9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B703785507B22BAF0B800737429577EC /* Pods-Runner.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
 		02FA61F4F906D1B87752B626B852CDDC /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F78F29492F0C8278DF03E60D4427B259 /* shared_preferences_foundation.release.xcconfig */;
@@ -5257,6 +5301,68 @@
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+		0AE172D8F2A4843BFACAD21A0ED26541 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_RELEASE=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				SYMROOT = "${SRCROOT}/../build";
 			};
 			name = Release;
 		};
@@ -5329,7 +5435,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/device_info_plus/device_info_plus.modulemap";
 				PRODUCT_MODULE_NAME = device_info_plus;
 				PRODUCT_NAME = device_info_plus;
@@ -5433,68 +5538,6 @@
 				WRAPPER_EXTENSION = bundle;
 			};
 			name = Profile;
-		};
-		1D6BBE705B4E14F77C21AB0FECA78CC3 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 193DDEA0EFE20A2F41A29B8ACCE7D6CB /* FlutterMacOS.release.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				SDKROOT = macosx;
-			};
-			name = Profile;
-		};
-		1F52306B9D18A4AE75E06675AA3CAB15 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = AC8FE152530FBDCE460186B326C1A8FB /* Pods-RunnerTests.release.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Release;
 		};
 		2037AEEB7A161845994B052EF866087E /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -5661,7 +5704,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/video_player_avfoundation/video_player_avfoundation.modulemap";
 				PRODUCT_MODULE_NAME = video_player_avfoundation;
 				PRODUCT_NAME = video_player_avfoundation;
@@ -5673,50 +5715,6 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Profile;
-		};
-		2DF9A1F22330CC8543DE455EDB2B1BD6 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 03E8AD2E8B75443E12D3D3BD12A9900E /* Pods-RunnerTests.debug.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
 		};
 		2E395792CA7C6729407F5D6BDACA2932 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -5803,7 +5801,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/file_selector_macos/file_selector_macos.modulemap";
 				PRODUCT_MODULE_NAME = file_selector_macos;
 				PRODUCT_NAME = file_selector_macos;
@@ -5878,7 +5875,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/url_launcher_macos/url_launcher_macos.modulemap";
 				PRODUCT_MODULE_NAME = url_launcher_macos;
 				PRODUCT_NAME = url_launcher_macos;
@@ -5919,7 +5915,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/file_selector_macos/file_selector_macos.modulemap";
 				PRODUCT_MODULE_NAME = file_selector_macos;
 				PRODUCT_NAME = file_selector_macos;
@@ -6018,7 +6013,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation.modulemap";
 				PRODUCT_MODULE_NAME = path_provider_foundation;
 				PRODUCT_NAME = path_provider_foundation;
@@ -6030,6 +6024,50 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
+		};
+		4F66360E7B9EF3E585F1769978942294 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 728A5ED1DD60BAC8C8F382A87B976F84 /* Pods-Runner.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
 		};
 		53816BAE47F2EFE41BED7904AA7DC388 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -6054,7 +6092,6 @@
 				GCC_PREFIX_HEADER = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-prefix.pch";
 				INFOPLIST_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation.modulemap";
 				PRODUCT_MODULE_NAME = shared_preferences_foundation;
 				PRODUCT_NAME = shared_preferences_foundation;
@@ -6084,94 +6121,6 @@
 				WRAPPER_EXTENSION = bundle;
 			};
 			name = Profile;
-		};
-		584BE0C1CA3974579033974E5274F6F8 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C50FD10CD19FF6999637BA5ECAF1681B /* Pods-Runner.profile.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Profile;
-		};
-		588F775D51E78FD8F72A67B1DC2EA7EA /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = B703785507B22BAF0B800737429577EC /* Pods-Runner.release.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Release;
 		};
 		5D3ADE307320177D1CAECAC60F589077 /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -6220,7 +6169,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/device_info_plus/device_info_plus.modulemap";
 				PRODUCT_MODULE_NAME = device_info_plus;
 				PRODUCT_NAME = device_info_plus;
@@ -6262,7 +6210,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/device_info_plus/device_info_plus.modulemap";
 				PRODUCT_MODULE_NAME = device_info_plus;
 				PRODUCT_NAME = device_info_plus;
@@ -6321,7 +6268,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/share_plus/share_plus.modulemap";
 				PRODUCT_MODULE_NAME = share_plus;
 				PRODUCT_NAME = share_plus;
@@ -6402,7 +6348,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/url_launcher_macos/url_launcher_macos.modulemap";
 				PRODUCT_MODULE_NAME = url_launcher_macos;
 				PRODUCT_NAME = url_launcher_macos;
@@ -6414,6 +6359,72 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
+		};
+		808E544862838153672EA12FCC127D9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_DEBUG=1",
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				SYMROOT = "${SRCROOT}/../build";
+			};
+			name = Debug;
 		};
 		8299EFF187212BBB3F6C874B73555D67 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -6455,7 +6466,6 @@
 				GCC_PREFIX_HEADER = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-prefix.pch";
 				INFOPLIST_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation.modulemap";
 				PRODUCT_MODULE_NAME = shared_preferences_foundation;
 				PRODUCT_NAME = shared_preferences_foundation;
@@ -6467,6 +6477,24 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Profile;
+		};
+		8CB4E83EF0991B760BC98905670E5464 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 193DDEA0EFE20A2F41A29B8ACCE7D6CB /* FlutterMacOS.release.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				SDKROOT = macosx;
+			};
+			name = Release;
 		};
 		8DE6FA5507DDC43FCFB7B87E60B6896F /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -6497,7 +6525,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation.modulemap";
 				PRODUCT_MODULE_NAME = path_provider_foundation;
 				PRODUCT_NAME = path_provider_foundation;
@@ -6573,7 +6600,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/video_player_avfoundation/video_player_avfoundation.modulemap";
 				PRODUCT_MODULE_NAME = video_player_avfoundation;
 				PRODUCT_NAME = video_player_avfoundation;
@@ -6581,6 +6607,50 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
 				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		977E2CE512B1526BD6285DFC2B24F29A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 03E8AD2E8B75443E12D3D3BD12A9900E /* Pods-RunnerTests.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -6614,7 +6684,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/video_player_avfoundation/video_player_avfoundation.modulemap";
 				PRODUCT_MODULE_NAME = video_player_avfoundation;
 				PRODUCT_NAME = video_player_avfoundation;
@@ -6626,72 +6695,6 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
-		};
-		A734648D21C485124F4CA7866CB7B37C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"POD_CONFIGURATION_DEBUG=1",
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRIP_INSTALLED_PRODUCT = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				SYMROOT = "${SRCROOT}/../build";
-			};
-			name = Debug;
 		};
 		A81A7B5B4961975EB4A3A99AEE6D654B /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -6728,183 +6731,7 @@
 			};
 			name = Release;
 		};
-		B2AC953410975D4FAC01D6592A2813C0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 193DDEA0EFE20A2F41A29B8ACCE7D6CB /* FlutterMacOS.release.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		B5134A33E59CF627621576DA04D9E072 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = D8E27894352A82439E6D7B5F4F115798 /* share_plus.release.xcconfig */;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/share_plus";
-				IBSC_MODULE = share_plus;
-				INFOPLIST_FILE = "Target Support Files/share_plus/ResourceBundle-share_plus_privacy-share_plus-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_NAME = share_plus_privacy;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				WRAPPER_EXTENSION = bundle;
-			};
-			name = Profile;
-		};
-		B6C611894ACAB464C07E6BB93D1E5589 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F78F29492F0C8278DF03E60D4427B259 /* shared_preferences_foundation.release.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				GCC_PREFIX_HEADER = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-prefix.pch";
-				INFOPLIST_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation.modulemap";
-				PRODUCT_MODULE_NAME = shared_preferences_foundation;
-				PRODUCT_NAME = shared_preferences_foundation;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Release;
-		};
-		B756B481166E7CCC6F3D5B37565B754F /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = E736E0C9C5B73D27B8865E363E2108AC /* Pods-RunnerTests.profile.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Profile;
-		};
-		BB6582DD00BC0E174C610E6797043A19 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1F77B9C72757475EC489185AF720EB98 /* path_provider_foundation.debug.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				GCC_PREFIX_HEADER = "Target Support Files/path_provider_foundation/path_provider_foundation-prefix.pch";
-				INFOPLIST_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation.modulemap";
-				PRODUCT_MODULE_NAME = path_provider_foundation;
-				PRODUCT_NAME = path_provider_foundation;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
-		};
-		C21FB40819B0A2D706FB6526F760B0B5 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F259ED1BCD1AB41148B115CD0CA206B8 /* path_provider_foundation.release.xcconfig */;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/path_provider_foundation";
-				IBSC_MODULE = path_provider_foundation;
-				INFOPLIST_FILE = "Target Support Files/path_provider_foundation/ResourceBundle-path_provider_foundation_privacy-path_provider_foundation-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_NAME = path_provider_foundation_privacy;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				WRAPPER_EXTENSION = bundle;
-			};
-			name = Profile;
-		};
-		C38C56AC8A0B6CDAE880C1F3D00965FD /* Profile */ = {
+		AF5B76B31CAF4546B42C34718BA67232 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -6954,7 +6781,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -6963,6 +6790,180 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 				SYMROOT = "${SRCROOT}/../build";
+			};
+			name = Profile;
+		};
+		B084F8C06C7C1752485A2FE7D2C1013C /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 193DDEA0EFE20A2F41A29B8ACCE7D6CB /* FlutterMacOS.release.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				SDKROOT = macosx;
+			};
+			name = Profile;
+		};
+		B130F20884A7C2635282E2C44875C773 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AC8FE152530FBDCE460186B326C1A8FB /* Pods-RunnerTests.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		B5134A33E59CF627621576DA04D9E072 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D8E27894352A82439E6D7B5F4F115798 /* share_plus.release.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/share_plus";
+				IBSC_MODULE = share_plus;
+				INFOPLIST_FILE = "Target Support Files/share_plus/ResourceBundle-share_plus_privacy-share_plus-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_NAME = share_plus_privacy;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Profile;
+		};
+		B6C611894ACAB464C07E6BB93D1E5589 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F78F29492F0C8278DF03E60D4427B259 /* shared_preferences_foundation.release.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				GCC_PREFIX_HEADER = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-prefix.pch";
+				INFOPLIST_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				MODULEMAP_FILE = "Target Support Files/shared_preferences_foundation/shared_preferences_foundation.modulemap";
+				PRODUCT_MODULE_NAME = shared_preferences_foundation;
+				PRODUCT_NAME = shared_preferences_foundation;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		BB6582DD00BC0E174C610E6797043A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1F77B9C72757475EC489185AF720EB98 /* path_provider_foundation.debug.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				GCC_PREFIX_HEADER = "Target Support Files/path_provider_foundation/path_provider_foundation-prefix.pch";
+				INFOPLIST_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MODULEMAP_FILE = "Target Support Files/path_provider_foundation/path_provider_foundation.modulemap";
+				PRODUCT_MODULE_NAME = path_provider_foundation;
+				PRODUCT_NAME = path_provider_foundation;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		C21FB40819B0A2D706FB6526F760B0B5 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F259ED1BCD1AB41148B115CD0CA206B8 /* path_provider_foundation.release.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/path_provider_foundation";
+				IBSC_MODULE = path_provider_foundation;
+				INFOPLIST_FILE = "Target Support Files/path_provider_foundation/ResourceBundle-path_provider_foundation_privacy-path_provider_foundation-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				PRODUCT_NAME = path_provider_foundation_privacy;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
 			};
 			name = Profile;
 		};
@@ -6995,7 +6996,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/share_plus/share_plus.modulemap";
 				PRODUCT_MODULE_NAME = share_plus;
 				PRODUCT_NAME = share_plus;
@@ -7053,7 +7053,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/url_launcher_macos/url_launcher_macos.modulemap";
 				PRODUCT_MODULE_NAME = url_launcher_macos;
 				PRODUCT_NAME = url_launcher_macos;
@@ -7106,85 +7105,93 @@
 			};
 			name = Release;
 		};
-		D7C18A4BB3A23E3E9BD431BC6F0C4001 /* Release */ = {
+		D9C7E5EBFF4EE53C3920A1BE5AD045C6 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C50FD10CD19FF6999637BA5ECAF1681B /* Pods-Runner.profile.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"POD_CONFIGURATION_RELEASE=1",
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
 					"$(inherited)",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRIP_INSTALLED_PRODUCT = NO;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
-				SYMROOT = "${SRCROOT}/../build";
-			};
-			name = Release;
-		};
-		DE3522BD18406F17F8719EC967A26EB4 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = C478011AA13853FD842119E837743706 /* FlutterMacOS.debug.xcconfig */;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
 			};
-			name = Debug;
+			name = Profile;
+		};
+		DD15BDDA88B4D7C33F59F8F910C3AB61 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E736E0C9C5B73D27B8865E363E2108AC /* Pods-RunnerTests.profile.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64-release/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULEMAP_FILE = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Profile;
 		};
 		E547990818546721DFECDF67B4ECD73E /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -7225,6 +7232,24 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
+		};
+		E5F502674040574AEE80D80A44E2AC17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C478011AA13853FD842119E837743706 /* FlutterMacOS.debug.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				SDKROOT = macosx;
+			};
+			name = Debug;
 		};
 		F0A489040A9A6946277A3C57E6879B48 /* Profile */ = {
 			isa = XCBuildConfiguration;
@@ -7295,7 +7320,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/share_plus/share_plus.modulemap";
 				PRODUCT_MODULE_NAME = share_plus;
 				PRODUCT_NAME = share_plus;
@@ -7307,50 +7331,6 @@
 				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
-		};
-		F220F1A64C705D138B00380EC19DABEE /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 728A5ED1DD60BAC8C8F382A87B976F84 /* Pods-Runner.debug.xcconfig */;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
-				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"/Users/mutse/development/flutter/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework/macos-arm64_x86_64\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = "Target Support Files/Pods-Runner/Pods-Runner-Info.plist";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MACH_O_TYPE = staticlib;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MODULEMAP_FILE = "Target Support Files/Pods-Runner/Pods-Runner.modulemap";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOLFLAGS = "";
-				PODS_ROOT = "$(SRCROOT)";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
 		};
 		FBA6E9B73459F49B953C2519DF17C7F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -7397,7 +7377,6 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULEMAP_FILE = "Target Support Files/file_selector_macos/file_selector_macos.modulemap";
 				PRODUCT_MODULE_NAME = file_selector_macos;
 				PRODUCT_NAME = file_selector_macos;
@@ -7436,9 +7415,9 @@
 		4821239608C13582E20E6DA73FD5F1F9 /* Build configuration list for PBXProject "Pods" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A734648D21C485124F4CA7866CB7B37C /* Debug */,
-				C38C56AC8A0B6CDAE880C1F3D00965FD /* Profile */,
-				D7C18A4BB3A23E3E9BD431BC6F0C4001 /* Release */,
+				808E544862838153672EA12FCC127D9A /* Debug */,
+				AF5B76B31CAF4546B42C34718BA67232 /* Profile */,
+				0AE172D8F2A4843BFACAD21A0ED26541 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -7476,9 +7455,9 @@
 		624022EE1C2EAB1C3CC38699E1368C5F /* Build configuration list for PBXAggregateTarget "FlutterMacOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				DE3522BD18406F17F8719EC967A26EB4 /* Debug */,
-				1D6BBE705B4E14F77C21AB0FECA78CC3 /* Profile */,
-				B2AC953410975D4FAC01D6592A2813C0 /* Release */,
+				E5F502674040574AEE80D80A44E2AC17 /* Debug */,
+				B084F8C06C7C1752485A2FE7D2C1013C /* Profile */,
+				8CB4E83EF0991B760BC98905670E5464 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -7576,9 +7555,9 @@
 		D52099AA1537D0F3745166E1889F6CA3 /* Build configuration list for PBXNativeTarget "Pods-RunnerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				2DF9A1F22330CC8543DE455EDB2B1BD6 /* Debug */,
-				B756B481166E7CCC6F3D5B37565B754F /* Profile */,
-				1F52306B9D18A4AE75E06675AA3CAB15 /* Release */,
+				977E2CE512B1526BD6285DFC2B24F29A /* Debug */,
+				DD15BDDA88B4D7C33F59F8F910C3AB61 /* Profile */,
+				B130F20884A7C2635282E2C44875C773 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -7616,9 +7595,9 @@
 		F2D10B0FF982375208C0D22DBD8D76B1 /* Build configuration list for PBXNativeTarget "Pods-Runner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F220F1A64C705D138B00380EC19DABEE /* Debug */,
-				584BE0C1CA3974579033974E5274F6F8 /* Profile */,
-				588F775D51E78FD8F72A67B1DC2EA7EA /* Release */,
+				4F66360E7B9EF3E585F1769978942294 /* Debug */,
+				D9C7E5EBFF4EE53C3920A1BE5AD045C6 /* Profile */,
+				021AED2E5B70E30AC74ACB92BCDF5A9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

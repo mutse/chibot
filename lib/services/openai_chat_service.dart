@@ -17,8 +17,10 @@ class OpenAIService extends BaseApiService implements ChatService {
     super.client,
   }) : super(baseUrl: baseUrl ?? AppConstants.openAIBaseUrl);
 
+  bool get _isOpenRouter => baseUrl.contains('openrouter.ai');
+
   @override
-  String get providerName => 'OpenAI';
+  String get providerName => _isOpenRouter ? 'OpenRouter' : 'OpenAI';
 
   @override
   List<String> get supportedModels => [
@@ -30,16 +32,22 @@ class OpenAIService extends BaseApiService implements ChatService {
 
   @override
   Map<String, String> getHeaders() {
-    return {
+    final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $apiKey',
     };
+
+    if (_isOpenRouter) {
+      headers['X-Title'] = 'Chibot';
+    }
+
+    return headers;
   }
 
   @override
   void validateResponse(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleErrorResponse(response.statusCode, response.body);
+      handleErrorResponse(response.statusCode, response.body);
     }
   }
 
@@ -114,7 +122,30 @@ class OpenAIService extends BaseApiService implements ChatService {
             }
 
             try {
-              final json = jsonDecode(data);
+              final json = jsonDecode(data) as Map<String, dynamic>;
+
+              if (json['error'] != null) {
+                final error = json['error'] as Map<String, dynamic>;
+                final message =
+                    _isOpenRouter
+                        ? _buildOpenRouterErrorMessage(
+                          statusCode: 0,
+                          fallbackMessage:
+                              error['message']?.toString() ??
+                              'Streaming provider error',
+                          errorData: error,
+                        )
+                        : (error['message']?.toString() ??
+                            'Streaming provider error');
+
+                throw ApiException(
+                  message,
+                  0,
+                  code: error['code']?.toString() ?? 'STREAM_PROVIDER_ERROR',
+                  responseData: json,
+                );
+              }
+
               final choices = json['choices'] as List?;
 
               if (choices != null && choices.isNotEmpty) {
@@ -231,8 +262,10 @@ class OpenAIService extends BaseApiService implements ChatService {
     return jsonEncode(request);
   }
 
-  void _handleErrorResponse(int statusCode, String responseBody) {
-    String errorMessage = 'OpenAI API request failed with status $statusCode';
+  @override
+  void handleErrorResponse(int statusCode, String responseBody) {
+    String errorMessage =
+        '${_isOpenRouter ? 'OpenRouter' : 'OpenAI'} API request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;
 
@@ -243,6 +276,14 @@ class OpenAIService extends BaseApiService implements ChatService {
         final error = responseData['error'] as Map<String, dynamic>;
         errorMessage = error['message'] ?? errorMessage;
         errorCode = error['code']?.toString();
+
+        if (_isOpenRouter) {
+          errorMessage = _buildOpenRouterErrorMessage(
+            statusCode: statusCode,
+            fallbackMessage: errorMessage,
+            errorData: error,
+          );
+        }
       }
     } catch (e) {
       logWarning('Failed to parse OpenAI error response', error: e);
@@ -254,5 +295,62 @@ class OpenAIService extends BaseApiService implements ChatService {
       code: errorCode ?? 'OPENAI_HTTP_$statusCode',
       responseData: responseData,
     );
+  }
+
+  String _buildOpenRouterErrorMessage({
+    required int statusCode,
+    required String fallbackMessage,
+    required Map<String, dynamic> errorData,
+  }) {
+    final metadata = errorData['metadata'];
+    String? providerName;
+    String? providerDetail;
+
+    if (metadata is Map<String, dynamic>) {
+      providerName = metadata['provider_name']?.toString();
+      providerDetail = _extractOpenRouterProviderDetail(metadata['raw']);
+    }
+
+    final detail = <String>[
+      if (providerName != null && providerName.isNotEmpty) 'provider: $providerName',
+      if (providerDetail != null && providerDetail.isNotEmpty) providerDetail,
+    ].join(' - ');
+
+    if (statusCode == 429) {
+      final prefix = 'OpenRouter rate limit exceeded';
+      return detail.isEmpty ? '$prefix. Please retry shortly or switch to another model/provider.' : '$prefix ($detail).';
+    }
+
+    if (fallbackMessage == 'Provider returned error' && detail.isNotEmpty) {
+      return 'OpenRouter provider error ($detail).';
+    }
+
+    return detail.isEmpty ? fallbackMessage : '$fallbackMessage ($detail)';
+  }
+
+  String? _extractOpenRouterProviderDetail(dynamic raw) {
+    if (raw == null) return null;
+
+    if (raw is String) {
+      final trimmed = raw.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    if (raw is Map<String, dynamic>) {
+      final message = raw['message']?.toString();
+      if (message != null && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+
+      final error = raw['error'];
+      if (error is Map<String, dynamic>) {
+        final nestedMessage = error['message']?.toString();
+        if (nestedMessage != null && nestedMessage.trim().isNotEmpty) {
+          return nestedMessage.trim();
+        }
+      }
+    }
+
+    return null;
   }
 }

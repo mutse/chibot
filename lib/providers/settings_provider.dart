@@ -88,6 +88,9 @@ class SettingsProvider with ChangeNotifier {
   static const String _videoDurationKey = 'video_duration';
   static const String _videoQualityKey = 'video_quality';
   static const String _videoAspectRatioKey = 'video_aspect_ratio';
+  static const String _customOpenAiModelsKey = 'custom_openai_models';
+  static const String _customOpenAiBaseUrlsKey = 'custom_openai_base_urls';
+  static const String _customOpenAiApiKeysKey = 'custom_openai_api_keys';
 
   // 默认的各提供商 API 基础 URL
   static const Map<String, String> defaultBaseUrls = {
@@ -145,13 +148,8 @@ class SettingsProvider with ChangeNotifier {
   };
 
   // Getter for all provider names (preset and custom)
-  List<String> get allProviderNames {
-    final names = defaultBaseUrls.keys.toList();
-    names.addAll(_customProviders.keys);
-    return List.unmodifiable(
-      names.toSet().toList(),
-    ); // Remove duplicates and make unmodifiable
-  }
+  List<String> get allProviderNames =>
+      _buildAllProviderNames(defaultBaseUrls, _customProviders);
 
   SettingsProvider({this.modelRegistry}) {
     _loadSettings();
@@ -186,156 +184,738 @@ class SettingsProvider with ChangeNotifier {
     }
   }
 
-  // Getters for Image Generation Settings
-  String get selectedImageProvider => _selectedImageProvider;
-  String get selectedImageModel => _selectedImageModel;
-  available_model.ModelType get selectedModelType => _selectedModelType;
+  String _resolveBaseUrl(
+    String? customUrl,
+    String provider,
+    Map<String, String> defaultUrls,
+  ) {
+    final baseUrl =
+        customUrl?.trim() ?? defaultUrls[provider] ?? defaultUrls['OpenAI']!;
+    return baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+  }
 
-  List<String> get availableImageModels {
-    List<String> modelsToShow = [];
-    if (_categorizedPresetImageModels.containsKey(_selectedImageProvider)) {
-      modelsToShow.addAll(
-        _categorizedPresetImageModels[_selectedImageProvider] ?? [],
-      );
-    } else if (_customImageProviders.containsKey(_selectedImageProvider)) {
-      modelsToShow.addAll(_customImageProviders[_selectedImageProvider] ?? []);
+  String? _normalizeNullableInput(String? value) {
+    if (value == null) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> _persistNullableString(
+    SharedPreferences prefs,
+    String key,
+    String? value,
+  ) async {
+    if (value == null || value.isEmpty) {
+      await prefs.remove(key);
+      return;
     }
-    modelsToShow.addAll(_customImageModels);
-    return List.unmodifiable(modelsToShow.toSet().toList());
+    await prefs.setString(key, value);
   }
 
-  List<String> get allImageProviderNames {
-    final names = defaultImageBaseUrls.keys.toList();
-    names.addAll(_customImageProviders.keys);
-    return List.unmodifiable(names.toSet().toList());
-  }
-
-  String get imageProviderUrl {
-    String baseUrl =
-        _imageProviderUrl?.trim() ??
-        defaultImageBaseUrls[_selectedImageProvider] ??
-        defaultImageBaseUrls['OpenAI']!;
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-    }
-    return baseUrl;
-  }
-
-  String? get rawImageProviderUrl => _imageProviderUrl;
-
-  List<String> get availableModels {
-    List<String> modelsToShow = [];
-    if (_selectedProvider == 'OpenAI') {
-      modelsToShow.addAll(_categorizedPresetModels['OpenAI'] ?? []);
-    } else if (_selectedProvider == 'Google') {
-      modelsToShow.addAll(_categorizedPresetModels['Google'] ?? []);
-    } else if (_selectedProvider == 'Anthropic') {
-      modelsToShow.addAll(_categorizedPresetModels['Anthropic'] ?? []);
-    } else if (_customProviders.containsKey(_selectedProvider)) {
-      // Handle custom provider
-      modelsToShow.addAll(_customProviders[_selectedProvider] ?? []);
-    }
-    // Add general custom models that might not be tied to a specific custom provider
-    // but could be used with preset providers if named correctly.
-    modelsToShow.addAll(_customModels);
-    return List.unmodifiable(
-      modelsToShow.toSet().toList(),
-    ); // toSet().toList() to remove duplicates and make unmodifiable
-  }
-
-  List<String> get customModels => List.unmodifiable(_customModels);
-  List<String> get customImageModels => List.unmodifiable(_customImageModels);
-
-  // 获取 Provider URL，优先使用用户设置的URL，否则返回当前选定提供商的默认URL
-  String get providerUrl {
-    // 确保返回的 URL 后面没有 /chat/completions 或其他特定路径后缀，因为 Service 层会拼接
-    String baseUrl =
-        _providerUrl?.trim() ??
-        defaultBaseUrls[_selectedProvider] ??
-        defaultBaseUrls['OpenAI']!;
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-    }
-    return baseUrl;
-  }
-
-  // 返回给UI显示的原始Provider URL，可能是空的
-  String? get rawProviderUrl => _providerUrl;
-
-  Future<void> _loadSettings() async {
+  Future<void> _setStringSetting(
+    String key,
+    String value,
+    void Function(String value) assign,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
+    assign(value);
+    await prefs.setString(key, value);
+    notifyListeners();
+  }
+
+  Future<void> _setBoolSetting(
+    String key,
+    bool value,
+    void Function(bool value) assign,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    assign(value);
+    await prefs.setBool(key, value);
+    notifyListeners();
+  }
+
+  Future<void> _setIntSetting(
+    String key,
+    int value,
+    void Function(int value) assign,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    assign(value);
+    await prefs.setInt(key, value);
+    notifyListeners();
+  }
+
+  Future<void> _setSelectedModelIfAvailable({
+    required String newModel,
+    required List<String> availableModels,
+    required String key,
+    required void Function(String value) assign,
+  }) async {
+    if (!availableModels.contains(newModel)) return;
+    await _setStringSetting(key, newModel, assign);
+  }
+
+  Future<void> _setProviderUrlInternal({
+    required String? newUrl,
+    required String key,
+    required void Function(String? value) assign,
+    required VoidCallback validate,
+  }) async {
+    final normalizedUrl = _normalizeNullableInput(newUrl);
+    final prefs = await SharedPreferences.getInstance();
+    assign(normalizedUrl);
+    await _persistNullableString(prefs, key, normalizedUrl);
+    notifyListeners();
+    validate();
+  }
+
+  List<String> _normalizeModelNames(List<String> models) {
+    return models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
+  }
+
+  Future<void> _persistStringListSetting(String key, List<String> values) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(key, values);
+  }
+
+  Future<void> _addCustomProviderWithModels({
+    required String providerName,
+    required List<String> models,
+    required Map<String, String> defaultUrls,
+    required Map<String, List<String>> targetProviders,
+    required String storageKey,
+  }) async {
+    final normalizedProvider = providerName.trim();
+    if (normalizedProvider.isEmpty || models.isEmpty) return;
+    if (defaultUrls.containsKey(normalizedProvider)) return;
+
+    targetProviders[normalizedProvider] = _normalizeModelNames(models);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(storageKey, json.encode(targetProviders));
+    notifyListeners();
+  }
+
+  Future<void> _removeCustomModelInternal({
+    required String modelName,
+    required List<String> targetModels,
+    required String storageKey,
+    required String selectedModel,
+    required VoidCallback validateSelection,
+  }) async {
+    if (!targetModels.remove(modelName)) return;
+    await _persistStringListSetting(storageKey, targetModels);
+    if (selectedModel == modelName) {
+      validateSelection();
+    }
+    notifyListeners();
+  }
+
+  Future<void> _addCustomTextModelInternal(String modelName) async {
+    final normalizedName = modelName.trim();
+    if (normalizedName.isEmpty ||
+        _customModels.contains(normalizedName) ||
+        _presetModels.contains(normalizedName)) {
+      return;
+    }
+    _customModels.add(normalizedName);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_customModelsKey, _customModels);
+    notifyListeners();
+    _validateSelectedModelForProvider();
+  }
+
+  Map<String, List<String>> _decodeProvidersMap(
+    String encoded,
+    String errorPrefix,
+  ) {
+    try {
+      final decoded = json.decode(encoded) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(key, List<String>.from(value as List)),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('$errorPrefix: $e');
+      }
+      return {};
+    }
+  }
+
+  Future<void> _importStringSetting(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+    String key,
+    void Function(String value) assign,
+  ) async {
+    final value = settingsMap[key];
+    if (value is! String) return;
+    await prefs.setString(key, value);
+    assign(value);
+  }
+
+  Future<void> _importBoolSetting(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+    String key,
+    void Function(bool value) assign,
+  ) async {
+    final value = settingsMap[key];
+    if (value is! bool) return;
+    await prefs.setBool(key, value);
+    assign(value);
+  }
+
+  Future<void> _importIntSetting(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+    String key,
+    void Function(int value) assign,
+  ) async {
+    final value = settingsMap[key];
+    if (value is! int) return;
+    await prefs.setInt(key, value);
+    assign(value);
+  }
+
+  Future<void> _importStringListSetting(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+    String key,
+    void Function(List<String> value) assign,
+  ) async {
+    final value = settingsMap[key];
+    if (value is! List) return;
+    final listValue = List<String>.from(value);
+    await prefs.setStringList(key, listValue);
+    assign(listValue);
+  }
+
+  void _addOptionalExportStringList(
+    SharedPreferences prefs,
+    Map<String, dynamic> settingsMap,
+    String key,
+  ) {
+    if (!prefs.containsKey(key)) return;
+    settingsMap[key] = prefs.getStringList(key);
+  }
+
+  Map<String, dynamic> _buildExportSettingsMap(SharedPreferences prefs) {
+    final settingsMap = <String, dynamic>{};
+    settingsMap[_apiKeyKey] = prefs.getString(_apiKeyKey);
+    settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
+    settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
+    settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
+    settingsMap[_fluxKontextApiKeyKey] = prefs.getString(_fluxKontextApiKeyKey);
+    settingsMap[_googleSearchApiKeyKey] = prefs.getString(_googleSearchApiKeyKey);
+    settingsMap[_googleSearchEngineIdKey] = prefs.getString(
+      _googleSearchEngineIdKey,
+    );
+    settingsMap[_googleSearchEnabledKey] = prefs.getBool(_googleSearchEnabledKey);
+    settingsMap[_googleSearchResultCountKey] = prefs.getInt(
+      _googleSearchResultCountKey,
+    );
+    settingsMap[_googleSearchProviderKey] = prefs.getString(
+      _googleSearchProviderKey,
+    );
+    settingsMap[_tavilySearchEnabledKey] = prefs.getBool(_tavilySearchEnabledKey);
+    settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
+    settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
+    settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
+    settingsMap[_selectedProviderKey] = prefs.getString(_selectedProviderKey);
+    settingsMap[_customProvidersKey] = prefs.getString(_customProvidersKey);
+    settingsMap[_selectedModelTypeKey] = prefs.getInt(_selectedModelTypeKey);
+    settingsMap[_selectedImageProviderKey] = prefs.getString(
+      _selectedImageProviderKey,
+    );
+    settingsMap[_selectedImageModelKey] = prefs.getString(_selectedImageModelKey);
+    settingsMap[_imageProviderUrlKey] = prefs.getString(_imageProviderUrlKey);
+    settingsMap[_customImageModelsKey] = prefs.getStringList(_customImageModelsKey);
+    settingsMap[_customImageProvidersKey] = prefs.getString(
+      _customImageProvidersKey,
+    );
+    settingsMap[_bflAspectRatioKey] = _bflAspectRatio;
+    settingsMap[_veo3ApiKeyKey] = prefs.getString(_veo3ApiKeyKey);
+    settingsMap[_selectedVideoProviderKey] = prefs.getString(
+      _selectedVideoProviderKey,
+    );
+    settingsMap[_videoResolutionKey] = prefs.getString(_videoResolutionKey);
+    settingsMap[_videoDurationKey] = prefs.getString(_videoDurationKey);
+    settingsMap[_videoQualityKey] = prefs.getString(_videoQualityKey);
+    settingsMap[_videoAspectRatioKey] = prefs.getString(_videoAspectRatioKey);
+
+    _addOptionalExportStringList(prefs, settingsMap, _customOpenAiModelsKey);
+    _addOptionalExportStringList(prefs, settingsMap, _customOpenAiBaseUrlsKey);
+    _addOptionalExportStringList(prefs, settingsMap, _customOpenAiApiKeysKey);
+    return settingsMap;
+  }
+
+  void _loadApiSettings(SharedPreferences prefs) {
     _apiKey = prefs.getString(_apiKeyKey);
-    _imageApiKey = prefs.getString(_imageApiKeyKey); // Load image API key
-    _claudeApiKey = prefs.getString(_claudeApiKeyKey); // Load Claude API key
-    _tavilyApiKey = prefs.getString(_tavilyApiKeyKey); // Load Tavily API key
-    _fluxKontextApiKey = prefs.getString(
-      _fluxKontextApiKeyKey,
-    ); // Load FLUX Kontext API key
+    _imageApiKey = prefs.getString(_imageApiKeyKey);
+    _claudeApiKey = prefs.getString(_claudeApiKeyKey);
+    _tavilyApiKey = prefs.getString(_tavilyApiKeyKey);
+    _fluxKontextApiKey = prefs.getString(_fluxKontextApiKeyKey);
     _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
     _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
     _googleSearchEnabled = prefs.getBool(_googleSearchEnabledKey) ?? false;
     _googleSearchResultCount = prefs.getInt(_googleSearchResultCountKey) ?? 10;
     _googleSearchProvider =
         prefs.getString(_googleSearchProviderKey) ?? 'googleCustomSearch';
-    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
-    _providerUrl = prefs.getString(_providerUrlKey); // 加载 Provider URL
-    _customModels = prefs.getStringList(_customModelsKey) ?? []; // 加载自定义模型
-    final String? customProvidersString = prefs.getString(_customProvidersKey);
-    if (customProvidersString != null) {
-      try {
-        // Deserialize custom providers from JSON
-        _customProviders = Map<String, List<String>>.from(
-          json
-              .decode(customProvidersString)
-              .map((key, value) => MapEntry(key, List<String>.from(value))),
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading custom providers: $e');
-        }
-        _customProviders = {}; // Reset on error
-      }
-    }
-    _selectedProvider =
-        prefs.getString(_selectedProviderKey) ?? 'OpenAI'; // 加载 Provider
-    _selectedModelType =
-        available_model.ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
-            available_model.ModelType.text.index];
+    _tavilySearchEnabled = prefs.getBool(_tavilySearchEnabledKey) ?? false;
+  }
 
-    // Load Image Generation Settings
-    _selectedImageProvider =
-        prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
+  void _loadTextModelSettings(SharedPreferences prefs) {
+    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
+    _providerUrl = prefs.getString(_providerUrlKey);
+    _customModels = prefs.getStringList(_customModelsKey) ?? [];
+    _customProviders = {};
+    final customProvidersString = prefs.getString(_customProvidersKey);
+    if (customProvidersString != null) {
+      _customProviders = _decodeProvidersMap(
+        customProvidersString,
+        'Error loading custom providers',
+      );
+    }
+    _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
+    _selectedModelType = available_model.ModelType.values[
+      prefs.getInt(_selectedModelTypeKey) ??
+          available_model.ModelType.text.index
+    ];
+  }
+
+  void _loadImageSettings(SharedPreferences prefs) {
+    _selectedImageProvider = prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
     _selectedImageModel = prefs.getString(_selectedImageModelKey) ?? 'dall-e-3';
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
-    final String? customImageProvidersString = prefs.getString(
-      _customImageProvidersKey,
-    );
+    _customImageProviders = {};
+    final customImageProvidersString = prefs.getString(_customImageProvidersKey);
     if (customImageProvidersString != null) {
-      try {
-        _customImageProviders = Map<String, List<String>>.from(
-          json
-              .decode(customImageProvidersString)
-              .map((key, value) => MapEntry(key, List<String>.from(value))),
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error loading custom image providers: $e');
-        }
-        _customImageProviders = {};
-      }
+      _customImageProviders = _decodeProvidersMap(
+        customImageProvidersString,
+        'Error loading custom image providers',
+      );
     }
     _bflAspectRatio = prefs.getString(_bflAspectRatioKey);
+  }
 
-    _tavilySearchEnabled = prefs.getBool(_tavilySearchEnabledKey) ?? false;
-
-    // Load Video Generation Settings
+  void _loadVideoSettings(SharedPreferences prefs) {
     _veo3ApiKey = prefs.getString(_veo3ApiKeyKey);
-    _selectedVideoProvider = prefs.getString(_selectedVideoProviderKey) ?? 'Google Veo3';
+    _selectedVideoProvider =
+        prefs.getString(_selectedVideoProviderKey) ?? 'Google Veo3';
     _videoResolution = prefs.getString(_videoResolutionKey) ?? '720p';
     _videoDuration = prefs.getString(_videoDurationKey) ?? '10s';
     _videoQuality = prefs.getString(_videoQualityKey) ?? 'standard';
     _videoAspectRatio = prefs.getString(_videoAspectRatioKey) ?? '16:9';
+  }
+
+  Future<void> _importApiAndSearchSettings(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+  ) async {
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _apiKeyKey,
+      (value) => _apiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _imageApiKeyKey,
+      (value) => _imageApiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _claudeApiKeyKey,
+      (value) => _claudeApiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _tavilyApiKeyKey,
+      (value) => _tavilyApiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _fluxKontextApiKeyKey,
+      (value) => _fluxKontextApiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _googleSearchApiKeyKey,
+      (value) => _googleSearchApiKey = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _googleSearchEngineIdKey,
+      (value) => _googleSearchEngineId = value,
+    );
+    await _importBoolSetting(
+      settingsMap,
+      prefs,
+      _googleSearchEnabledKey,
+      (value) => _googleSearchEnabled = value,
+    );
+    await _importIntSetting(
+      settingsMap,
+      prefs,
+      _googleSearchResultCountKey,
+      (value) => _googleSearchResultCount = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _googleSearchProviderKey,
+      (value) => _googleSearchProvider = value,
+    );
+    await _importBoolSetting(
+      settingsMap,
+      prefs,
+      _tavilySearchEnabledKey,
+      (value) => _tavilySearchEnabled = value,
+    );
+  }
+
+  Future<void> _importTextModelSettings(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+  ) async {
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _selectedModelKey,
+      (value) => _selectedModel = value,
+    );
+    if (kDebugMode && settingsMap[_selectedModelKey] is String) {
+      print('Imported selectedModel: $_selectedModel');
+    }
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _providerUrlKey,
+      (value) => _providerUrl = value,
+    );
+    await _importStringListSetting(
+      settingsMap,
+      prefs,
+      _customModelsKey,
+      (value) => _customModels = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _selectedProviderKey,
+      (value) => _selectedProvider = value,
+    );
+    if (kDebugMode && settingsMap[_selectedProviderKey] is String) {
+      print('Imported selectedProvider: $_selectedProvider');
+    }
+
+    final customProvidersRaw = settingsMap[_customProvidersKey];
+    if (customProvidersRaw is String) {
+      await prefs.setString(_customProvidersKey, customProvidersRaw);
+      _customProviders = _decodeProvidersMap(
+        customProvidersRaw,
+        'Error parsing custom providers',
+      );
+    }
+
+    if (!defaultBaseUrls.containsKey(_selectedProvider) &&
+        !_customProviders.containsKey(_selectedProvider) &&
+        _selectedModel.isNotEmpty) {
+      _customProviders[_selectedProvider] = [_selectedModel];
+      await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+      if (kDebugMode) {
+        print(
+          'Created custom provider $_selectedProvider with model $_selectedModel',
+        );
+      }
+    }
+
+    await _importIntSetting(
+      settingsMap,
+      prefs,
+      _selectedModelTypeKey,
+      (value) => _selectedModelType = available_model.ModelType.values[value],
+    );
+  }
+
+  Future<void> _importImageSettings(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+  ) async {
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _selectedImageProviderKey,
+      (value) => _selectedImageProvider = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _selectedImageModelKey,
+      (value) => _selectedImageModel = value,
+    );
+    await _importStringSetting(
+      settingsMap,
+      prefs,
+      _imageProviderUrlKey,
+      (value) => _imageProviderUrl = value,
+    );
+    await _importStringListSetting(
+      settingsMap,
+      prefs,
+      _customImageModelsKey,
+      (value) => _customImageModels = value,
+    );
+
+    final customImageProvidersRaw = settingsMap[_customImageProvidersKey];
+    if (customImageProvidersRaw is String) {
+      await prefs.setString(_customImageProvidersKey, customImageProvidersRaw);
+      _customImageProviders = _decodeProvidersMap(
+        customImageProvidersRaw,
+        'Error parsing custom image providers',
+      );
+    }
+
+    if (settingsMap[_bflAspectRatioKey] != null) {
+      _bflAspectRatio = settingsMap[_bflAspectRatioKey];
+      await _saveBflAspectRatio();
+    }
+  }
+
+  Future<void> _importOptionalOpenAiCompatibleSettings(
+    Map<String, dynamic> settingsMap,
+    SharedPreferences prefs,
+  ) async {
+    await _importStringListSetting(
+      settingsMap,
+      prefs,
+      _customOpenAiModelsKey,
+      (_) {},
+    );
+    await _importStringListSetting(
+      settingsMap,
+      prefs,
+      _customOpenAiBaseUrlsKey,
+      (_) {},
+    );
+    await _importStringListSetting(
+      settingsMap,
+      prefs,
+      _customOpenAiApiKeysKey,
+      (_) {},
+    );
+  }
+
+  void _registerModelsToRegistry({
+    required available_model.ModelType type,
+    required Map<String, List<String>> providerModels,
+    required Map<String, String> defaultUrls,
+    required bool supportsStreaming,
+  }) {
+    if (modelRegistry == null) return;
+    for (final provider in providerModels.keys) {
+      for (final model in providerModels[provider]!) {
+        modelRegistry!.registerModel(
+          available_model.AvailableModel(
+            id: model,
+            name: model,
+            provider: provider,
+            type: type,
+            supportsStreaming: supportsStreaming,
+            capabilities: {},
+            baseUrl: defaultUrls[provider],
+          ),
+        );
+      }
+    }
+  }
+
+  void _registerCustomModelsToRegistry({
+    required available_model.ModelType type,
+    required List<String> models,
+    required String provider,
+    required String? baseUrl,
+    required bool supportsStreaming,
+  }) {
+    if (modelRegistry == null) return;
+    for (final model in models) {
+      modelRegistry!.registerModel(
+        available_model.AvailableModel(
+          id: model,
+          name: model,
+          provider: provider,
+          type: type,
+          supportsStreaming: supportsStreaming,
+          capabilities: {},
+          baseUrl: baseUrl,
+        ),
+      );
+    }
+  }
+
+  void _syncTextModelsToRegistry() {
+    _registerModelsToRegistry(
+      type: available_model.ModelType.text,
+      providerModels: _categorizedPresetModels,
+      defaultUrls: defaultBaseUrls,
+      supportsStreaming: true,
+    );
+    _registerCustomModelsToRegistry(
+      type: available_model.ModelType.text,
+      models: _customModels,
+      provider: _selectedProvider,
+      baseUrl: _providerUrl,
+      supportsStreaming: true,
+    );
+  }
+
+  void _syncImageModelsToRegistry() {
+    _registerModelsToRegistry(
+      type: available_model.ModelType.image,
+      providerModels: _categorizedPresetImageModels,
+      defaultUrls: defaultImageBaseUrls,
+      supportsStreaming: false,
+    );
+    _registerCustomModelsToRegistry(
+      type: available_model.ModelType.image,
+      models: _customImageModels,
+      provider: _selectedImageProvider,
+      baseUrl: _imageProviderUrl,
+      supportsStreaming: false,
+    );
+  }
+
+  String _pickFallbackModel({
+    required String provider,
+    required Map<String, List<String>> presetModels,
+    required Map<String, List<String>> customProviders,
+    required List<String> currentAvailableModels,
+  }) {
+    final presetProviderModels = presetModels[provider];
+    if (presetProviderModels != null && presetProviderModels.isNotEmpty) {
+      return presetProviderModels.first;
+    }
+
+    final customProviderModels = customProviders[provider];
+    if (customProviderModels != null && customProviderModels.isNotEmpty) {
+      return customProviderModels.first;
+    }
+
+    return currentAvailableModels.isNotEmpty ? currentAvailableModels.first : '';
+  }
+
+  void _persistSelectedModelAsync(String storageKey, String selectedModel) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(storageKey, selectedModel);
+    });
+  }
+
+  String? _resolveProviderUrlForSelection(
+    String provider,
+    Map<String, String> defaultUrls,
+  ) {
+    return defaultUrls.containsKey(provider) ? defaultUrls[provider] : null;
+  }
+
+  Future<void> _persistSelectedProviderAndUrl(
+    SharedPreferences prefs, {
+    required String providerKey,
+    required String provider,
+    required String urlKey,
+    required String? url,
+  }) async {
+    await prefs.setString(providerKey, provider);
+    await _persistNullableString(prefs, urlKey, url);
+  }
+
+  List<String> _buildAvailableModels({
+    required String selectedProvider,
+    required Map<String, List<String>> presetModels,
+    required Map<String, List<String>> customProviders,
+    required List<String> customModels,
+  }) {
+    final modelsToShow = <String>[];
+    final presetProviderModels = presetModels[selectedProvider];
+    if (presetProviderModels != null) {
+      modelsToShow.addAll(presetProviderModels);
+    } else if (customProviders.containsKey(selectedProvider)) {
+      modelsToShow.addAll(customProviders[selectedProvider] ?? []);
+    }
+    modelsToShow.addAll(customModels);
+    return List.unmodifiable(modelsToShow.toSet().toList());
+  }
+
+  List<String> _buildAllProviderNames(
+    Map<String, String> defaultUrls,
+    Map<String, List<String>> customProviders,
+  ) {
+    final names = defaultUrls.keys.toList();
+    names.addAll(customProviders.keys);
+    return List.unmodifiable(names.toSet().toList());
+  }
+
+  // Getters for Image Generation Settings
+  String get selectedImageProvider => _selectedImageProvider;
+  String get selectedImageModel => _selectedImageModel;
+  available_model.ModelType get selectedModelType => _selectedModelType;
+
+  List<String> get availableImageModels {
+    return _buildAvailableModels(
+      selectedProvider: _selectedImageProvider,
+      presetModels: _categorizedPresetImageModels,
+      customProviders: _customImageProviders,
+      customModels: _customImageModels,
+    );
+  }
+
+  List<String> get allImageProviderNames =>
+      _buildAllProviderNames(defaultImageBaseUrls, _customImageProviders);
+
+  String get imageProviderUrl => _resolveBaseUrl(
+    _imageProviderUrl,
+    _selectedImageProvider,
+    defaultImageBaseUrls,
+  );
+
+  String? get rawImageProviderUrl => _imageProviderUrl;
+
+  List<String> get availableModels {
+    return _buildAvailableModels(
+      selectedProvider: _selectedProvider,
+      presetModels: _categorizedPresetModels,
+      customProviders: _customProviders,
+      customModels: _customModels,
+    );
+  }
+
+  List<String> get customModels => List.unmodifiable(_customModels);
+  List<String> get customImageModels => List.unmodifiable(_customImageModels);
+
+  // 获取 Provider URL，优先使用用户设置的URL，否则返回当前选定提供商的默认URL
+  String get providerUrl => _resolveBaseUrl(
+    _providerUrl,
+    _selectedProvider,
+    defaultBaseUrls,
+  );
+
+  // 返回给UI显示的原始Provider URL，可能是空的
+  String? get rawProviderUrl => _providerUrl;
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _loadApiSettings(prefs);
+    _loadTextModelSettings(prefs);
+    _loadImageSettings(prefs);
+    _loadVideoSettings(prefs);
 
     notifyListeners();
     // Ensure the selected model is valid for the loaded provider
@@ -347,90 +927,24 @@ class SettingsProvider with ChangeNotifier {
 
   void syncModelsToRegistry() {
     if (modelRegistry == null) return;
-    // 1. 注册文本模型
-    for (var provider in _categorizedPresetModels.keys) {
-      for (var model in _categorizedPresetModels[provider]!) {
-        modelRegistry!.registerModel(
-          available_model.AvailableModel(
-            id: model,
-            name: model,
-            provider: provider,
-            type: available_model.ModelType.text,
-            supportsStreaming: true,
-            capabilities: {},
-            baseUrl: defaultBaseUrls[provider],
-          ),
-        );
-      }
-    }
-    // 2. 注册自定义文本模型
-    for (var model in _customModels) {
-      modelRegistry!.registerModel(
-        available_model.AvailableModel(
-          id: model,
-          name: model,
-          provider: _selectedProvider,
-          type: available_model.ModelType.text,
-          supportsStreaming: true,
-          capabilities: {},
-          baseUrl: _providerUrl,
-        ),
-      );
-    }
-    // 3. 注册图像模型
-    for (var provider in _categorizedPresetImageModels.keys) {
-      for (var model in _categorizedPresetImageModels[provider]!) {
-        modelRegistry!.registerModel(
-          available_model.AvailableModel(
-            id: model,
-            name: model,
-            provider: provider,
-            type: available_model.ModelType.image,
-            supportsStreaming: false,
-            capabilities: {},
-            baseUrl: defaultImageBaseUrls[provider],
-          ),
-        );
-      }
-    }
-    // 4. 注册自定义图像模型
-    for (var model in _customImageModels) {
-      modelRegistry!.registerModel(
-        available_model.AvailableModel(
-          id: model,
-          name: model,
-          provider: _selectedImageProvider,
-          type: available_model.ModelType.image,
-          supportsStreaming: false,
-          capabilities: {},
-          baseUrl: _imageProviderUrl,
-        ),
-      );
-    }
+    _syncTextModelsToRegistry();
+    _syncImageModelsToRegistry();
     // 5. 可扩展：注册 OpenAI 兼容自定义模型
   }
 
   Future<void> setSelectedProvider(String newProvider) async {
     if (_selectedProvider != newProvider) {
       _selectedProvider = newProvider;
-      // If it's a known preset provider, set its default URL.
-      // For custom providers, the URL might be set differently or not at all by default.
-      if (defaultBaseUrls.containsKey(newProvider)) {
-        _providerUrl = defaultBaseUrls[newProvider];
-      } else {
-        // For custom providers, we might clear the URL or handle it based on specific logic.
-        // For now, let's clear it, assuming custom providers will have their URLs set manually.
-        _providerUrl = null;
-      }
+      _providerUrl = _resolveProviderUrlForSelection(newProvider, defaultBaseUrls);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedProviderKey, newProvider);
-      if (_providerUrl != null) {
-        await prefs.setString(_providerUrlKey, _providerUrl!);
-      } else {
-        // 如果 defaultBaseUrls[newProvider] 返回 null（理论上不应发生），则移除旧的 key
-        await prefs.remove(_providerUrlKey);
-      }
+      await _persistSelectedProviderAndUrl(
+        prefs,
+        providerKey: _selectedProviderKey,
+        provider: newProvider,
+        urlKey: _providerUrlKey,
+        url: _providerUrl,
+      );
 
       // _validateSelectedModelForProvider 会为新的提供商设置默认模型，并处理其持久化
       _validateSelectedModelForProvider();
@@ -441,86 +955,51 @@ class SettingsProvider with ChangeNotifier {
   void _validateSelectedModelForProvider() {
     final currentAvailableModels = availableModels;
     if (!currentAvailableModels.contains(_selectedModel)) {
-      if (_selectedProvider == 'OpenAI' &&
-          (_categorizedPresetModels['OpenAI']?.isNotEmpty ?? false)) {
-        _selectedModel = _categorizedPresetModels['OpenAI']!.first;
-      } else if (_selectedProvider == 'Google' &&
-          (_categorizedPresetModels['Google']?.isNotEmpty ?? false)) {
-        _selectedModel = _categorizedPresetModels['Google']!.first;
-      } else if (_selectedProvider == 'Anthropic' &&
-          (_categorizedPresetModels['Anthropic']?.isNotEmpty ?? false)) {
-        _selectedModel = _categorizedPresetModels['Anthropic']!.first;
-      } else if (_customProviders.containsKey(_selectedProvider) &&
-          (_customProviders[_selectedProvider]?.isNotEmpty ?? false)) {
-        _selectedModel = _customProviders[_selectedProvider]!.first;
-      } else if (currentAvailableModels.isNotEmpty) {
-        _selectedModel = currentAvailableModels.first;
-      } else {
-        _selectedModel = ''; // No models available
-      }
+      _selectedModel = _pickFallbackModel(
+        provider: _selectedProvider,
+        presetModels: _categorizedPresetModels,
+        customProviders: _customProviders,
+        currentAvailableModels: currentAvailableModels,
+      );
       if (kDebugMode) {
         print('Model validation changed selectedModel to: $_selectedModel');
       }
-      // 异步保存更改后的 selectedModel
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString(_selectedModelKey, _selectedModel);
-      });
+      _persistSelectedModelAsync(_selectedModelKey, _selectedModel);
     }
   }
 
   Future<void> setApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _apiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_apiKeyKey);
-    } else {
-      await prefs.setString(_apiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _apiKeyKey, apiKey);
     notifyListeners();
   }
 
   Future<void> setImageApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _imageApiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_imageApiKeyKey);
-    } else {
-      await prefs.setString(_imageApiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _imageApiKeyKey, apiKey);
     notifyListeners();
   }
 
   Future<void> setClaudeApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _claudeApiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_claudeApiKeyKey);
-    } else {
-      await prefs.setString(_claudeApiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _claudeApiKeyKey, apiKey);
     notifyListeners();
   }
 
-  void setTavilyApiKey(String? key) {
+  Future<void> setTavilyApiKey(String? key) async {
+    final prefs = await SharedPreferences.getInstance();
     _tavilyApiKey = key;
-    SharedPreferences.getInstance().then((prefs) {
-      if (key == null || key.isEmpty) {
-        prefs.remove(_tavilyApiKeyKey);
-      } else {
-        prefs.setString(_tavilyApiKeyKey, key);
-      }
-    });
+    await _persistNullableString(prefs, _tavilyApiKeyKey, key);
     notifyListeners();
   }
 
   Future<void> setFluxKontextApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _fluxKontextApiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_fluxKontextApiKeyKey);
-    } else {
-      await prefs.setString(_fluxKontextApiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _fluxKontextApiKeyKey, apiKey);
     notifyListeners();
   }
 
@@ -535,18 +1014,18 @@ class SettingsProvider with ChangeNotifier {
   Future<void> setSelectedImageProvider(String newProvider) async {
     if (_selectedImageProvider != newProvider) {
       _selectedImageProvider = newProvider;
-      if (defaultImageBaseUrls.containsKey(newProvider)) {
-        _imageProviderUrl = defaultImageBaseUrls[newProvider];
-      } else {
-        _imageProviderUrl = null;
-      }
+      _imageProviderUrl = _resolveProviderUrlForSelection(
+        newProvider,
+        defaultImageBaseUrls,
+      );
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedImageProviderKey, newProvider);
-      if (_imageProviderUrl != null) {
-        await prefs.setString(_imageProviderUrlKey, _imageProviderUrl!);
-      } else {
-        await prefs.remove(_imageProviderUrlKey);
-      }
+      await _persistSelectedProviderAndUrl(
+        prefs,
+        providerKey: _selectedImageProviderKey,
+        provider: newProvider,
+        urlKey: _imageProviderUrlKey,
+        url: _imageProviderUrl,
+      );
       _validateSelectedImageModelForProvider();
       notifyListeners();
     }
@@ -555,56 +1034,42 @@ class SettingsProvider with ChangeNotifier {
   void _validateSelectedImageModelForProvider() {
     final currentAvailableImageModels = availableImageModels;
     if (!currentAvailableImageModels.contains(_selectedImageModel)) {
-      if (_categorizedPresetImageModels.containsKey(_selectedImageProvider) &&
-          (_categorizedPresetImageModels[_selectedImageProvider]?.isNotEmpty ??
-              false)) {
-        _selectedImageModel =
-            _categorizedPresetImageModels[_selectedImageProvider]!.first;
-      } else if (_customImageProviders.containsKey(_selectedImageProvider) &&
-          (_customImageProviders[_selectedImageProvider]?.isNotEmpty ??
-              false)) {
-        _selectedImageModel =
-            _customImageProviders[_selectedImageProvider]!.first;
-      } else if (currentAvailableImageModels.isNotEmpty) {
-        _selectedImageModel = currentAvailableImageModels.first;
-      } else {
-        _selectedImageModel = ''; // No models available
-      }
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString(_selectedImageModelKey, _selectedImageModel);
-      });
+      _selectedImageModel = _pickFallbackModel(
+        provider: _selectedImageProvider,
+        presetModels: _categorizedPresetImageModels,
+        customProviders: _customImageProviders,
+        currentAvailableModels: currentAvailableImageModels,
+      );
+      _persistSelectedModelAsync(_selectedImageModelKey, _selectedImageModel);
     }
   }
 
   Future<void> setSelectedImageModel(String newModel) async {
-    if (availableImageModels.contains(newModel)) {
-      _selectedImageModel = newModel;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedImageModelKey, newModel);
-      notifyListeners();
-    }
+    await _setSelectedModelIfAvailable(
+      newModel: newModel,
+      availableModels: availableImageModels,
+      key: _selectedImageModelKey,
+      assign: (value) => _selectedImageModel = value,
+    );
   }
 
   Future<void> setSelectedModelType(available_model.ModelType newType) async {
     if (_selectedModelType != newType) {
-      _selectedModelType = newType;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_selectedModelTypeKey, newType.index);
-      notifyListeners();
+      await _setIntSetting(
+        _selectedModelTypeKey,
+        newType.index,
+        (value) => _selectedModelType = available_model.ModelType.values[value],
+      );
     }
   }
 
   Future<void> setImageProviderUrl(String? newUrl) async {
-    _imageProviderUrl =
-        (newUrl == null || newUrl.trim().isEmpty) ? null : newUrl.trim();
-    final prefs = await SharedPreferences.getInstance();
-    if (_imageProviderUrl == null) {
-      await prefs.remove(_imageProviderUrlKey);
-    } else {
-      await prefs.setString(_imageProviderUrlKey, _imageProviderUrl!);
-    }
-    notifyListeners();
-    _validateSelectedImageModelForProvider();
+    await _setProviderUrlInternal(
+      newUrl: newUrl,
+      key: _imageProviderUrlKey,
+      assign: (value) => _imageProviderUrl = value,
+      validate: _validateSelectedImageModelForProvider,
+    );
   }
 
   Future<void> addCustomImageModel(String modelName) async {
@@ -623,116 +1088,75 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> removeCustomImageModel(String modelName) async {
-    if (_customImageModels.remove(modelName)) {
-      await SharedPreferences.getInstance().then(
-        (prefs) =>
-            prefs.setStringList(_customImageModelsKey, _customImageModels),
-      );
-      if (_selectedImageModel == modelName) {
-        _validateSelectedImageModelForProvider();
-      }
-      notifyListeners();
-    }
+    await _removeCustomModelInternal(
+      modelName: modelName,
+      targetModels: _customImageModels,
+      storageKey: _customImageModelsKey,
+      selectedModel: _selectedImageModel,
+      validateSelection: _validateSelectedImageModelForProvider,
+    );
   }
 
   Future<void> addCustomImageProviderWithModels(
     String providerName,
     List<String> models,
   ) async {
-    if (providerName.trim().isEmpty || models.isEmpty) return;
-    if (defaultImageBaseUrls.containsKey(providerName.trim())) return;
-
-    _customImageProviders[providerName.trim()] =
-        models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _customImageProvidersKey,
-      json.encode(_customImageProviders),
+    await _addCustomProviderWithModels(
+      providerName: providerName,
+      models: models,
+      defaultUrls: defaultImageBaseUrls,
+      targetProviders: _customImageProviders,
+      storageKey: _customImageProvidersKey,
     );
-    notifyListeners();
   }
 
   Future<void> addCustomTextModel(String modelName) async {
-    if (modelName.trim().isEmpty ||
-        _customModels.contains(modelName.trim()) ||
-        _presetModels.contains(modelName.trim())) {
-      return; // 不添加空名称、重复名称或与预设模型冲突的名称
-    }
-    _customModels.add(modelName.trim());
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_customModelsKey, _customModels);
-    notifyListeners();
-    // Ensure the selected model is valid for the loaded provider
-    _validateSelectedModelForProvider();
+    await _addCustomTextModelInternal(modelName);
   }
 
   Future<void> setSelectedModel(String newModel) async {
-    // 检查模型是否在当前可用模型列表中
-    if (availableModels.contains(newModel)) {
-      _selectedModel = newModel;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedModelKey, newModel);
-      notifyListeners();
-    }
+    await _setSelectedModelIfAvailable(
+      newModel: newModel,
+      availableModels: availableModels,
+      key: _selectedModelKey,
+      assign: (value) => _selectedModel = value,
+    );
   }
 
   Future<void> setProviderUrl(String? newUrl) async {
-    _providerUrl =
-        (newUrl == null || newUrl.trim().isEmpty) ? null : newUrl.trim();
-    final prefs = await SharedPreferences.getInstance();
-    if (_providerUrl == null) {
-      await prefs.remove(_providerUrlKey);
-    } else {
-      await prefs.setString(_providerUrlKey, _providerUrl!);
-    }
-    notifyListeners();
-    // Ensure the selected model is valid for the loaded provider
-    _validateSelectedModelForProvider();
+    await _setProviderUrlInternal(
+      newUrl: newUrl,
+      key: _providerUrlKey,
+      assign: (value) => _providerUrl = value,
+      validate: _validateSelectedModelForProvider,
+    );
   }
 
   Future<void> addCustomModel(String modelName) async {
-    if (modelName.trim().isEmpty ||
-        _customModels.contains(modelName.trim()) ||
-        _presetModels.contains(modelName.trim())) {
-      return; // 不添加空名称、重复名称或与预设模型冲突的名称
-    }
-    _customModels.add(modelName.trim());
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_customModelsKey, _customModels);
-    notifyListeners();
-    // Ensure the selected model is valid for the loaded provider
-    _validateSelectedModelForProvider();
+    await _addCustomTextModelInternal(modelName);
   }
 
   Future<void> addCustomProviderWithModels(
     String providerName,
     List<String> models,
   ) async {
-    if (providerName.trim().isEmpty || models.isEmpty) return;
-    // Prevent overwriting preset providers
-    if (defaultBaseUrls.containsKey(providerName.trim())) return;
-
-    _customProviders[providerName.trim()] =
-        models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
-    final prefs = await SharedPreferences.getInstance();
-    // Serialize the custom providers map to JSON
-    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
-    notifyListeners();
-    // Optionally, switch to the new provider and select its first model
-    // setSelectedProvider(providerName.trim());
+    await _addCustomProviderWithModels(
+      providerName: providerName,
+      models: models,
+      defaultUrls: defaultBaseUrls,
+      targetProviders: _customProviders,
+      storageKey: _customProvidersKey,
+    );
   }
 
   Future<void> removeCustomModel(String modelName) async {
-    if (_customModels.remove(modelName)) {
-      await SharedPreferences.getInstance().then(
-        (prefs) => prefs.setStringList(_customModelsKey, _customModels),
-      );
-      // 如果移除的是当前选中的模型，则重置为当前提供商的默认模型
-      if (_selectedModel == modelName) {
-        _validateSelectedModelForProvider(); // This will set a default if needed
-      }
-      notifyListeners();
-    }
+    await _removeCustomModelInternal(
+      modelName: modelName,
+      targetModels: _customModels,
+      storageKey: _customModelsKey,
+      selectedModel: _selectedModel,
+      validateSelection: _validateSelectedModelForProvider,
+    );
   }
 
   // Video Generation Settings Getters
@@ -747,170 +1171,94 @@ class SettingsProvider with ChangeNotifier {
   Future<void> setVeo3ApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _veo3ApiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_veo3ApiKeyKey);
-    } else {
-      await prefs.setString(_veo3ApiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _veo3ApiKeyKey, apiKey);
     notifyListeners();
   }
 
   Future<void> setSelectedVideoProvider(String provider) async {
-    final prefs = await SharedPreferences.getInstance();
-    _selectedVideoProvider = provider;
-    await prefs.setString(_selectedVideoProviderKey, provider);
-    notifyListeners();
+    await _setStringSetting(
+      _selectedVideoProviderKey,
+      provider,
+      (value) => _selectedVideoProvider = value,
+    );
   }
 
   Future<void> setVideoResolution(String resolution) async {
-    final prefs = await SharedPreferences.getInstance();
-    _videoResolution = resolution;
-    await prefs.setString(_videoResolutionKey, resolution);
-    notifyListeners();
+    await _setStringSetting(
+      _videoResolutionKey,
+      resolution,
+      (value) => _videoResolution = value,
+    );
   }
 
   Future<void> setVideoDuration(String duration) async {
-    final prefs = await SharedPreferences.getInstance();
-    _videoDuration = duration;
-    await prefs.setString(_videoDurationKey, duration);
-    notifyListeners();
+    await _setStringSetting(
+      _videoDurationKey,
+      duration,
+      (value) => _videoDuration = value,
+    );
   }
 
   Future<void> setVideoQuality(String quality) async {
-    final prefs = await SharedPreferences.getInstance();
-    _videoQuality = quality;
-    await prefs.setString(_videoQualityKey, quality);
-    notifyListeners();
+    await _setStringSetting(
+      _videoQualityKey,
+      quality,
+      (value) => _videoQuality = value,
+    );
   }
 
   Future<void> setVideoAspectRatio(String aspectRatio) async {
-    final prefs = await SharedPreferences.getInstance();
-    _videoAspectRatio = aspectRatio;
-    await prefs.setString(_videoAspectRatioKey, aspectRatio);
-    notifyListeners();
+    await _setStringSetting(
+      _videoAspectRatioKey,
+      aspectRatio,
+      (value) => _videoAspectRatio = value,
+    );
   }
 
   // Google Search Settings Methods
   Future<void> setGoogleSearchApiKey(String? apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     _googleSearchApiKey = apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      await prefs.remove(_googleSearchApiKeyKey);
-    } else {
-      await prefs.setString(_googleSearchApiKeyKey, apiKey);
-    }
+    await _persistNullableString(prefs, _googleSearchApiKeyKey, apiKey);
     notifyListeners();
   }
 
   Future<void> setGoogleSearchEngineId(String? engineId) async {
     final prefs = await SharedPreferences.getInstance();
     _googleSearchEngineId = engineId;
-    if (engineId == null || engineId.isEmpty) {
-      await prefs.remove(_googleSearchEngineIdKey);
-    } else {
-      await prefs.setString(_googleSearchEngineIdKey, engineId);
-    }
+    await _persistNullableString(prefs, _googleSearchEngineIdKey, engineId);
     notifyListeners();
   }
 
   Future<void> setGoogleSearchEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    _googleSearchEnabled = enabled;
-    await prefs.setBool(_googleSearchEnabledKey, enabled);
-    notifyListeners();
+    await _setBoolSetting(
+      _googleSearchEnabledKey,
+      enabled,
+      (value) => _googleSearchEnabled = value,
+    );
   }
 
   Future<void> setGoogleSearchResultCount(int count) async {
-    final prefs = await SharedPreferences.getInstance();
-    _googleSearchResultCount = count.clamp(1, 20);
-    await prefs.setInt(_googleSearchResultCountKey, _googleSearchResultCount);
-    notifyListeners();
+    await _setIntSetting(
+      _googleSearchResultCountKey,
+      count.clamp(1, 20),
+      (value) => _googleSearchResultCount = value,
+    );
   }
 
   Future<void> setGoogleSearchProvider(String provider) async {
-    final prefs = await SharedPreferences.getInstance();
-    _googleSearchProvider = provider;
-    await prefs.setString(_googleSearchProviderKey, provider);
-    notifyListeners();
+    await _setStringSetting(
+      _googleSearchProviderKey,
+      provider,
+      (value) => _googleSearchProvider = value,
+    );
   }
 
   // Export settings to XML
   Future<String> exportSettingsToXml() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final settingsMap = <String, dynamic>{};
-
-      // Get all settings from SharedPreferences
-      settingsMap[_apiKeyKey] = prefs.getString(_apiKeyKey);
-      settingsMap[_imageApiKeyKey] = prefs.getString(_imageApiKeyKey);
-      settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
-      settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
-      settingsMap[_fluxKontextApiKeyKey] = prefs.getString(
-        _fluxKontextApiKeyKey,
-      ); // FLUX Kontext API Key
-      settingsMap[_googleSearchApiKeyKey] = prefs.getString(
-        _googleSearchApiKeyKey,
-      ); // Google Search API Key
-      settingsMap[_googleSearchEngineIdKey] = prefs.getString(
-        _googleSearchEngineIdKey,
-      ); // Google Search Engine ID
-      settingsMap[_googleSearchEnabledKey] = prefs.getBool(
-        _googleSearchEnabledKey,
-      );
-      settingsMap[_googleSearchResultCountKey] = prefs.getInt(
-        _googleSearchResultCountKey,
-      );
-      settingsMap[_googleSearchProviderKey] = prefs.getString(
-        _googleSearchProviderKey,
-      );
-      settingsMap[_tavilySearchEnabledKey] = prefs.getBool(
-        _tavilySearchEnabledKey,
-      );
-      settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
-      settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
-      settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
-      settingsMap[_selectedProviderKey] = prefs.getString(_selectedProviderKey);
-      settingsMap[_customProvidersKey] = prefs.getString(_customProvidersKey);
-      settingsMap[_selectedModelTypeKey] = prefs.getInt(_selectedModelTypeKey);
-      settingsMap[_selectedImageProviderKey] = prefs.getString(
-        _selectedImageProviderKey,
-      );
-      settingsMap[_selectedImageModelKey] = prefs.getString(
-        _selectedImageModelKey,
-      );
-      settingsMap[_imageProviderUrlKey] = prefs.getString(_imageProviderUrlKey);
-      settingsMap[_customImageModelsKey] = prefs.getStringList(
-        _customImageModelsKey,
-      );
-      settingsMap[_customImageProvidersKey] = prefs.getString(
-        _customImageProvidersKey,
-      );
-      settingsMap[_bflAspectRatioKey] = _bflAspectRatio;
-
-      // Video Generation Settings
-      settingsMap[_veo3ApiKeyKey] = prefs.getString(_veo3ApiKeyKey);
-      settingsMap[_selectedVideoProviderKey] = prefs.getString(_selectedVideoProviderKey);
-      settingsMap[_videoResolutionKey] = prefs.getString(_videoResolutionKey);
-      settingsMap[_videoDurationKey] = prefs.getString(_videoDurationKey);
-      settingsMap[_videoQualityKey] = prefs.getString(_videoQualityKey);
-      settingsMap[_videoAspectRatioKey] = prefs.getString(_videoAspectRatioKey);
-
-      // 新增：导出 OpenAI 兼容自定义模型（如有）
-      if (prefs.containsKey('custom_openai_models')) {
-        settingsMap['custom_openai_models'] = prefs.getStringList(
-          'custom_openai_models',
-        );
-      }
-      if (prefs.containsKey('custom_openai_base_urls')) {
-        settingsMap['custom_openai_base_urls'] = prefs.getStringList(
-          'custom_openai_base_urls',
-        );
-      }
-      if (prefs.containsKey('custom_openai_api_keys')) {
-        settingsMap['custom_openai_api_keys'] = prefs.getStringList(
-          'custom_openai_api_keys',
-        );
-      }
+      final settingsMap = _buildExportSettingsMap(prefs);
 
       if (kDebugMode) {
         print('Settings map for export: $settingsMap');
@@ -933,241 +1281,10 @@ class SettingsProvider with ChangeNotifier {
 
       // Clear existing settings first (optional, depends on requirements)
       // await _clearAllSettings(prefs);
-
-      // Import API keys
-      if (settingsMap[_apiKeyKey] != null) {
-        await prefs.setString(_apiKeyKey, settingsMap[_apiKeyKey]);
-        _apiKey = settingsMap[_apiKeyKey];
-      }
-
-      if (settingsMap[_imageApiKeyKey] != null) {
-        await prefs.setString(_imageApiKeyKey, settingsMap[_imageApiKeyKey]);
-        _imageApiKey = settingsMap[_imageApiKeyKey];
-      }
-
-      if (settingsMap[_claudeApiKeyKey] != null) {
-        await prefs.setString(_claudeApiKeyKey, settingsMap[_claudeApiKeyKey]);
-        _claudeApiKey = settingsMap[_claudeApiKeyKey];
-      }
-
-      if (settingsMap[_tavilyApiKeyKey] != null) {
-        await prefs.setString(_tavilyApiKeyKey, settingsMap[_tavilyApiKeyKey]);
-        _tavilyApiKey = settingsMap[_tavilyApiKeyKey];
-      }
-      // FLUX Kontext API Key（解密后存储）
-      if (settingsMap[_fluxKontextApiKeyKey] != null) {
-        await prefs.setString(
-          _fluxKontextApiKeyKey,
-          settingsMap[_fluxKontextApiKeyKey],
-        );
-        _fluxKontextApiKey = settingsMap[_fluxKontextApiKeyKey];
-      }
-      // Google Search API Key（解密后存储）
-      if (settingsMap[_googleSearchApiKeyKey] != null) {
-        await prefs.setString(
-          _googleSearchApiKeyKey,
-          settingsMap[_googleSearchApiKeyKey],
-        );
-        _googleSearchApiKey = settingsMap[_googleSearchApiKeyKey];
-      }
-      // Google Search Engine ID
-      if (settingsMap[_googleSearchEngineIdKey] != null) {
-        await prefs.setString(
-          _googleSearchEngineIdKey,
-          settingsMap[_googleSearchEngineIdKey],
-        );
-        _googleSearchEngineId = settingsMap[_googleSearchEngineIdKey];
-      }
-
-      if (settingsMap[_googleSearchEnabledKey] != null) {
-        await prefs.setBool(
-          _googleSearchEnabledKey,
-          settingsMap[_googleSearchEnabledKey],
-        );
-        _googleSearchEnabled = settingsMap[_googleSearchEnabledKey];
-      }
-
-      if (settingsMap[_googleSearchResultCountKey] != null) {
-        await prefs.setInt(
-          _googleSearchResultCountKey,
-          settingsMap[_googleSearchResultCountKey],
-        );
-        _googleSearchResultCount = settingsMap[_googleSearchResultCountKey];
-      }
-
-      if (settingsMap[_googleSearchProviderKey] != null) {
-        await prefs.setString(
-          _googleSearchProviderKey,
-          settingsMap[_googleSearchProviderKey],
-        );
-        _googleSearchProvider = settingsMap[_googleSearchProviderKey];
-      }
-
-      if (settingsMap[_tavilySearchEnabledKey] != null) {
-        await prefs.setBool(
-          _tavilySearchEnabledKey,
-          settingsMap[_tavilySearchEnabledKey],
-        );
-        _tavilySearchEnabled = settingsMap[_tavilySearchEnabledKey];
-      }
-
-      // Import model settings
-      if (settingsMap[_selectedModelKey] != null) {
-        await prefs.setString(
-          _selectedModelKey,
-          settingsMap[_selectedModelKey],
-        );
-        _selectedModel = settingsMap[_selectedModelKey];
-        if (kDebugMode) {
-          print('Imported selectedModel: $_selectedModel');
-        }
-      }
-
-      if (settingsMap[_providerUrlKey] != null) {
-        await prefs.setString(_providerUrlKey, settingsMap[_providerUrlKey]);
-        _providerUrl = settingsMap[_providerUrlKey];
-      }
-
-      if (settingsMap[_customModelsKey] != null) {
-        await prefs.setStringList(
-          _customModelsKey,
-          settingsMap[_customModelsKey],
-        );
-        _customModels = settingsMap[_customModelsKey];
-      }
-
-      if (settingsMap[_selectedProviderKey] != null) {
-        await prefs.setString(
-          _selectedProviderKey,
-          settingsMap[_selectedProviderKey],
-        );
-        _selectedProvider = settingsMap[_selectedProviderKey];
-        if (kDebugMode) {
-          print('Imported selectedProvider: $_selectedProvider');
-        }
-      }
-
-      // Load custom providers first before validating models
-      if (settingsMap[_customProvidersKey] != null) {
-        await prefs.setString(
-          _customProvidersKey,
-          settingsMap[_customProvidersKey],
-        );
-        try {
-          _customProviders = Map<String, List<String>>.from(
-            json.decode(settingsMap[_customProvidersKey]),
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            print('Error parsing custom providers: $e');
-          }
-          _customProviders = {};
-        }
-      }
-
-      // Special handling: If selected provider is custom but not in _customProviders, add it with the selected model
-      if (!defaultBaseUrls.containsKey(_selectedProvider) &&
-          !_customProviders.containsKey(_selectedProvider) &&
-          _selectedModel.isNotEmpty) {
-        // Create a custom provider with the selected model
-        _customProviders[_selectedProvider] = [_selectedModel];
-        // Save to preferences
-        await prefs.setString(
-          _customProvidersKey,
-          json.encode(_customProviders),
-        );
-        if (kDebugMode) {
-          print(
-            'Created custom provider $_selectedProvider with model $_selectedModel',
-          );
-        }
-      }
-
-      if (settingsMap[_selectedModelTypeKey] != null) {
-        await prefs.setInt(
-          _selectedModelTypeKey,
-          settingsMap[_selectedModelTypeKey],
-        );
-        _selectedModelType =
-            available_model
-                .ModelType
-                .values[settingsMap[_selectedModelTypeKey]];
-      }
-
-      // Import image settings
-      if (settingsMap[_selectedImageProviderKey] != null) {
-        await prefs.setString(
-          _selectedImageProviderKey,
-          settingsMap[_selectedImageProviderKey],
-        );
-        _selectedImageProvider = settingsMap[_selectedImageProviderKey];
-      }
-
-      if (settingsMap[_selectedImageModelKey] != null) {
-        await prefs.setString(
-          _selectedImageModelKey,
-          settingsMap[_selectedImageModelKey],
-        );
-        _selectedImageModel = settingsMap[_selectedImageModelKey];
-      }
-
-      if (settingsMap[_imageProviderUrlKey] != null) {
-        await prefs.setString(
-          _imageProviderUrlKey,
-          settingsMap[_imageProviderUrlKey],
-        );
-        _imageProviderUrl = settingsMap[_imageProviderUrlKey];
-      }
-
-      if (settingsMap[_customImageModelsKey] != null) {
-        await prefs.setStringList(
-          _customImageModelsKey,
-          settingsMap[_customImageModelsKey],
-        );
-        _customImageModels = settingsMap[_customImageModelsKey];
-      }
-
-      if (settingsMap[_customImageProvidersKey] != null) {
-        await prefs.setString(
-          _customImageProvidersKey,
-          settingsMap[_customImageProvidersKey],
-        );
-        try {
-          _customImageProviders = Map<String, List<String>>.from(
-            json.decode(settingsMap[_customImageProvidersKey]),
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            print('Error parsing custom image providers: $e');
-          }
-          _customImageProviders = {};
-        }
-      }
-
-      if (settingsMap[_bflAspectRatioKey] != null) {
-        _bflAspectRatio = settingsMap[_bflAspectRatioKey];
-        await _saveBflAspectRatio();
-      }
-
-      // 新增：导入 OpenAI 兼容自定义模型
-      if (settingsMap['custom_openai_models'] != null) {
-        await prefs.setStringList(
-          'custom_openai_models',
-          List<String>.from(settingsMap['custom_openai_models']),
-        );
-      }
-      if (settingsMap['custom_openai_base_urls'] != null) {
-        await prefs.setStringList(
-          'custom_openai_base_urls',
-          List<String>.from(settingsMap['custom_openai_base_urls']),
-        );
-      }
-      if (settingsMap['custom_openai_api_keys'] != null) {
-        await prefs.setStringList(
-          'custom_openai_api_keys',
-          List<String>.from(settingsMap['custom_openai_api_keys']),
-        );
-      }
+      await _importApiAndSearchSettings(settingsMap, prefs);
+      await _importTextModelSettings(settingsMap, prefs);
+      await _importImageSettings(settingsMap, prefs);
+      await _importOptionalOpenAiCompatibleSettings(settingsMap, prefs);
 
       // Now validate settings after all data is loaded
       _validateSelectedModelForProvider();
@@ -1256,14 +1373,5 @@ class SettingsProvider with ChangeNotifier {
   }
 
   // Get effective provider URL (removing trailing slashes)
-  String get effectiveProviderUrl {
-    String baseUrl =
-        _providerUrl?.trim() ??
-        defaultBaseUrls[_selectedProvider] ??
-        defaultBaseUrls['OpenAI']!;
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-    }
-    return baseUrl;
-  }
+  String get effectiveProviderUrl => providerUrl;
 }

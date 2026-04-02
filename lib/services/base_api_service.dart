@@ -135,7 +135,7 @@ abstract class BaseApiService {
       
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final responseBody = await response.stream.bytesToString();
-        _handleErrorResponse(response.statusCode, responseBody);
+        handleErrorResponse(response.statusCode, responseBody);
       }
       
       return response;
@@ -155,7 +155,8 @@ abstract class BaseApiService {
         code: 'STREAM_NETWORK_ERROR',
         originalError: e,
       );
-      
+    } on AppException {
+      rethrow;
     } catch (e) {
       logError('Unexpected streaming error', error: e);
       throw ApiException(
@@ -182,7 +183,7 @@ abstract class BaseApiService {
   }
 
   // Handle error responses
-  void _handleErrorResponse(int statusCode, String responseBody) {
+  void handleErrorResponse(int statusCode, String responseBody) {
     String errorMessage = 'Request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;
