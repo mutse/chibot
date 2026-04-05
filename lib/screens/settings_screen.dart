@@ -55,10 +55,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       margin: margin ?? const EdgeInsets.only(bottom: 16.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.0),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -75,8 +75,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.25),
-                  Colors.white.withOpacity(0.15),
+                  Colors.white.withValues(alpha: 0.25),
+                  Colors.white.withValues(alpha: 0.15),
                 ],
               ),
               borderRadius: BorderRadius.circular(borderRadius),
@@ -98,7 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.0),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12.0),
@@ -106,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: TextField(
@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
+                hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.4)),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
@@ -127,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? IconButton(
                           icon: Icon(
                             Icons.clear,
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                           ),
                           onPressed: onClear,
                         )
@@ -151,8 +151,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         border: Border.all(
           color:
               selected
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.2),
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.2),
           width: selected ? 1.5 : 1.0,
         ),
       ),
@@ -164,8 +164,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: BoxDecoration(
               color:
                   selected
-                      ? Colors.white.withOpacity(0.35)
-                      : Colors.white.withOpacity(0.15),
+                      ? Colors.white.withValues(alpha: 0.35)
+                      : Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20.0),
             ),
             child: ChoiceChip(
@@ -197,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.0),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12.0),
@@ -205,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12.0),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -218,10 +218,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               underline: Container(),
               icon: Icon(
                 Icons.arrow_drop_down,
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
               ),
               style: const TextStyle(color: Colors.black87),
-              dropdownColor: Colors.white.withOpacity(0.95),
+              dropdownColor: Colors.white.withValues(alpha: 0.95),
             ),
           ),
         ),
@@ -238,10 +238,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.0),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -259,12 +259,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 colors:
                     backgroundColor != null
                         ? [
-                          backgroundColor.withOpacity(0.8),
-                          backgroundColor.withOpacity(0.6),
+                          backgroundColor.withValues(alpha: 0.8),
+                          backgroundColor.withValues(alpha: 0.6),
                         ]
                         : [
-                          Colors.white.withOpacity(0.25),
-                          Colors.white.withOpacity(0.15),
+                          Colors.white.withValues(alpha: 0.25),
+                          Colors.white.withValues(alpha: 0.15),
                         ],
               ),
               borderRadius: BorderRadius.circular(12.0),
@@ -314,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             helperText,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -597,7 +597,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.settingsSaved),
-        backgroundColor: Colors.black.withOpacity(0.7),
+        backgroundColor: Colors.black.withValues(alpha: 0.7),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -933,7 +933,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.green,
       );
     } catch (error) {
-      print('Import validation error: $error');
+      debugPrint('Import validation error: $error');
       if (!context.mounted) return;
       _showStatusSnackBar(
         context,
@@ -1686,8 +1686,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.25),
-                    Colors.white.withOpacity(0.15),
+                    Colors.white.withValues(alpha: 0.25),
+                    Colors.white.withValues(alpha: 0.15),
                   ],
                 ),
               ),
@@ -1701,9 +1701,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.withOpacity(0.05),
-              Colors.purple.withOpacity(0.05),
-              Colors.pink.withOpacity(0.05),
+              Colors.blue.withValues(alpha: 0.05),
+              Colors.purple.withValues(alpha: 0.05),
+              Colors.pink.withValues(alpha: 0.05),
             ],
           ),
         ),
@@ -1893,16 +1893,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       // 强制同步最新模型到 ModelRegistry
       await unifiedSettings.syncModelsToRegistry();
-      print('Starting export process...');
+      debugPrint('Starting export process...');
       final xmlContent = await unifiedSettings.exportSettingsToXml();
-      print('XML content generated: ${xmlContent.length} characters');
+      debugPrint('XML content generated: ${xmlContent.length} characters');
       final directoryInfo = await _getChibotDirectory();
       final exportDir = directoryInfo.directory;
 
       // Create directory if it doesn't exist
       if (!await exportDir.exists()) {
         await exportDir.create(recursive: true);
-        print('Created directory: ${exportDir.path}');
+        debugPrint('Created directory: ${exportDir.path}');
       }
 
       // Generate filename with timestamp
@@ -1911,12 +1911,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final fileName = 'chibot_config_$timestamp.xml';
       final filePath = '${exportDir.path}/$fileName';
 
-      print('Saving to: $filePath');
+      debugPrint('Saving to: $filePath');
 
       // Write the file
       final file = File(filePath);
       await file.writeAsString(xmlContent);
-      print('File written successfully');
+      debugPrint('File written successfully');
 
       if (context.mounted) {
         _showStatusSnackBar(
@@ -1948,7 +1948,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {});
       }
     } catch (e) {
-      print('Export error: $e');
+      debugPrint('Export error: $e');
       if (context.mounted) {
         String errorTitle = '导出失败';
         String errorMessage = e.toString();
@@ -2040,7 +2040,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     UnifiedSettingsProvider unifiedSettings,
   ) async {
     try {
-      print('Starting file picker import...');
+      debugPrint('Starting file picker import...');
 
       // Use file picker to select XML config file
       const XTypeGroup typeGroup = XTypeGroup(
@@ -2080,7 +2080,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Read and validate the file content
       final xmlContent = await file.readAsString();
-      print('XML content read: ${xmlContent.length} characters from $fileName');
+      debugPrint('XML content read: ${xmlContent.length} characters from $fileName');
 
       if (!_isValidSettingsXml(xmlContent)) {
         if (context.mounted) {
@@ -2104,7 +2104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       if (confirmed) {
-        print('User confirmed file picker import');
+        debugPrint('User confirmed file picker import');
         await _applyImportedSettings(
           context,
           unifiedSettings,
@@ -2118,7 +2118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         );
       } else {
-        print('User cancelled file picker import');
+        debugPrint('User cancelled file picker import');
         if (context.mounted) {
           _showSimpleStatusMessage(
             context,
@@ -2128,7 +2128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } catch (e) {
-      print('File picker import error: $e');
+      debugPrint('File picker import error: $e');
       if (context.mounted) {
         _showStatusSnackBar(
           context,
@@ -2162,7 +2162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final documentsDir = await getApplicationDocumentsDirectory();
       return documentsDir.path;
     } catch (e) {
-      print('Error getting initial directory: $e');
+      debugPrint('Error getting initial directory: $e');
     }
     return null;
   }
@@ -2172,7 +2172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     UnifiedSettingsProvider unifiedSettings,
   ) async {
     try {
-      print('Starting import process...');
+      debugPrint('Starting import process...');
       final directoryInfo = await _getChibotDirectory();
       final importDir = directoryInfo.directory;
 
@@ -2289,7 +2289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Read and validate the selected file
       final xmlContent = await selectedFile.readAsString();
-      print(
+      debugPrint(
         'XML content read: ${xmlContent.length} characters from ${path.basename(selectedFile.path)}',
       );
 
@@ -2316,7 +2316,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       if (confirmed) {
-        print('User confirmed import');
+        debugPrint('User confirmed import');
         await _applyImportedSettings(
           context,
           unifiedSettings,
@@ -2335,7 +2335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         );
       } else {
-        print('User cancelled import');
+        debugPrint('User cancelled import');
         if (context.mounted) {
           _showSimpleStatusMessage(
             context,
@@ -2345,7 +2345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } catch (e) {
-      print('Import error: $e');
+      debugPrint('Import error: $e');
       if (context.mounted) {
         _showStatusSnackBar(
           context,

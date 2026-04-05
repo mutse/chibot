@@ -150,6 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
         apiKeys: apiKeys,
         query: text,
       );
+      if (!mounted) return null;
       return AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
     } catch (e) {
       _appendAiMessage(
@@ -318,7 +319,7 @@ class _ChatScreenState extends State<ChatScreen> {
     for (int i = _messages.length - 1; i >= 0; i--) {
       if (_messages[i] is ImageMessage &&
           (_messages[i] as ImageMessage).text == prompt &&
-          ((_messages[i] as ImageMessage).isLoading ?? false)) {
+          (_messages[i] as ImageMessage).isLoading) {
         return i;
       }
     }
@@ -372,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen> {
         (s) => s.id == _currentImageSessionId,
       );
     } catch (e) {
-      print(
+      debugPrint(
         'Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e',
       );
       _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -460,6 +461,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     await _ensureCurrentSession(userMessage, prompt);
+    if (!mounted) return;
     _scrollToBottom();
 
     if (apiKeys.apiKey == null || apiKeys.apiKey!.isEmpty) {
@@ -528,7 +530,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _handleGenericStreamError(e);
         }
       }
-      print("Error receiving stream: $e");
+      debugPrint('Error receiving stream: $e');
     } finally {
       // Ensure isLoading is false if not already set by success/error blocks
       if (mounted && _isLoading) {
@@ -790,7 +792,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 // Search bar
                 Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(
                       Platform.isMacOS ? 8 : 12,
                     ),
@@ -800,8 +802,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)!.search,
                       hintStyle: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                          0.6,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.6,
                         ),
                       ),
                       prefixIcon: Icon(
@@ -930,6 +932,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   '检查更新',
                   onTap: () async {
                     final release = await UpdateService.fetchLatestRelease();
+                    if (!context.mounted) return;
                     if (release == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('检查更新失败，请稍后重试')),
@@ -987,13 +990,13 @@ class _ChatScreenState extends State<ChatScreen> {
           decoration: BoxDecoration(
             color:
                 isSelected
-                    ? theme.colorScheme.primaryContainer.withOpacity(0.8)
+                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.8)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 12),
             border:
                 isSelected
                     ? Border.all(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
                       width: 1,
                     )
                     : null,
@@ -1041,6 +1044,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             final Offset position = renderBox.localToGlobal(
                               Offset.zero,
                             );
+                            final deleteAction = onDelete;
+                            final exportAction = onExport;
 
                             await showMenu(
                               context: itemContext,
@@ -1093,9 +1098,9 @@ class _ChatScreenState extends State<ChatScreen> {
                               ],
                             ).then((value) {
                               if (value == 'delete') {
-                                onDelete?.call();
+                                deleteAction?.call();
                               } else if (value == 'export') {
-                                onExport?.call();
+                                exportAction?.call();
                               }
                             });
                           } else {
@@ -1205,7 +1210,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final bool isAiLoading =
-        message.sender == MessageSender.ai && (message.isLoading ?? false);
+        message.sender == MessageSender.ai && message.isLoading;
     Widget messageContent;
     if (isAiLoading && message.text.isEmpty) {
       messageContent = SizedBox(
@@ -1213,7 +1218,7 @@ class _ChatScreenState extends State<ChatScreen> {
         height: 20,
         child: Center(
           child: SpinKitThreeBounce(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             size: 18.0,
           ),
         ),
@@ -1250,7 +1255,7 @@ class _ChatScreenState extends State<ChatScreen> {
           color:
               isUserMessage
                   ? theme.colorScheme.primaryContainer
-                  : theme.colorScheme.surfaceVariant,
+                  : theme.colorScheme.surfaceContainerHighest,
           child: Container(
             padding: const EdgeInsets.symmetric(
               vertical: 12.0,
@@ -1368,8 +1373,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   } else if (value == 'save_prompt') {
                     await Clipboard.setData(
-                      ClipboardData(text: message.text ?? ''),
+                      ClipboardData(text: message.text),
                     );
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(localizations.promptCopied)),
                     );
@@ -1421,7 +1427,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? null
                 : [
                   BoxShadow(
-                    color: theme.colorScheme.shadow.withOpacity(0.1),
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.1),
                     spreadRadius: 0,
                     blurRadius: 8,
                     offset: const Offset(0, -2),
@@ -1434,12 +1440,12 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(
                     Platform.isMacOS ? 8 : 24,
                   ),
                   border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                     width: 1.0,
                   ),
                 ),
@@ -1456,7 +1462,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               AppLocalizations.of(context)!.askAnyQuestion,
                           hintStyle: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant
-                                .withOpacity(0.7),
+                                .withValues(alpha: 0.7),
                           ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
@@ -1504,7 +1510,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                         : isTextModel
                                         ? theme.colorScheme.onSurfaceVariant
                                         : theme.colorScheme.onSurfaceVariant
-                                            .withOpacity(0.4),
+                                            .withValues(alpha: 0.4),
                               ),
                               tooltip: 'Web Search',
                             ),
@@ -1526,7 +1532,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor:
                         _isLoading || isEmpty
-                            ? theme.colorScheme.surfaceVariant
+                            ? theme.colorScheme.surfaceContainerHighest
                             : theme.colorScheme.primary,
                     foregroundColor:
                         _isLoading || isEmpty
@@ -1600,11 +1606,6 @@ class _ChatScreenState extends State<ChatScreen> {
       context,
       listen: false,
     );
-    final unifiedSettings = Provider.of<UnifiedSettingsProvider>(
-      context,
-      listen: false,
-    );
-
     _addImageGenerationPlaceholders(prompt);
     _scrollToBottom();
 
@@ -1700,7 +1701,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
       }
-      print("Error generating image: $e");
+      debugPrint('Error generating image: $e');
     } finally {
       if (mounted && _isLoading) {
         setState(() {

@@ -276,27 +276,6 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
     );
   }
 
-  Future<void> _initTrayAndWindow(BuildContext context) async {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      windowManager.addListener(this);
-      await trayManager.setIcon('assets/images/icon.png');
-      final localizations = AppLocalizations.of(context);
-      await trayManager.setContextMenu(
-        Menu(
-          items: [
-            MenuItem(
-              key: 'show',
-              label: localizations?.trayShowHide ?? 'Show/Hide',
-            ),
-            MenuItem.separator(),
-            MenuItem(key: 'exit', label: localizations?.trayExit ?? 'Exit'),
-          ],
-        ),
-      );
-      trayManager.addListener(this);
-    }
-  }
-
   @override
   void onTrayIconMouseDown() async {
     if (await windowManager.isVisible()) {

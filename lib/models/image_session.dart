@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../core/logger.dart';
 import 'image_message.dart';
+import '../services/google_image_service.dart';
 
 class ImageSession extends Equatable {
   final String id;
@@ -192,10 +193,13 @@ class ImageSession extends Equatable {
   
   // Get model display name
   String get modelDisplayName {
+    final resolvedModel = provider == 'Google'
+        ? GoogleImageService.getDisplayName(model)
+        : model;
     if (provider != null) {
-      return '$provider - $model';
+      return '$provider - $resolvedModel';
     }
-    return model;
+    return resolvedModel;
   }
 
   @override

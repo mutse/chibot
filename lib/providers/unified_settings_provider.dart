@@ -4,7 +4,6 @@ import 'chat_model_provider.dart';
 import 'image_model_provider.dart';
 import 'video_model_provider.dart';
 import 'search_provider.dart';
-import '../models/model_registry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/available_model.dart' as available_model;
 import '../utils/settings_xml_handler.dart';
@@ -247,7 +246,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
       return SettingsXmlHandler.exportToXml(flatMap);
     } catch (e) {
       if (kDebugMode) {
-        print('Error in exportSettingsToXml: $e');
+        debugPrint('Error in exportSettingsToXml: $e');
       }
       throw Exception('Failed to export settings to XML: $e');
     }
@@ -261,7 +260,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
       await importSettings(nestedMap);
     } catch (e) {
       if (kDebugMode) {
-        print('Error in importSettingsFromXml: $e');
+        debugPrint('Error in importSettingsFromXml: $e');
       }
       throw Exception('Failed to import settings from XML: $e');
     }

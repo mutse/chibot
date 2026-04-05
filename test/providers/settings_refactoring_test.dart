@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
@@ -109,6 +108,27 @@ void main() {
     });
 
     test('更改提供商时验证图像模型', () async {
+      await imageModel.setSelectedImageProvider('Google');
+      expect(
+        imageModel.availableImageModels,
+        containsAll([
+          'gemini-3.1-flash-image-preview',
+          'gemini-3-pro-image-preview',
+          'gemini-2.5-flash-image',
+        ]),
+      );
+    });
+
+    test('Google 图像模型会规范化为官方模型 ID', () async {
+      await imageModel.setSelectedImageProvider('Google');
+      await imageModel.setSelectedImageModel('nano banada 2');
+      expect(
+        imageModel.selectedImageModel,
+        equals('gemini-3.1-flash-image-preview'),
+      );
+    });
+
+    test('切换到 BFL 提供商时显示对应图像模型', () async {
       await imageModel.setSelectedImageProvider('Black Forest Labs');
       expect(
         imageModel.availableImageModels,

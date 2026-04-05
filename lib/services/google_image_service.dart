@@ -8,17 +8,22 @@ class GoogleImageService {
   GoogleImageService({required this.apiKey});
 
   static const String baseUrl = 'https://generativelanguage.googleapis.com';
+  static const String nanoBanana2Model = 'gemini-3.1-flash-image-preview';
+  static const String nanoBananaProModel = 'gemini-3-pro-image-preview';
+  static const String nanoBananaModel = 'gemini-2.5-flash-image';
 
   Future<String?> generateImage({
     required String prompt,
-    String model = 'nano-banana',
+    String model = nanoBanana2Model,
     String? aspectRatio,
     int maxWaitSeconds = 120,
     int pollIntervalMs = 2000,
   }) async {
+    final normalizedModel = normalizeModel(model);
+
     if (kDebugMode) {
       print('[GoogleImageService] Starting image generation');
-      print('[GoogleImageService] Model: $model');
+      print('[GoogleImageService] Model: $normalizedModel');
       print('[GoogleImageService] Prompt: $prompt');
       print('[GoogleImageService] Aspect ratio: $aspectRatio');
     }
@@ -32,8 +37,10 @@ class GoogleImageService {
 
     try {
       // Google's generative AI API endpoint for image generation
-      final Uri endpointUri = Uri.parse('$baseUrl/v1beta/models/$model:generateContent');
-      
+      final Uri endpointUri = Uri.parse(
+        '$baseUrl/v1beta/models/$normalizedModel:generateContent',
+      );
+
       final Map<String, String> headers = {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
@@ -44,19 +51,20 @@ class GoogleImageService {
         'contents': [
           {
             'parts': [
-              {'text': prompt}
-            ]
+              {'text': prompt},
+            ],
           }
         ],
         'generationConfig': {
+          'responseModalities': ['IMAGE'],
           'temperature': 0.7,
           'candidateCount': 1,
-        }
+        },
       };
 
       // Add aspect ratio if provided
       if (aspectRatio != null && aspectRatio.isNotEmpty) {
-        body['generationConfig']['aspectRatio'] = aspectRatio;
+        body['generationConfig']['imageConfig'] = {'aspectRatio': aspectRatio};
       }
 
       if (kDebugMode) {
@@ -142,7 +150,7 @@ class GoogleImageService {
   /// Generate image with OpenAI-compatible size parameter
   Future<String?> generateImageWithOpenAISize({
     required String prompt,
-    String model = 'nano-banana',
+    String model = nanoBanana2Model,
     String openAISize = '1024x1024',
     Duration? maxWaitTime,
     Duration? pollInterval,
@@ -180,9 +188,57 @@ class GoogleImageService {
   /// Get supported models for Google image generation
   static List<String> getSupportedModels() {
     return [
-      'nano-banana',
-      'gemini-pro-vision', // If Google supports this for image generation
+      nanoBanana2Model,
+      nanoBananaProModel,
+      nanoBananaModel,
     ];
+  }
+
+  static String getDisplayName(String model) {
+    switch (normalizeModel(model)) {
+      case nanoBanana2Model:
+        return 'Nano Banana 2';
+      case nanoBananaProModel:
+        return 'Nano Banana Pro';
+      case nanoBananaModel:
+        return 'Nano Banana';
+      default:
+        return model;
+    }
+  }
+
+  static String normalizeModel(String model) {
+    final trimmed = model.trim();
+    if (trimmed.isEmpty) {
+      return nanoBanana2Model;
+    }
+
+    final normalized = trimmed
+        .toLowerCase()
+        .replaceAll('_', '-')
+        .replaceAll(RegExp(r'\s+'), '-');
+
+    switch (normalized) {
+      case 'nano-banada-2':
+      case 'nano-banana-二':
+      case 'nano-banana-2':
+      case 'nano-banana2':
+      case 'nanobanana-2':
+      case 'nano-banana-v2':
+      case 'nano-banana-two':
+      case 'nano-banana-ii':
+        return nanoBanana2Model;
+      case 'nano-banana-pro':
+      case 'nano-banana-pro-3':
+      case 'nano-banana-3-pro':
+      case 'nano-banana-pro-preview':
+        return nanoBananaProModel;
+      case 'nano-banana':
+      case 'nanobanana':
+        return nanoBananaModel;
+      default:
+        return trimmed;
+    }
   }
 
   /// Get supported aspect ratios

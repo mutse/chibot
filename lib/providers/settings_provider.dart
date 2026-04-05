@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/utils/settings_xml_handler.dart';
 import 'package:chibot/services/flux_kontext_service.dart';
 import 'package:chibot/services/flux_krea_service.dart';
+import 'package:chibot/services/google_image_service.dart';
 import 'dart:convert';
 import '../models/model_registry.dart';
 import '../models/available_model.dart' as available_model;
@@ -144,7 +145,7 @@ class SettingsProvider with ChangeNotifier {
       // Add other Stability AI models as needed
     ],
     'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev', 'flux-krea-dev'],
-    'Google': ['nano-banana', 'gemini-pro-vision'],
+    'Google': GoogleImageService.getSupportedModels(),
   };
 
   // Getter for all provider names (preset and custom)
@@ -337,7 +338,7 @@ class SettingsProvider with ChangeNotifier {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('$errorPrefix: $e');
+        debugPrint('$errorPrefix: $e');
       }
       return {};
     }
@@ -487,7 +488,10 @@ class SettingsProvider with ChangeNotifier {
 
   void _loadImageSettings(SharedPreferences prefs) {
     _selectedImageProvider = prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
-    _selectedImageModel = prefs.getString(_selectedImageModelKey) ?? 'dall-e-3';
+    _selectedImageModel = _normalizeImageModelForProvider(
+      _selectedImageProvider,
+      prefs.getString(_selectedImageModelKey) ?? 'dall-e-3',
+    );
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
     _customImageProviders = {};
@@ -594,7 +598,7 @@ class SettingsProvider with ChangeNotifier {
       (value) => _selectedModel = value,
     );
     if (kDebugMode && settingsMap[_selectedModelKey] is String) {
-      print('Imported selectedModel: $_selectedModel');
+      debugPrint('Imported selectedModel: $_selectedModel');
     }
     await _importStringSetting(
       settingsMap,
@@ -615,7 +619,7 @@ class SettingsProvider with ChangeNotifier {
       (value) => _selectedProvider = value,
     );
     if (kDebugMode && settingsMap[_selectedProviderKey] is String) {
-      print('Imported selectedProvider: $_selectedProvider');
+      debugPrint('Imported selectedProvider: $_selectedProvider');
     }
 
     final customProvidersRaw = settingsMap[_customProvidersKey];
@@ -633,7 +637,7 @@ class SettingsProvider with ChangeNotifier {
       _customProviders[_selectedProvider] = [_selectedModel];
       await prefs.setString(_customProvidersKey, json.encode(_customProviders));
       if (kDebugMode) {
-        print(
+        debugPrint(
           'Created custom provider $_selectedProvider with model $_selectedModel',
         );
       }
@@ -724,10 +728,14 @@ class SettingsProvider with ChangeNotifier {
     if (modelRegistry == null) return;
     for (final provider in providerModels.keys) {
       for (final model in providerModels[provider]!) {
+        final modelName = type == available_model.ModelType.image &&
+                provider == 'Google'
+            ? GoogleImageService.getDisplayName(model)
+            : model;
         modelRegistry!.registerModel(
           available_model.AvailableModel(
             id: model,
-            name: model,
+            name: modelName,
             provider: provider,
             type: type,
             supportsStreaming: supportsStreaming,
@@ -962,7 +970,7 @@ class SettingsProvider with ChangeNotifier {
         currentAvailableModels: currentAvailableModels,
       );
       if (kDebugMode) {
-        print('Model validation changed selectedModel to: $_selectedModel');
+        debugPrint('Model validation changed selectedModel to: $_selectedModel');
       }
       _persistSelectedModelAsync(_selectedModelKey, _selectedModel);
     }
@@ -1032,6 +1040,10 @@ class SettingsProvider with ChangeNotifier {
   }
 
   void _validateSelectedImageModelForProvider() {
+    _selectedImageModel = _normalizeImageModelForProvider(
+      _selectedImageProvider,
+      _selectedImageModel,
+    );
     final currentAvailableImageModels = availableImageModels;
     if (!currentAvailableImageModels.contains(_selectedImageModel)) {
       _selectedImageModel = _pickFallbackModel(
@@ -1045,12 +1057,23 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> setSelectedImageModel(String newModel) async {
+    final normalizedModel = _normalizeImageModelForProvider(
+      _selectedImageProvider,
+      newModel,
+    );
     await _setSelectedModelIfAvailable(
-      newModel: newModel,
+      newModel: normalizedModel,
       availableModels: availableImageModels,
       key: _selectedImageModelKey,
       assign: (value) => _selectedImageModel = value,
     );
+  }
+
+  String _normalizeImageModelForProvider(String provider, String model) {
+    if (provider == 'Google') {
+      return GoogleImageService.normalizeModel(model);
+    }
+    return model.trim();
   }
 
   Future<void> setSelectedModelType(available_model.ModelType newType) async {
@@ -1261,13 +1284,13 @@ class SettingsProvider with ChangeNotifier {
       final settingsMap = _buildExportSettingsMap(prefs);
 
       if (kDebugMode) {
-        print('Settings map for export: $settingsMap');
+        debugPrint('Settings map for export: $settingsMap');
       }
 
       return SettingsXmlHandler.exportToXml(settingsMap);
     } catch (e) {
       if (kDebugMode) {
-        print('Error in exportSettingsToXml: $e');
+        debugPrint('Error in exportSettingsToXml: $e');
       }
       throw Exception('Failed to export settings: $e');
     }
@@ -1297,7 +1320,7 @@ class SettingsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('Error importing settings from XML: $e');
+        debugPrint('Error importing settings from XML: $e');
       }
       throw Exception('Failed to import settings: $e');
     }
@@ -1322,14 +1345,14 @@ class SettingsProvider with ChangeNotifier {
   // Test FLUX.1 connection
   Future<bool> testFluxConnection() async {
     if (kDebugMode) {
-      print('[SettingsProvider] Testing FLUX.1 connection');
-      print('[SettingsProvider] Selected model: $_selectedImageModel');
-      print('[SettingsProvider] API key available: ${_imageApiKey != null && _imageApiKey!.isNotEmpty}');
+      debugPrint('[SettingsProvider] Testing FLUX.1 connection');
+      debugPrint('[SettingsProvider] Selected model: $_selectedImageModel');
+      debugPrint('[SettingsProvider] API key available: ${_imageApiKey != null && _imageApiKey!.isNotEmpty}');
     }
     
     if (_imageApiKey == null || _imageApiKey!.isEmpty) {
       if (kDebugMode) {
-        print('[SettingsProvider] No API key provided for FLUX.1 test');
+        debugPrint('[SettingsProvider] No API key provided for FLUX.1 test');
       }
       return false;
     }
@@ -1338,35 +1361,35 @@ class SettingsProvider with ChangeNotifier {
       // Test FLUX.1 Kontext connection
       if (_selectedImageModel.contains('kontext')) {
         if (kDebugMode) {
-          print('[SettingsProvider] Testing FLUX.1-Kontext connection');
+          debugPrint('[SettingsProvider] Testing FLUX.1-Kontext connection');
         }
         final fluxService = FluxKontextService(apiKey: _imageApiKey!);
         final result = await fluxService.testConnection();
         if (kDebugMode) {
-          print('[SettingsProvider] FLUX.1-Kontext test result: $result');
+          debugPrint('[SettingsProvider] FLUX.1-Kontext test result: $result');
         }
         return result;
       } 
       // Test FLUX.1 Krea connection
       else if (_selectedImageModel.contains('krea')) {
         if (kDebugMode) {
-          print('[SettingsProvider] Testing FLUX.1-Krea-dev connection');
+          debugPrint('[SettingsProvider] Testing FLUX.1-Krea-dev connection');
         }
         final fluxService = FluxKreaService(apiKey: _imageApiKey!);
         final result = await fluxService.testConnection();
         if (kDebugMode) {
-          print('[SettingsProvider] FLUX.1-Krea-dev test result: $result');
+          debugPrint('[SettingsProvider] FLUX.1-Krea-dev test result: $result');
         }
         return result;
       }
       
       if (kDebugMode) {
-        print('[SettingsProvider] No FLUX.1 model selected');
+        debugPrint('[SettingsProvider] No FLUX.1 model selected');
       }
       return false;
     } catch (e) {
       if (kDebugMode) {
-        print('[SettingsProvider] FLUX.1 connection test failed: $e');
+        debugPrint('[SettingsProvider] FLUX.1 connection test failed: $e');
       }
       return false;
     }

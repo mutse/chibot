@@ -186,7 +186,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     return Container(
       height: 250,
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.red, width: 1),
       ),
@@ -243,10 +243,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
+                      Colors.black.withValues(alpha: 0.3),
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black.withOpacity(0.5),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -320,7 +320,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                                     _seekTo(Duration(milliseconds: value.toInt()));
                                   },
                                   activeColor: Theme.of(context).primaryColor,
-                                  inactiveColor: Colors.white.withOpacity(0.3),
+                                  inactiveColor: Colors.white.withValues(alpha: 0.3),
                                 ),
                               ),
                               Text(

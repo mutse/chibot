@@ -44,9 +44,6 @@ class AboutScreen extends StatelessWidget {
             // Features Section
             _buildFeaturesSection(context),
 
-            // Supported Features Section
-            // _buildSupportedFeaturesSection(context),
-
             // Supported Models Section
             _buildSupportedModelsSection(context),
 
@@ -217,7 +214,7 @@ class AboutScreen extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),
@@ -239,70 +236,12 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupportedFeaturesSection(BuildContext context) {
-    final features = [
-      '文字对话',
-      '文生图',
-      '历史记录',
-      '多模型支持',
-      '自定义配置',
-      '离线缓存',
-      '跨平台同步',
-      '数据导出',
-    ];
-
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(top: 1),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '支持的功能',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
-            ),
-            itemCount: features.length,
-            itemBuilder: (context, index) {
-              return Row(
-                children: [
-                  const Icon(Icons.check, color: Colors.green, size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    features[index],
-                    style: const TextStyle(fontSize: 11, color: Colors.black87),
-                  ),
-                ],
-              );
-            },
           ),
         ],
       ),

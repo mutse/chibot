@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../models/model_registry.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
+import '../services/google_image_service.dart';
 
 /// 负责图像生成相关的模型配置
 /// 职责：选择图像生成模型、配置提供商、管理 Aspect Ratio
@@ -54,7 +55,7 @@ class ImageModelProvider with ChangeNotifier {
       'stable-diffusion-v1-6',
     ],
     'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev', 'flux-krea-dev'],
-    'Google': ['nano-banana', 'gemini-pro-vision'],
+    'Google': GoogleImageService.getSupportedModels(),
   };
 
   // ==================== Getters ====================
@@ -104,11 +105,21 @@ class ImageModelProvider with ChangeNotifier {
     _loadSettings();
   }
 
+  String _normalizeImageModelForProvider(String provider, String model) {
+    if (provider == 'Google') {
+      return GoogleImageService.normalizeModel(model);
+    }
+    return model.trim();
+  }
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _selectedImageProvider =
         prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
-    _selectedImageModel = prefs.getString(_selectedImageModelKey) ?? 'dall-e-3';
+    _selectedImageModel = _normalizeImageModelForProvider(
+      _selectedImageProvider,
+      prefs.getString(_selectedImageModelKey) ?? 'dall-e-3',
+    );
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
     _bflAspectRatio = prefs.getString(_bflAspectRatioKey);
@@ -125,7 +136,7 @@ class ImageModelProvider with ChangeNotifier {
         );
       } catch (e) {
         if (kDebugMode) {
-          print('Error loading custom image providers: $e');
+          debugPrint('Error loading custom image providers: $e');
         }
         _customImageProviders = {};
       }
@@ -149,10 +160,14 @@ class ImageModelProvider with ChangeNotifier {
 
   /// 设置选定的图像生成模型
   Future<void> setSelectedImageModel(String model) async {
-    if (_selectedImageModel != model) {
-      _selectedImageModel = model;
+    final normalizedModel = _normalizeImageModelForProvider(
+      _selectedImageProvider,
+      model,
+    );
+    if (_selectedImageModel != normalizedModel) {
+      _selectedImageModel = normalizedModel;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedImageModelKey, model);
+      await prefs.setString(_selectedImageModelKey, normalizedModel);
       notifyListeners();
     }
   }
@@ -273,10 +288,13 @@ class ImageModelProvider with ChangeNotifier {
       // 1. 注册预设图像模型
       for (var provider in _categorizedPresetImageModels.keys) {
         for (var model in _categorizedPresetImageModels[provider]!) {
+          final modelName = provider == 'Google'
+              ? GoogleImageService.getDisplayName(model)
+              : model;
           modelRegistry!.registerModel(
             AvailableModel(
               id: model,
-              name: model,
+              name: modelName,
               provider: provider,
               type: available_model.ModelType.image,
               supportsStreaming: false,
@@ -348,7 +366,10 @@ class ImageModelProvider with ChangeNotifier {
       _selectedImageProvider = data[_selectedImageProviderKey];
     }
     if (data.containsKey(_selectedImageModelKey)) {
-      _selectedImageModel = data[_selectedImageModelKey];
+      _selectedImageModel = _normalizeImageModelForProvider(
+        _selectedImageProvider,
+        data[_selectedImageModelKey],
+      );
     }
     if (data.containsKey(_imageProviderUrlKey)) {
       _imageProviderUrl = data[_imageProviderUrlKey];
@@ -372,14 +393,14 @@ class ImageModelProvider with ChangeNotifier {
             );
           } catch (e) {
             if (kDebugMode) {
-              print('Error parsing custom image providers JSON: $e');
+              debugPrint('Error parsing custom image providers JSON: $e');
             }
             parsedProviders = {};
           }
         } else if (customImageProvidersData is Map) {
           // Already a Map from direct import
           parsedProviders = Map<String, List<String>>.from(
-            (customImageProvidersData as Map).map(
+            customImageProvidersData.map(
               (key, value) => MapEntry(key, List<String>.from(value)),
             ),
           );

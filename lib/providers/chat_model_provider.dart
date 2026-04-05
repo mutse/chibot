@@ -146,7 +146,7 @@ class ChatModelProvider with ChangeNotifier {
         );
       } catch (e) {
         if (kDebugMode) {
-          print('Error loading custom providers: $e');
+          debugPrint('Error loading custom providers: $e');
         }
         _customProviders = {};
       }
@@ -307,14 +307,14 @@ class ChatModelProvider with ChangeNotifier {
             );
           } catch (e) {
             if (kDebugMode) {
-              print('Error parsing custom providers JSON: $e');
+              debugPrint('Error parsing custom providers JSON: $e');
             }
             parsedProviders = {};
           }
         } else if (customProvidersData is Map) {
           // Already a Map from direct import
           parsedProviders = Map<String, List<String>>.from(
-            (customProvidersData as Map).map(
+            customProvidersData.map(
               (key, value) => MapEntry(key, List<String>.from(value)),
             ),
           );

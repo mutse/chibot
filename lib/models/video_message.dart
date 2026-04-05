@@ -71,9 +71,9 @@ class VideoMessage extends ChatMessage {
   final double? progress;
   final String prompt; // Store the video generation prompt
 
-  VideoMessage({
-    required String id,
-    required String text,
+  const VideoMessage({
+    required super.id,
+    required super.text,
     required super.sender,
     required super.timestamp,
     super.isLoading,
@@ -88,10 +88,7 @@ class VideoMessage extends ChatMessage {
     this.progress,
     String? prompt,
   }) : prompt = prompt ?? text,
-        super(
-          id: id,
-          text: text,
-        );
+        super();
 
   @override
   VideoMessage copyWith({
