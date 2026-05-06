@@ -10,6 +10,7 @@ import 'providers/video_model_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/unified_settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
+import 'package:chibot/screens/desktop/desktop_workspace_screen.dart';
 import 'package:chibot/screens/mobile/mobile_home_shell.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
@@ -21,9 +22,11 @@ import 'providers/settings_models_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    final bool desktopWorkspaceTarget = Platform.isWindows || Platform.isMacOS;
     await windowManager.ensureInitialized();
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(900, 700),
+    WindowOptions windowOptions = WindowOptions(
+      size:
+          desktopWorkspaceTarget ? const Size(1520, 980) : const Size(900, 700),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -89,6 +92,8 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         home:
             Platform.isAndroid || Platform.isIOS
                 ? const MobileHomeShell()
+                : Platform.isWindows || Platform.isMacOS
+                ? const DesktopWorkspaceScreen()
                 : const ChatScreen(),
         theme: _buildModernTheme(),
         debugShowCheckedModeBanner: false,
@@ -110,7 +115,11 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
   }
 
   ThemeData _buildModernTheme() {
-    const seedColor = Color(0xFF6750A4); // Material 3 purple
+    final bool desktopWorkspaceTarget = Platform.isWindows || Platform.isMacOS;
+    final Color seedColor =
+        desktopWorkspaceTarget
+            ? const Color(0xFF0B7B7B)
+            : const Color(0xFF6750A4);
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: Brightness.light,
@@ -120,30 +129,43 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       useMaterial3: true,
       colorScheme: colorScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
+      scaffoldBackgroundColor:
+          desktopWorkspaceTarget
+              ? const Color(0xFFF7F1E8)
+              : colorScheme.surface,
 
       // Typography
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      textTheme: TextTheme(
+        displayLarge: const TextStyle(
           fontSize: 57,
           fontWeight: FontWeight.w400,
           letterSpacing: -0.25,
         ),
-        headlineLarge: TextStyle(
+        displaySmall:
+            desktopWorkspaceTarget
+                ? const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.2,
+                  color: Color(0xFF142033),
+                )
+                : null,
+        headlineLarge: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w400,
           letterSpacing: 0,
         ),
-        titleLarge: TextStyle(
+        titleLarge: const TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w500,
           letterSpacing: 0,
         ),
-        bodyLarge: TextStyle(
+        bodyLarge: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.5,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.25,
@@ -154,6 +176,8 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         backgroundColor:
             Platform.isMacOS
                 ? colorScheme.surface.withValues(alpha: 0.8)
+                : desktopWorkspaceTarget
+                ? const Color(0xFFF7F1E8)
                 : colorScheme.surface,
         elevation: Platform.isMacOS ? 0 : 1,
         surfaceTintColor: colorScheme.surfaceTint,
@@ -170,7 +194,9 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       cardTheme: CardThemeData(
         elevation: Platform.isMacOS ? 1 : 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 12),
+          borderRadius: BorderRadius.circular(
+            desktopWorkspaceTarget ? 24 : (Platform.isMacOS ? 8 : 12),
+          ),
         ),
         surfaceTintColor: colorScheme.surfaceTint,
       ),
@@ -185,18 +211,24 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           vertical: 16.0,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
+          borderRadius: BorderRadius.circular(
+            desktopWorkspaceTarget ? 18 : (Platform.isMacOS ? 8 : 24),
+          ),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
+          borderRadius: BorderRadius.circular(
+            desktopWorkspaceTarget ? 18 : (Platform.isMacOS ? 8 : 24),
+          ),
           borderSide: BorderSide(
             color: colorScheme.outline.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
+          borderRadius: BorderRadius.circular(
+            desktopWorkspaceTarget ? 18 : (Platform.isMacOS ? 8 : 24),
+          ),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
