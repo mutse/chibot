@@ -10,6 +10,7 @@ import 'providers/video_model_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/unified_settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
+import 'package:chibot/screens/mobile/mobile_home_shell.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
@@ -85,7 +86,10 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       ],
       child: MaterialApp(
         title: "Chi AI Chatbot",
-        home: const ChatScreen(),
+        home:
+            Platform.isAndroid || Platform.isIOS
+                ? const MobileHomeShell()
+                : const ChatScreen(),
         theme: _buildModernTheme(),
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
