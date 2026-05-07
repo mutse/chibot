@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
@@ -14,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
 import 'package:chibot/models/available_model.dart' as available_model;
+import 'package:chibot/screens/mobile/mobile_ui.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,55 +36,54 @@ class _PlatformDirectoryInfo {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const TextStyle _sectionTitleStyle = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Colors.black87,
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    color: MobilePalette.textPrimary,
   );
 
   late AppLocalizations l10n;
   late TextEditingController _apiKeyController;
 
-  // 玻璃态UI辅助方法
+  InputDecoration _buildFieldDecoration({
+    String? hintText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: MobilePalette.textSecondary,
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: MobilePalette.surface,
+      suffixIcon: suffixIcon,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: MobilePalette.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: MobilePalette.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: MobilePalette.primary, width: 1.5),
+      ),
+    );
+  }
+
   Widget _buildGlassCard({
     required Widget child,
     EdgeInsets? padding,
     EdgeInsets? margin,
-    double borderRadius = 16.0,
+    double borderRadius = 22.0,
   }) {
-    return Container(
+    return MobileSurface(
       margin: margin ?? const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.25),
-                  Colors.white.withValues(alpha: 0.15),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(borderRadius),
-            ),
-            child: child,
-          ),
-        ),
-      ),
+      padding: padding ?? const EdgeInsets.all(16.0),
+      radius: borderRadius,
+      child: child,
     );
   }
 
@@ -95,47 +94,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     TextInputType? keyboardType,
     VoidCallback? onClear,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        color: MobilePalette.textPrimary,
+        fontWeight: FontWeight.w600,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: TextField(
-              controller: controller,
-              obscureText: obscureText,
-              keyboardType: keyboardType,
-              style: const TextStyle(color: Colors.black87),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: Colors.black.withValues(alpha: 0.4)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 14.0,
-                ),
-                suffixIcon:
-                    onClear != null
-                        ? IconButton(
-                          icon: Icon(
-                            Icons.clear,
-                            color: Colors.black.withValues(alpha: 0.5),
-                          ),
-                          onPressed: onClear,
-                        )
-                        : null,
-              ),
-            ),
-          ),
-        ),
+      decoration: _buildFieldDecoration(
+        hintText: hintText,
+        suffixIcon:
+            onClear != null
+                ? IconButton(
+                  icon: const Icon(
+                    Icons.clear_rounded,
+                    color: MobilePalette.textSecondary,
+                  ),
+                  onPressed: onClear,
+                )
+                : null,
       ),
     );
   }
@@ -145,46 +123,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool selected,
     required ValueChanged<bool> onSelected,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20.0),
-        border: Border.all(
-          color:
-              selected
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : Colors.white.withValues(alpha: 0.2),
-          width: selected ? 1.5 : 1.0,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  selected
-                      ? Colors.white.withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20.0),
-            ),
-            child: ChoiceChip(
-              label: Text(
-                label,
-                style: TextStyle(
-                  color: selected ? Colors.black87 : Colors.black54,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-              selected: selected,
-              onSelected: onSelected,
-              backgroundColor: Colors.transparent,
-              selectedColor: Colors.transparent,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-          ),
-        ),
-      ),
+    return MobilePill(
+      label: label,
+      selected: selected,
+      onTap: () => onSelected(!selected),
     );
   }
 
@@ -194,38 +136,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ValueChanged<T?> onChanged,
     String? hintText,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
+    return DropdownButtonFormField<T>(
+      initialValue: value,
+      items: items,
+      onChanged: onChanged,
+      isExpanded: true,
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: MobilePalette.textSecondary,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: DropdownButton<T>(
-              value: value,
-              items: items,
-              onChanged: onChanged,
-              hint: hintText != null ? Text(hintText) : null,
-              isExpanded: true,
-              underline: Container(),
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: Colors.black.withValues(alpha: 0.6),
-              ),
-              style: const TextStyle(color: Colors.black87),
-              dropdownColor: Colors.white.withValues(alpha: 0.95),
-            ),
-          ),
-        ),
+      style: const TextStyle(
+        color: MobilePalette.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
       ),
+      dropdownColor: MobilePalette.surfaceStrong,
+      decoration: _buildFieldDecoration(hintText: hintText),
     );
   }
 
@@ -235,61 +161,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     Color? backgroundColor,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors:
-                    backgroundColor != null
-                        ? [
-                          backgroundColor.withValues(alpha: 0.8),
-                          backgroundColor.withValues(alpha: 0.6),
-                        ]
-                        : [
-                          Colors.white.withValues(alpha: 0.25),
-                          Colors.white.withValues(alpha: 0.15),
-                        ],
-              ),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: ElevatedButton.icon(
-              onPressed: onPressed,
-              icon: Icon(icon, color: Colors.black87),
-              label: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-        ),
+    return FilledButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        backgroundColor: backgroundColor ?? MobilePalette.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
     );
   }
@@ -312,15 +193,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 4),
           Text(
             helperText,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-              color: Colors.black.withValues(alpha: 0.5),
+              color: MobilePalette.textSecondary,
             ),
           ),
         ],
         SizedBox(height: spacingBeforeField),
         field,
       ],
+    );
+  }
+
+  Widget _buildInlineActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return MobileIconCircleButton(icon: icon, onTap: onTap);
+  }
+
+  Widget _buildModelListTile({
+    required String title,
+    required VoidCallback onDelete,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: MobilePalette.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MobilePalette.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: MobilePalette.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: Color(0xFFD95C45),
+            ),
+            tooltip: '删除',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchRow({
+    required String title,
+    String? subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: MobilePalette.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MobilePalette.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: MobilePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: MobilePalette.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            activeThumbColor: Colors.white,
+            activeTrackColor: MobilePalette.primary,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 
@@ -957,7 +932,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(l10n.selectModelType),
+          const MobileSectionLabel(title: 'Workspace Mode'),
+          const SizedBox(height: 6),
+          Text(
+            l10n.selectModelType,
+            style: const TextStyle(
+              color: MobilePalette.textSecondary,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -1014,20 +997,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     UnifiedSettingsProvider unifiedSettings,
   ) {
     return _buildGlassCard(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(l10n.selectModelProvider),
-          _buildGlassButton(
-            label: l10n.add,
-            icon: Icons.add,
-            onPressed: () {
+          MobileSectionLabel(
+            title: l10n.addModelProvider,
+            actionLabel: l10n.add,
+            onAction: () {
               _showAddProviderAndModelDialog(
                 context,
                 unifiedSettings,
                 unifiedSettings.selectedModelType,
               );
             },
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '添加 OpenAI 兼容 provider、自定义模型和接入地址。',
+            style: TextStyle(color: MobilePalette.textSecondary, fontSize: 12),
           ),
         ],
       ),
@@ -1038,92 +1025,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            _buildSectionTitle('Tavily Web 搜索功能'),
-            const Spacer(),
-            Switch(
-              value: search.tavilySearchEnabled,
-              onChanged: (value) {
-                search.setTavilySearchEnabled(value);
-              },
-            ),
-          ],
+        const MobileSectionLabel(title: 'Search'),
+        const SizedBox(height: 12),
+        _buildSwitchRow(
+          title: 'Tavily Web 搜索',
+          subtitle: '为聊天启用增强型网页检索',
+          value: search.tavilySearchEnabled,
+          onChanged: (value) {
+            search.setTavilySearchEnabled(value);
+          },
         ),
-        const SizedBox(height: 10),
         if (search.tavilySearchEnabled) ...[
-          _buildSectionTitle('Tavily Web 搜索 API Key'),
-          TextField(
-            controller: _tavilyApiKeyController,
-            obscureText: true,
-            decoration: const InputDecoration(hintText: '输入 Tavily API Key'),
-          ),
-          const SizedBox(height: 10),
-        ],
-        Row(
-          children: [
-            _buildSectionTitle('Google 搜索功能'),
-            const Spacer(),
-            Switch(
-              value: search.googleSearchEnabled,
-              onChanged: (value) {
-                search.setGoogleSearchEnabled(value);
-              },
+          const SizedBox(height: 12),
+          _buildSimpleFieldSection(
+            title: 'Tavily API Key',
+            field: _buildGlassTextField(
+              controller: _tavilyApiKeyController,
+              hintText: '输入 Tavily API Key',
+              obscureText: true,
             ),
-          ],
+          ),
+          const SizedBox(height: 14),
+        ],
+        _buildSwitchRow(
+          title: 'Google 搜索',
+          subtitle: '使用 Custom Search 返回网页结果',
+          value: search.googleSearchEnabled,
+          onChanged: (value) {
+            search.setGoogleSearchEnabled(value);
+          },
         ),
         if (search.googleSearchEnabled) ...[
-          const Text('Google Search API Key', style: TextStyle(fontSize: 14)),
-          TextField(
-            controller: _googleSearchApiKeyController,
-            obscureText: true,
-            decoration: const InputDecoration(
+          const SizedBox(height: 12),
+          _buildSimpleFieldSection(
+            title: 'Google Search API Key',
+            field: _buildGlassTextField(
+              controller: _googleSearchApiKeyController,
               hintText: '输入 Google Custom Search API Key',
+              obscureText: true,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text('Google Search Engine ID', style: TextStyle(fontSize: 14)),
-          TextField(
-            controller: _googleSearchEngineIdController,
-            decoration: const InputDecoration(
+          const SizedBox(height: 14),
+          _buildSimpleFieldSection(
+            title: 'Google Search Engine ID',
+            field: _buildGlassTextField(
+              controller: _googleSearchEngineIdController,
               hintText: '输入 Custom Search Engine ID',
             ),
           ),
+          const SizedBox(height: 14),
+          _buildSectionTitle('搜索结果数量'),
           const SizedBox(height: 10),
-          const Text('搜索结果数量', style: TextStyle(fontSize: 14)),
-          Slider(
-            value: search.googleSearchResultCount.toDouble(),
-            min: 1,
-            max: 20,
-            divisions: 19,
-            label: search.googleSearchResultCount.toString(),
-            onChanged: (value) {
-              search.setGoogleSearchResultCount(value.toInt());
-            },
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: MobilePalette.primary,
+              inactiveTrackColor: MobilePalette.border,
+              thumbColor: MobilePalette.primary,
+              overlayColor: MobilePalette.primary.withValues(alpha: 0.12),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: search.googleSearchResultCount.toDouble(),
+              min: 1,
+              max: 20,
+              divisions: 19,
+              label: search.googleSearchResultCount.toString(),
+              onChanged: (value) {
+                search.setGoogleSearchResultCount(value.toInt());
+              },
+            ),
           ),
-          const SizedBox(height: 10),
-          const Text('搜索提供商', style: TextStyle(fontSize: 14)),
-          DropdownButton<String>(
-            value: search.googleSearchProvider,
-            isExpanded: true,
-            items: const [
-              DropdownMenuItem(
-                value: 'googleCustomSearch',
-                child: Text('Google Custom Search API'),
-              ),
-              DropdownMenuItem(
-                value: 'programmableSearch',
-                child: Text('Programmable Search Engine'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                search.setGoogleSearchProvider(value);
-              }
-            },
+          Text(
+            '当前返回 ${search.googleSearchResultCount} 条结果',
+            style: const TextStyle(
+              color: MobilePalette.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildSimpleFieldSection(
+            title: '搜索提供商',
+            field: _buildGlassDropdown<String>(
+              value: search.googleSearchProvider,
+              items: const [
+                DropdownMenuItem(
+                  value: 'googleCustomSearch',
+                  child: Text('Google Custom Search API'),
+                ),
+                DropdownMenuItem(
+                  value: 'programmableSearch',
+                  child: Text('Programmable Search Engine'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  search.setGoogleSearchProvider(value);
+                }
+              },
+            ),
           ),
         ],
-        const SizedBox(height: 10),
       ],
     );
   }
@@ -1136,6 +1137,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required SettingsModelsProvider settingsModels,
     required UnifiedSettingsProvider unifiedSettings,
   }) {
+    final availableTextModels =
+        settingsModels.textModels
+            .where((model) => model.provider == chatModel.selectedProvider)
+            .toList();
+    final selectedModel =
+        availableTextModels.any((model) => model.id == chatModel.selectedModel)
+            ? chatModel.selectedModel
+            : (availableTextModels.isNotEmpty
+                ? availableTextModels.first.id
+                : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1143,14 +1155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.selectModelProvider,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
+              _buildSectionTitle(l10n.selectModelProvider),
               const SizedBox(height: 12),
               _buildGlassDropdown<String>(
                 value:
@@ -1234,101 +1239,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: _buildSimpleFieldSection(
             title: l10n.selectModel,
             field: _buildGlassDropdown<String>(
-              value:
-                  settingsModels.textModels
-                          .where(
-                            (m) => m.provider == chatModel.selectedProvider,
-                          )
-                          .any((m) => m.id == chatModel.selectedModel)
-                      ? chatModel.selectedModel
-                      : (settingsModels.textModels
-                              .where(
-                                (m) => m.provider == chatModel.selectedProvider,
-                              )
-                              .isNotEmpty
-                          ? settingsModels.textModels
-                              .where(
-                                (m) => m.provider == chatModel.selectedProvider,
-                              )
-                              .first
-                              .id
-                          : null),
+              value: selectedModel,
               items:
-                  settingsModels.textModels
-                      .where(
-                        (model) => model.provider == chatModel.selectedProvider,
-                      )
-                      .map((model) {
-                        return DropdownMenuItem<String>(
-                          value: model.id,
-                          child: Text(model.name),
-                        );
-                      })
-                      .toList(),
+                  availableTextModels.map((model) {
+                    return DropdownMenuItem<String>(
+                      value: model.id,
+                      child: Text(model.name),
+                    );
+                  }).toList(),
               onChanged: (String? newValue) {
                 if (newValue != null) {
                   chatModel.setSelectedModel(newValue);
                 }
               },
               hintText:
-                  settingsModels.textModels
-                          .where(
-                            (m) => m.provider == chatModel.selectedProvider,
-                          )
-                          .isEmpty
-                      ? l10n.noModelsAvailable
-                      : null,
+                  availableTextModels.isEmpty ? l10n.noModelsAvailable : null,
             ),
           ),
         ),
-        const SizedBox(height: 20),
-        _buildSectionTitle(l10n.customModels),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _customModelController,
-                decoration: InputDecoration(
-                  hintText: l10n.enterCustomModelName,
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(l10n.customModels),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGlassTextField(
+                      controller: _customModelController,
+                      hintText: l10n.enterCustomModelName,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildInlineActionButton(
+                    icon: Icons.add_rounded,
+                    onTap: () {
+                      final modelName = _customModelController.text.trim();
+                      if (modelName.isNotEmpty) {
+                        chatModel.addCustomModel(modelName);
+                        chatModel.setSelectedModel(modelName);
+                        _customModelController.clear();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              if (chatModel.customModels.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  l10n.yourCustomModels,
+                  style: const TextStyle(
+                    color: MobilePalette.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () {
-                final modelName = _customModelController.text.trim();
-                if (modelName.isNotEmpty) {
-                  chatModel.addCustomModel(modelName);
-                  chatModel.setSelectedModel(modelName);
-                  _customModelController.clear();
-                }
-              },
-            ),
-          ],
-        ),
-        _buildSearchSettingsSection(search),
-        if (chatModel.customModels.isNotEmpty)
-          Text(
-            l10n.yourCustomModels,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ...chatModel.customModels.map(
+                  (model) => _buildModelListTile(
+                    title: model,
+                    onDelete: () {
+                      chatModel.removeCustomModel(model);
+                    },
+                  ),
+                ),
+              ],
+            ],
           ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: chatModel.customModels.length,
-          itemBuilder: (context, index) {
-            final model = chatModel.customModels[index];
-            return ListTile(
-              title: Text(model),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () {
-                  chatModel.removeCustomModel(model);
-                },
-              ),
-            );
-          },
         ),
+        _buildGlassCard(child: _buildSearchSettingsSection(search)),
       ],
     );
   }
@@ -1338,199 +1317,183 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ImageModelProvider imageModel,
     required SettingsModelsProvider settingsModels,
   }) {
+    final availableImageModels =
+        settingsModels.imageModels
+            .where(
+              (model) => model.provider == imageModel.selectedImageProvider,
+            )
+            .toList();
+    final selectedModel =
+        availableImageModels.any(
+              (model) => model.id == imageModel.selectedImageModel,
+            )
+            ? imageModel.selectedImageModel
+            : (availableImageModels.isNotEmpty
+                ? availableImageModels.first.id
+                : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButton<String>(
-          value:
-              imageModel.allImageProviderNames.contains(
-                    imageModel.selectedImageProvider,
-                  )
-                  ? imageModel.selectedImageProvider
-                  : (imageModel.allImageProviderNames.isNotEmpty
-                      ? imageModel.allImageProviderNames.first
-                      : null),
-          isExpanded: true,
-          items:
-              imageModel.allImageProviderNames.map((String provider) {
-                return DropdownMenuItem<String>(
-                  value: provider,
-                  child: Text(provider),
-                );
-              }).toList(),
-          onChanged: (String? newValue) async {
-            if (newValue != null) {
-              await imageModel.setSelectedImageProvider(newValue);
-              _imageProviderUrlController.text =
-                  imageModel.rawImageProviderUrl ?? '';
-              _apiKeyController.text =
-                  apiKeys.getImageApiKeyForProvider(newValue) ?? '';
-              if (imageModel.availableImageModels.isNotEmpty) {
-                await imageModel.setSelectedImageModel(
-                  imageModel.availableImageModels.first,
-                );
-              } else {
-                await imageModel.setSelectedImageModel('');
-              }
-              setState(() {});
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-        Text(l10n.modelProviderURLOptional, style: _sectionTitleStyle),
-        Text(
-          l10n.defaultUrl(
-            ImageModelProvider.defaultImageBaseUrls['OpenAI'] ?? '',
-          ),
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-        TextField(
-          controller: _imageProviderUrlController,
-          decoration: const InputDecoration(
-            hintText: 'e.g., https://api.stability.ai',
-          ),
-          keyboardType: TextInputType.url,
-        ),
-        const SizedBox(height: 20),
-        _buildSectionTitle(l10n.apiKey(imageModel.selectedImageProvider)),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _apiKeyController,
-                obscureText: true,
-                decoration: InputDecoration(hintText: l10n.enterYourAPIKey),
-              ),
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: l10n.selectModelProvider,
+            field: _buildGlassDropdown<String>(
+              value:
+                  imageModel.allImageProviderNames.contains(
+                        imageModel.selectedImageProvider,
+                      )
+                      ? imageModel.selectedImageProvider
+                      : (imageModel.allImageProviderNames.isNotEmpty
+                          ? imageModel.allImageProviderNames.first
+                          : null),
+              items:
+                  imageModel.allImageProviderNames.map((String provider) {
+                    return DropdownMenuItem<String>(
+                      value: provider,
+                      child: Text(provider),
+                    );
+                  }).toList(),
+              onChanged: (String? newValue) async {
+                if (newValue != null) {
+                  await imageModel.setSelectedImageProvider(newValue);
+                  _imageProviderUrlController.text =
+                      imageModel.rawImageProviderUrl ?? '';
+                  _apiKeyController.text =
+                      apiKeys.getImageApiKeyForProvider(newValue) ?? '';
+                  if (imageModel.availableImageModels.isNotEmpty) {
+                    await imageModel.setSelectedImageModel(
+                      imageModel.availableImageModels.first,
+                    );
+                  } else {
+                    await imageModel.setSelectedImageModel('');
+                  }
+                  setState(() {});
+                }
+              },
             ),
-            IconButton(
-              icon: const Icon(Icons.clear),
-              tooltip: '清除',
-              onPressed: () async {
+          ),
+        ),
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: l10n.modelProviderURLOptional,
+            helperText: l10n.defaultUrl(
+              ImageModelProvider.defaultImageBaseUrls['OpenAI'] ?? '',
+            ),
+            field: _buildGlassTextField(
+              controller: _imageProviderUrlController,
+              hintText: 'e.g., https://api.stability.ai',
+              keyboardType: TextInputType.url,
+            ),
+          ),
+        ),
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: l10n.apiKey(imageModel.selectedImageProvider),
+            field: _buildGlassTextField(
+              controller: _apiKeyController,
+              hintText: l10n.enterYourAPIKey,
+              obscureText: true,
+              onClear: () async {
                 setState(() {
                   _apiKeyController.clear();
                 });
                 await _saveImageProviderApiKey(apiKeys, imageModel, '');
               },
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 20),
-        _buildSectionTitle(l10n.selectModel),
-        DropdownButton<String>(
-          value:
-              settingsModels.imageModels
-                      .where(
-                        (m) => m.provider == imageModel.selectedImageProvider,
-                      )
-                      .any((m) => m.id == imageModel.selectedImageModel)
-                  ? imageModel.selectedImageModel
-                  : (settingsModels.imageModels
-                          .where(
-                            (m) =>
-                                m.provider == imageModel.selectedImageProvider,
-                          )
-                          .isNotEmpty
-                      ? settingsModels.imageModels
-                          .where(
-                            (m) =>
-                                m.provider == imageModel.selectedImageProvider,
-                          )
-                          .first
-                          .id
-                      : null),
-          isExpanded: true,
-          items:
-              settingsModels.imageModels
-                  .where(
-                    (model) =>
-                        model.provider == imageModel.selectedImageProvider,
-                  )
-                  .map((model) {
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: l10n.selectModel,
+            field: _buildGlassDropdown<String>(
+              value: selectedModel,
+              items:
+                  availableImageModels.map((model) {
                     return DropdownMenuItem<String>(
                       value: model.id,
                       child: Text(model.name),
                     );
-                  })
-                  .toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              imageModel.setSelectedImageModel(newValue);
-            }
-          },
-          hint:
-              settingsModels.imageModels
-                      .where(
-                        (m) => m.provider == imageModel.selectedImageProvider,
-                      )
-                      .isEmpty
-                  ? Text(l10n.noModelsAvailable)
-                  : null,
-        ),
-        if (imageModel.selectedImageProvider == 'Black Forest Labs') ...[
-          const SizedBox(height: 20),
-          _buildSectionTitle(l10n.aspectRatio),
-          DropdownButton<String>(
-            value: imageModel.bflAspectRatio ?? '1:1',
-            isExpanded: true,
-            items: const [
-              DropdownMenuItem(value: '1:1', child: Text('1:1 (正方形)')),
-              DropdownMenuItem(value: '16:9', child: Text('16:9 (横屏)')),
-              DropdownMenuItem(value: '9:16', child: Text('9:16 (竖屏)')),
-              DropdownMenuItem(value: '4:3', child: Text('4:3')),
-              DropdownMenuItem(value: '3:2', child: Text('3:2')),
-            ],
-            onChanged: (value) async {
-              await imageModel.setBflAspectRatio(value);
-            },
-          ),
-        ],
-        const SizedBox(height: 20),
-        _buildSectionTitle(l10n.customModels),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _customModelController,
-                decoration: InputDecoration(
-                  hintText: l10n.enterCustomModelName,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () {
-                final modelName = _customModelController.text.trim();
-                if (modelName.isNotEmpty) {
-                  imageModel.addCustomImageModel(modelName);
-                  imageModel.setSelectedImageModel(modelName);
-                  _customModelController.clear();
+                  }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  imageModel.setSelectedImageModel(newValue);
                 }
               },
+              hintText:
+                  availableImageModels.isEmpty ? l10n.noModelsAvailable : null,
             ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        if (imageModel.customImageModels.isNotEmpty)
-          Text(
-            l10n.yourCustomModels,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: imageModel.customImageModels.length,
-          itemBuilder: (context, index) {
-            final model = imageModel.customImageModels[index];
-            return ListTile(
-              title: Text(model),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () {
-                  imageModel.removeCustomImageModel(model);
+        ),
+        if (imageModel.selectedImageProvider == 'Black Forest Labs') ...[
+          _buildGlassCard(
+            child: _buildSimpleFieldSection(
+              title: l10n.aspectRatio,
+              field: _buildGlassDropdown<String>(
+                value: imageModel.bflAspectRatio ?? '1:1',
+                items: const [
+                  DropdownMenuItem(value: '1:1', child: Text('1:1 (正方形)')),
+                  DropdownMenuItem(value: '16:9', child: Text('16:9 (横屏)')),
+                  DropdownMenuItem(value: '9:16', child: Text('9:16 (竖屏)')),
+                  DropdownMenuItem(value: '4:3', child: Text('4:3')),
+                  DropdownMenuItem(value: '3:2', child: Text('3:2')),
+                ],
+                onChanged: (value) async {
+                  await imageModel.setBflAspectRatio(value);
                 },
               ),
-            );
-          },
+            ),
+          ),
+        ],
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionTitle(l10n.customModels),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGlassTextField(
+                      controller: _customModelController,
+                      hintText: l10n.enterCustomModelName,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildInlineActionButton(
+                    icon: Icons.add_rounded,
+                    onTap: () {
+                      final modelName = _customModelController.text.trim();
+                      if (modelName.isNotEmpty) {
+                        imageModel.addCustomImageModel(modelName);
+                        imageModel.setSelectedImageModel(modelName);
+                        _customModelController.clear();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              if (imageModel.customImageModels.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  l10n.yourCustomModels,
+                  style: const TextStyle(
+                    color: MobilePalette.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                ...imageModel.customImageModels.map(
+                  (model) => _buildModelListTile(
+                    title: model,
+                    onDelete: () {
+                      imageModel.removeCustomImageModel(model);
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ],
     );
@@ -1543,114 +1506,220 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButton<String>(
-          value: videoModel.selectedVideoProvider,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: 'Google Veo3', child: Text('Google Veo3')),
-          ],
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              videoModel.setSelectedVideoProvider(newValue);
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-        _buildSectionTitle('Google Veo3 API Key'),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _apiKeyController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your Google Veo3 API Key',
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: l10n.selectModelProvider,
+            field: _buildGlassDropdown<String>(
+              value: videoModel.selectedVideoProvider,
+              items: const [
+                DropdownMenuItem(
+                  value: 'Google Veo3',
+                  child: Text('Google Veo3'),
                 ),
-              ),
+              ],
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  videoModel.setSelectedVideoProvider(newValue);
+                }
+              },
             ),
-            IconButton(
-              icon: const Icon(Icons.clear),
-              tooltip: '清除',
-              onPressed: () async {
+          ),
+        ),
+        _buildGlassCard(
+          child: _buildSimpleFieldSection(
+            title: 'Google Veo3 API Key',
+            field: _buildGlassTextField(
+              controller: _apiKeyController,
+              hintText: 'Enter your Google Veo3 API Key',
+              obscureText: true,
+              onClear: () async {
                 setState(() {
                   _apiKeyController.clear();
                 });
                 await apiKeys.setGoogleApiKey('');
               },
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 20),
-        _buildSectionTitle('Video Resolution'),
-        DropdownButton<String>(
-          value: videoModel.videoResolution,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: '480p', child: Text('480p (854×480)')),
-            DropdownMenuItem(value: '720p', child: Text('720p HD (1280×720)')),
-            DropdownMenuItem(
-              value: '1080p',
-              child: Text('1080p Full HD (1920×1080)'),
-            ),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              videoModel.setVideoResolution(value);
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-        _buildSectionTitle('Video Duration'),
-        DropdownButton<String>(
-          value: videoModel.videoDuration,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: '5s', child: Text('5 seconds')),
-            DropdownMenuItem(value: '10s', child: Text('10 seconds')),
-            DropdownMenuItem(value: '30s', child: Text('30 seconds')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              videoModel.setVideoDuration(value);
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-        _buildSectionTitle('Video Quality'),
-        DropdownButton<String>(
-          value: videoModel.videoQuality,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(
-              value: 'standard',
-              child: Text('Standard Quality'),
-            ),
-            DropdownMenuItem(value: 'high', child: Text('High Quality')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              videoModel.setVideoQuality(value);
-            }
-          },
-        ),
-        const SizedBox(height: 20),
-        _buildSectionTitle('Video Aspect Ratio'),
-        DropdownButton<String>(
-          value: videoModel.videoAspectRatio,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(value: '16:9', child: Text('16:9 (Landscape)')),
-            DropdownMenuItem(value: '9:16', child: Text('9:16 (Portrait)')),
-            DropdownMenuItem(value: '1:1', child: Text('1:1 (Square)')),
-            DropdownMenuItem(value: '4:3', child: Text('4:3 (Traditional)')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              videoModel.setVideoAspectRatio(value);
-            }
-          },
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MobileSectionLabel(title: 'Video Output'),
+              const SizedBox(height: 12),
+              _buildSimpleFieldSection(
+                title: 'Video Resolution',
+                field: _buildGlassDropdown<String>(
+                  value: videoModel.videoResolution,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '480p',
+                      child: Text('480p (854×480)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '720p',
+                      child: Text('720p HD (1280×720)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '1080p',
+                      child: Text('1080p Full HD (1920×1080)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoResolution(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildSimpleFieldSection(
+                title: 'Video Duration',
+                field: _buildGlassDropdown<String>(
+                  value: videoModel.videoDuration,
+                  items: const [
+                    DropdownMenuItem(value: '5s', child: Text('5 seconds')),
+                    DropdownMenuItem(value: '10s', child: Text('10 seconds')),
+                    DropdownMenuItem(value: '30s', child: Text('30 seconds')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoDuration(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildSimpleFieldSection(
+                title: 'Video Quality',
+                field: _buildGlassDropdown<String>(
+                  value: videoModel.videoQuality,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'standard',
+                      child: Text('Standard Quality'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'high',
+                      child: Text('High Quality'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoQuality(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildSimpleFieldSection(
+                title: 'Video Aspect Ratio',
+                field: _buildGlassDropdown<String>(
+                  value: videoModel.videoAspectRatio,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '16:9',
+                      child: Text('16:9 (Landscape)'),
+                    ),
+                    DropdownMenuItem(
+                      value: '9:16',
+                      child: Text('9:16 (Portrait)'),
+                    ),
+                    DropdownMenuItem(value: '1:1', child: Text('1:1 (Square)')),
+                    DropdownMenuItem(
+                      value: '4:3',
+                      child: Text('4:3 (Traditional)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      videoModel.setVideoAspectRatio(value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActionPanel({
+    required BuildContext context,
+    required UnifiedSettingsProvider unifiedSettings,
+    required ApiKeyProvider apiKeys,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+    required SearchProvider search,
+  }) {
+    final exportButton = _buildGlassButton(
+      label: l10n.exportConfig,
+      icon: Icons.file_upload_outlined,
+      backgroundColor: MobilePalette.textPrimary,
+      onPressed: () => _exportSettings(context, unifiedSettings),
+    );
+    final importButton = _buildGlassButton(
+      label: l10n.importConfig,
+      icon: Icons.file_download_outlined,
+      backgroundColor: MobilePalette.secondary,
+      onPressed: () => _showImportOptions(context, unifiedSettings),
+    );
+    final saveButton = _buildGlassButton(
+      label: l10n.saveSettings,
+      icon: Icons.save_outlined,
+      backgroundColor: MobilePalette.primary,
+      onPressed: () async {
+        await _saveSettingsForSelectedMode(
+          apiKeys: apiKeys,
+          chatModel: chatModel,
+          imageModel: imageModel,
+          search: search,
+          unifiedSettings: unifiedSettings,
+        );
+
+        if (!mounted || !context.mounted) return;
+        chatModel.syncModelsToRegistry();
+        _showSettingsSavedSnackBar(context);
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      },
+    );
+
+    return _buildGlassCard(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 640;
+
+          if (isWide) {
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: exportButton),
+                    const SizedBox(width: 12),
+                    Expanded(child: importButton),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(width: double.infinity, child: saveButton),
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              SizedBox(width: double.infinity, child: exportButton),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: importButton),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: saveButton),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -1673,125 +1742,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _syncSearchControllers(search);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.settings),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.25),
-                    Colors.white.withValues(alpha: 0.15),
+      backgroundColor: MobilePalette.background,
+      body: DecoratedBox(
+        decoration: buildMobileBackgroundDecoration(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              MobileTopBar(
+                leading: MobileIconCircleButton(
+                  icon:
+                      Navigator.canPop(context)
+                          ? Icons.arrow_back_ios_new_rounded
+                          : Icons.settings_outlined,
+                  onTap:
+                      Navigator.canPop(context)
+                          ? () => Navigator.maybePop(context)
+                          : null,
+                ),
+                title: l10n.settings,
+                subtitle: 'API keys, models, providers, and search settings',
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+                  children: <Widget>[
+                    _buildModelTypeCard(unifiedSettings),
+                    _buildAddProviderCard(context, unifiedSettings),
+                    if (unifiedSettings.selectedModelType ==
+                        available_model.ModelType.text) ...[
+                      _buildTextSettingsSection(
+                        apiKeys: apiKeys,
+                        chatModel: chatModel,
+                        imageModel: imageModel,
+                        search: search,
+                        settingsModels: settingsModels,
+                        unifiedSettings: unifiedSettings,
+                      ),
+                    ] else if (unifiedSettings.selectedModelType ==
+                        available_model.ModelType.image) ...[
+                      _buildImageSettingsSection(
+                        apiKeys: apiKeys,
+                        imageModel: imageModel,
+                        settingsModels: settingsModels,
+                      ),
+                    ] else if (unifiedSettings.selectedModelType ==
+                        available_model.ModelType.video) ...[
+                      _buildVideoSettingsSection(
+                        apiKeys: apiKeys,
+                        videoModel: videoModel,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    _buildActionPanel(
+                      context: context,
+                      unifiedSettings: unifiedSettings,
+                      apiKeys: apiKeys,
+                      chatModel: chatModel,
+                      imageModel: imageModel,
+                      search: search,
+                    ),
                   ],
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.withValues(alpha: 0.05),
-              Colors.purple.withValues(alpha: 0.05),
-              Colors.pink.withValues(alpha: 0.05),
             ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _buildModelTypeCard(unifiedSettings),
-                _buildAddProviderCard(context, unifiedSettings),
-                if (unifiedSettings.selectedModelType ==
-                    available_model.ModelType.text) ...[
-                  _buildTextSettingsSection(
-                    apiKeys: apiKeys,
-                    chatModel: chatModel,
-                    imageModel: imageModel,
-                    search: search,
-                    settingsModels: settingsModels,
-                    unifiedSettings: unifiedSettings,
-                  ),
-                ] else if (unifiedSettings.selectedModelType ==
-                    available_model.ModelType.image) ...[
-                  _buildImageSettingsSection(
-                    apiKeys: apiKeys,
-                    imageModel: imageModel,
-                    settingsModels: settingsModels,
-                  ),
-                ] else if (unifiedSettings.selectedModelType ==
-                    available_model.ModelType.video) ...[
-                  _buildVideoSettingsSection(
-                    apiKeys: apiKeys,
-                    videoModel: videoModel,
-                  ),
-                ],
-                const SizedBox(height: 30),
-                // Export/Import Settings Section
-                _buildGlassCard(
-                  margin: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _buildGlassButton(
-                          label: l10n.exportConfig,
-                          icon: Icons.file_upload,
-                          backgroundColor: Colors.blue,
-                          onPressed:
-                              () => _exportSettings(context, unifiedSettings),
-                        ),
-                        _buildGlassButton(
-                          label: l10n.importConfig,
-                          icon: Icons.file_download,
-                          backgroundColor: Colors.green,
-                          onPressed:
-                              () =>
-                                  _showImportOptions(context, unifiedSettings),
-                        ),
-                        _buildGlassButton(
-                          label: l10n.saveSettings,
-                          icon: Icons.save,
-                          backgroundColor: Colors.purple,
-                          onPressed: () async {
-                            await _saveSettingsForSelectedMode(
-                              apiKeys: apiKeys,
-                              chatModel: chatModel,
-                              imageModel: imageModel,
-                              search: search,
-                              unifiedSettings: unifiedSettings,
-                            );
-
-                            // 保存后同步模型到内存注册表
-                            chatModel.syncModelsToRegistry();
-
-                            _showSettingsSavedSnackBar(context);
-                            if (Navigator.canPop(context)) {
-                              Navigator.pop(context);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -2080,7 +2093,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Read and validate the file content
       final xmlContent = await file.readAsString();
-      debugPrint('XML content read: ${xmlContent.length} characters from $fileName');
+      debugPrint(
+        'XML content read: ${xmlContent.length} characters from $fileName',
+      );
 
       if (!_isValidSettingsXml(xmlContent)) {
         if (context.mounted) {
@@ -2103,6 +2118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         sourceLabel: '文件选择器',
       );
 
+      if (!context.mounted) return;
       if (confirmed) {
         debugPrint('User confirmed file picker import');
         await _applyImportedSettings(
@@ -2315,6 +2331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         platformLabel: directoryInfo.platformName,
       );
 
+      if (!context.mounted) return;
       if (confirmed) {
         debugPrint('User confirmed import');
         await _applyImportedSettings(
