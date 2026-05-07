@@ -41,7 +41,10 @@ class ChatServiceFactory {
     if (!ServiceConfigValidator.hasText(rawApiKey)) {
       throw MissingApiKeyException(
         provider: provider,
-        availableProviders: getConfiguredProviders(apiKeys),
+        availableProviders: getConfiguredProviders(
+          apiKeys,
+          providerNames: chatModel.allProviderNames,
+        ),
       );
     }
 
@@ -54,18 +57,19 @@ class ChatServiceFactory {
   }
 
   /// 获取已配置 API Key 的提供商列表
-  static List<String> getConfiguredProviders(ApiKeyProvider apiKeys) {
-    final configured = <String>[];
-    if (ServiceConfigValidator.hasText(apiKeys.openaiApiKey)) {
-      configured.add(openAI);
-    }
-    if (ServiceConfigValidator.hasText(apiKeys.googleApiKey)) {
-      configured.add(gemini);
-    }
-    if (ServiceConfigValidator.hasText(apiKeys.claudeApiKey)) {
-      configured.add(claude);
-    }
-    return configured;
+  static List<String> getConfiguredProviders(
+    ApiKeyProvider apiKeys, {
+    List<String>? providerNames,
+  }) {
+    final namesToCheck = providerNames ?? supportedProviders;
+    return namesToCheck
+        .where(
+          (provider) =>
+              ServiceConfigValidator.hasText(
+                apiKeys.getApiKeyForProvider(provider),
+              ),
+        )
+        .toList();
   }
 
   /// 传统方式创建聊天服务（保持向后兼容）

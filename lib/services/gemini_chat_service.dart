@@ -22,11 +22,10 @@ class GeminiService extends BaseApiService implements ChatService {
 
   @override
   List<String> get supportedModels => [
+    'gemini-2.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
     'gemini-2.0-flash',
-    'gemini-2.5-pro-preview-06-05',
-    'gemini-2.5-flash-preview-05-20',
-    'gemini-1.5-pro',
-    'gemini-1.5-flash',
   ];
 
   @override
@@ -161,7 +160,7 @@ class GeminiService extends BaseApiService implements ChatService {
       });
 
       final response = await post(
-        '/models/gemini-1.5-flash:generateContent',
+        '/models/gemini-2.5-flash-lite:generateContent',
         queryParams: {'key': apiKey},
         body: requestBody,
       );

@@ -130,6 +130,20 @@ class SettingsXmlHandler {
       settings['google_search_api_key'],
       4,
     );
+    final customProviderApiKeys = settings['custom_provider_api_keys_map'];
+    if (customProviderApiKeys != null) {
+      final encodedKeys = customProviderApiKeys is String
+          ? customProviderApiKeys
+          : json_lib.json.encode(customProviderApiKeys);
+      if (encodedKeys.isNotEmpty && encodedKeys != '{}') {
+        _writeEncryptedXmlTag(
+          buffer,
+          'custom_provider_api_keys',
+          encodedKeys,
+          4,
+        );
+      }
+    }
     buffer.writeln('  </api_keys>');
   }
 
@@ -145,6 +159,15 @@ class SettingsXmlHandler {
       4,
     );
     _writeXmlTag(buffer, 'provider_url', settings['openai_provider_url'], 4);
+    final providerUrls = settings['chat_provider_urls_map'];
+    if (providerUrls != null) {
+      final providerUrlsStr = providerUrls is String
+          ? providerUrls
+          : json_lib.json.encode(providerUrls);
+      if (providerUrlsStr.isNotEmpty && providerUrlsStr != '{}') {
+        _writeXmlTag(buffer, 'provider_urls', providerUrlsStr, 4);
+      }
+    }
     _writeXmlTag(
       buffer,
       'selected_model_type',
@@ -184,6 +207,40 @@ class SettingsXmlHandler {
           : json_lib.json.encode(customProviders);
       if (customProvidersStr.isNotEmpty && customProvidersStr != '{}') {
         _writeXmlTag(buffer, 'custom_providers', customProvidersStr, 4);
+      }
+    }
+
+    final customModelsByProvider =
+        settings['chat_custom_models_by_provider_map'];
+    if (customModelsByProvider != null) {
+      final customModelsByProviderStr = customModelsByProvider is String
+          ? customModelsByProvider
+          : json_lib.json.encode(customModelsByProvider);
+      if (customModelsByProviderStr.isNotEmpty &&
+          customModelsByProviderStr != '{}') {
+        _writeXmlTag(
+          buffer,
+          'custom_models_by_provider',
+          customModelsByProviderStr,
+          4,
+        );
+      }
+    }
+
+    final providerSelectedModels =
+        settings['chat_provider_selected_models_map'];
+    if (providerSelectedModels != null) {
+      final providerSelectedModelsStr = providerSelectedModels is String
+          ? providerSelectedModels
+          : json_lib.json.encode(providerSelectedModels);
+      if (providerSelectedModelsStr.isNotEmpty &&
+          providerSelectedModelsStr != '{}') {
+        _writeXmlTag(
+          buffer,
+          'provider_selected_models',
+          providerSelectedModelsStr,
+          4,
+        );
       }
     }
 
@@ -396,6 +453,10 @@ class SettingsXmlHandler {
         apiKeysContent,
         'google_search_api_key',
       );
+      settings['custom_provider_api_keys_map'] = _extractEncryptedTagValue(
+        apiKeysContent,
+        'custom_provider_api_keys',
+      );
     }
 
     return settings;
@@ -417,6 +478,10 @@ class SettingsXmlHandler {
       settings['openai_provider_url'] = _extractTagValue(
         providerContent,
         'provider_url',
+      );
+      settings['chat_provider_urls_map'] = _extractTagValue(
+        providerContent,
+        'provider_urls',
       );
       final modelTypeStr = _extractTagValue(
         providerContent,
@@ -446,6 +511,14 @@ class SettingsXmlHandler {
       settings['custom_providers_map'] = _extractTagValue(
         modelContent,
         'custom_providers',
+      );
+      settings['chat_custom_models_by_provider_map'] = _extractTagValue(
+        modelContent,
+        'custom_models_by_provider',
+      );
+      settings['chat_provider_selected_models_map'] = _extractTagValue(
+        modelContent,
+        'provider_selected_models',
       );
 
       // Parse custom models list

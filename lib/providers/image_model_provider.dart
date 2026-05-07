@@ -285,6 +285,7 @@ class ImageModelProvider with ChangeNotifier {
   /// 将图像模型同步到模型注册表
   Future<void> syncModelsToRegistry() async {
     if (modelRegistry != null) {
+      modelRegistry!.clearType(available_model.ModelType.image);
       // 1. 注册预设图像模型
       for (var provider in _categorizedPresetImageModels.keys) {
         for (var model in _categorizedPresetImageModels[provider]!) {

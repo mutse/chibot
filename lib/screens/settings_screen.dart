@@ -339,16 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ApiKeyProvider apiKeys,
     ChatModelProvider chatModel,
   ) {
-    switch (chatModel.selectedProvider) {
-      case 'OpenAI':
-        return apiKeys.apiKey ?? '';
-      case 'Anthropic':
-        return apiKeys.claudeApiKey ?? '';
-      case 'Google':
-        return apiKeys.apiKey ?? ''; // Using OpenAI key for Google for now
-      default:
-        return apiKeys.apiKey ?? '';
-    }
+    return apiKeys.getApiKeyForProvider(chatModel.selectedProvider) ?? '';
   }
 
   String _getApiKeyLabel(
@@ -368,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'Google':
         return 'Google API Key';
       default:
-        return l10n.apiKey(chatModel.selectedProvider);
+        return '${chatModel.selectedProvider} API Key';
     }
   }
 
@@ -385,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'Google':
         return 'Enter your Google API Key';
       default:
-        return l10n.enterYourAPIKey;
+        return 'Enter API key for ${chatModel.selectedProvider}';
     }
   }
 
@@ -394,20 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ChatModelProvider chatModel,
     String apiKey,
   ) async {
-    switch (chatModel.selectedProvider) {
-      case 'OpenAI':
-        await apiKeys.setOpenaiApiKey(apiKey);
-        break;
-      case 'Anthropic':
-        await apiKeys.setClaudeApiKey(apiKey);
-        break;
-      case 'Google':
-        await apiKeys.setGoogleApiKey(apiKey);
-        break;
-      default:
-        await apiKeys.setOpenaiApiKey(apiKey);
-        break;
-    }
+    await apiKeys.setApiKeyForProvider(chatModel.selectedProvider, apiKey);
   }
 
   Future<void> _saveImageProviderApiKey(
@@ -1013,7 +991,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            '添加 OpenAI 兼容 provider、自定义模型和接入地址。',
+            '添加自定义厂商、模型、Base URL 和 API key。文本模型默认按 OpenAI 兼容接口接入。',
             style: TextStyle(color: MobilePalette.textSecondary, fontSize: 12),
           ),
         ],
@@ -1200,9 +1178,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _buildGlassCard(
           child: _buildSimpleFieldSection(
             title: l10n.modelProviderURLOptional,
-            helperText: l10n.defaultUrl(
-              ChatModelProvider.defaultBaseUrls['OpenAI'] ?? '',
-            ),
+            helperText:
+                ChatModelProvider.defaultBaseUrls.containsKey(
+                      chatModel.selectedProvider,
+                    )
+                    ? l10n.defaultUrl(
+                      ChatModelProvider
+                              .defaultBaseUrls[chatModel.selectedProvider] ??
+                          '',
+                    )
+                    : 'OpenAI compatible base URL, for example http://localhost:11434/v1',
             field: _buildGlassTextField(
               controller: _providerUrlController,
               hintText: 'e.g., http://localhost:11434/v1',

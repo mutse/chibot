@@ -30,7 +30,7 @@ class AppConstants {
   static const String tavilyBaseUrl = 'https://api.tavily.com';
 
   // Default Models
-  static const String defaultTextModel = 'gpt-4o';
+  static const String defaultTextModel = 'gpt-5.5';
   static const String defaultImageModel = 'dall-e-3';
   static const String defaultProvider = 'OpenAI';
 

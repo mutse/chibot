@@ -13,7 +13,7 @@ class MissingApiKeyException implements Exception {
   String get userFriendlyMessage {
     if (availableProviders.isEmpty) {
       return 'No API keys configured. Please configure at least one provider in Settings:\n'
-          '- OpenAI (GPT-4, GPT-4o)\n'
+          '- OpenAI (GPT-5 / GPT-4.1)\n'
           '- Google (Gemini)\n'
           '- Anthropic (Claude)\n\n'
           'Tap the Settings icon to add your API keys.';

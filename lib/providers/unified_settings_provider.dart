@@ -321,6 +321,8 @@ class UnifiedSettingsProvider with ChangeNotifier {
       'flux_kontext_api_key',
       'tavily_api_key',
       'google_search_api_key',
+      'google_search_engine_id',
+      'custom_provider_api_keys_map',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {
@@ -339,6 +341,9 @@ class UnifiedSettingsProvider with ChangeNotifier {
       'openai_provider_url',
       'custom_models_list',
       'custom_providers_map',
+      'chat_provider_urls_map',
+      'chat_provider_selected_models_map',
+      'chat_custom_models_by_provider_map',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {

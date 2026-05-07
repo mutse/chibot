@@ -37,8 +37,13 @@ void main() {
       expect(apiKeys.apiKey, equals('test-key')); // 向后兼容
     });
 
-    test('getApiKeyForProvider 返回正确的密钥', () {
-      // 这个测试需要实际的持久化，暂时跳过
+    test('自定义 provider 使用独立的 API 密钥', () async {
+      await apiKeys.setApiKeyForProvider('OpenRouter', 'openrouter-key');
+      expect(
+        apiKeys.getApiKeyForProvider('OpenRouter'),
+        equals('openrouter-key'),
+      );
+      expect(apiKeys.openaiApiKey, isNull);
     });
   });
 
@@ -52,14 +57,14 @@ void main() {
     });
 
     test('初始化时使用默认模型', () {
-      expect(chatModel.selectedModel, equals('gpt-4o'));
+      expect(chatModel.selectedModel, equals('gpt-5.5'));
       expect(chatModel.selectedProvider, equals('OpenAI'));
     });
 
     test('availableModels 包含 OpenAI 模型', () {
       expect(
         chatModel.availableModels,
-        containsAll(['gpt-4', 'gpt-4o', 'gpt-4.1']),
+        containsAll(['gpt-5.5', 'gpt-4.1', 'gpt-4o']),
       );
     });
 
@@ -76,10 +81,25 @@ void main() {
       expect(
         chatModel.availableModels,
         containsAll([
-          'gemini-2.0-flash',
-          'gemini-2.5-pro-preview-06-05',
-          'gemini-2.5-flash-preview-05-20',
+          'gemini-2.5-pro',
+          'gemini-2.5-flash',
+          'gemini-2.5-flash-lite',
         ]),
+      );
+    });
+
+    test('自定义 provider 的 URL 按厂商分别保存', () async {
+      await chatModel.addCustomProvider('OpenRouter', ['openai/gpt-4.1']);
+      await chatModel.setSelectedProvider('OpenRouter');
+      await chatModel.setProviderUrl('https://openrouter.ai/api/v1');
+
+      await chatModel.setSelectedProvider('OpenAI');
+      await chatModel.setProviderUrl('https://api.openai.com/v1');
+
+      await chatModel.setSelectedProvider('OpenRouter');
+      expect(
+        chatModel.rawProviderUrl,
+        equals('https://openrouter.ai/api/v1'),
       );
     });
   });

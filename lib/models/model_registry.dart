@@ -15,15 +15,24 @@ class ModelRegistry {
       List.unmodifiable(_models[type] ?? []);
 
   void registerModel(AvailableModel model) {
-    _models[model.type]?.removeWhere((m) => m.id == model.id);
+    _models[model.type]?.removeWhere(
+      (m) => m.id == model.id && m.provider == model.provider,
+    );
     _models[model.type]?.add(model);
-    _lastValidated[model.id] = DateTime.now();
+    _lastValidated[_buildValidationKey(model.id, model.provider)] =
+        DateTime.now();
   }
 
-  bool shouldRefresh(String modelId) {
-    final lastValidated = _lastValidated[modelId];
+  bool shouldRefresh(String modelId, {String? provider}) {
+    final cacheKey =
+        provider == null ? modelId : _buildValidationKey(modelId, provider);
+    final lastValidated = _lastValidated[cacheKey];
     return lastValidated == null ||
         DateTime.now().difference(lastValidated) > cacheTtl;
+  }
+
+  void clearType(ModelType type) {
+    _models[type]?.clear();
   }
 
   void clear() {
@@ -31,5 +40,9 @@ class ModelRegistry {
       _models[type]?.clear();
     }
     _lastValidated.clear();
+  }
+
+  String _buildValidationKey(String modelId, String provider) {
+    return '$provider::$modelId';
   }
 }

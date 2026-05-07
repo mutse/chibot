@@ -24,10 +24,20 @@ class OpenAIService extends BaseApiService implements ChatService {
 
   @override
   List<String> get supportedModels => [
-    'gpt-4',
+    'gpt-5.5',
+    'gpt-5.4',
+    'gpt-5.4-mini',
+    'gpt-5.4-nano',
+    'gpt-5.1',
+    'gpt-5-mini',
+    'gpt-5-nano',
+    'gpt-4.1',
+    'gpt-4.1-mini',
+    'gpt-4.1-nano',
     'gpt-4o',
-    'gpt-4-turbo',
-    'gpt-3.5-turbo',
+    'gpt-4o-mini',
+    'o3',
+    'o4-mini',
   ];
 
   @override
@@ -191,7 +201,7 @@ class OpenAIService extends BaseApiService implements ChatService {
           'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
 
       final requestBody = _buildChatRequest(
-        'gpt-3.5-turbo',
+        'gpt-4.1-mini',
         [
           {'role': 'user', 'content': prompt},
         ],

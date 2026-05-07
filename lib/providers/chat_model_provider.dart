@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import '../models/model_registry.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/available_model.dart';
-import 'package:chibot/models/available_model.dart' as available_model;
+import '../models/available_model.dart' as available_model;
+import '../models/model_registry.dart';
 
 /// 负责聊天相关的模型配置和提供商管理
 /// 职责：选择聊天模型、管理提供商、配置提供商 URL
@@ -16,18 +17,30 @@ class ChatModelProvider with ChangeNotifier {
   static const String _selectedProviderKey = 'selected_model_provider';
 
   // 当前选定的聊天模型
-  String _selectedModel = 'gpt-4o';
+  String _selectedModel = 'gpt-5.5';
   static const String _selectedModelKey = 'openai_selected_model';
 
-  // 自定义提供商 URL
-  String? _providerUrl;
+  // 兼容旧版本的单一 URL 存储键
   static const String _providerUrlKey = 'openai_provider_url';
 
-  // 自定义模型列表
-  List<String> _customModels = [];
-  static const String _customModelsKey = 'custom_models_list';
+  // 当前 provider 的自定义 URL（按 provider 保存）
+  Map<String, String> _providerUrls = {};
+  static const String _providerUrlsKey = 'chat_provider_urls_map';
 
-  // 自定义提供商及其模型
+  // 每个 provider 最近一次选择的模型
+  Map<String, String> _providerSelectedModels = {};
+  static const String _providerSelectedModelsKey =
+      'chat_provider_selected_models_map';
+
+  // 兼容旧版本的“当前 provider 附加自定义模型”存储键
+  static const String _legacyCustomModelsKey = 'custom_models_list';
+
+  // 当前 provider 附加的自定义模型（按 provider 保存）
+  Map<String, List<String>> _customModelsByProvider = {};
+  static const String _customModelsByProviderKey =
+      'chat_custom_models_by_provider_map';
+
+  // 自定义提供商及其基础模型
   Map<String, List<String>> _customProviders = {};
   static const String _customProvidersKey = 'custom_providers_map';
 
@@ -40,87 +53,61 @@ class ChatModelProvider with ChangeNotifier {
 
   // 分类的预设模型（按提供商组织）
   final Map<String, List<String>> _categorizedPresetModels = {
-    'OpenAI': ['gpt-4', 'gpt-4o', 'gpt-4.1'],
-    'Google': [
-      'gemini-2.0-flash',
-      'gemini-2.5-pro-preview-06-05',
-      'gemini-2.5-flash-preview-05-20',
+    'OpenAI': [
+      'gpt-5.5',
+      'gpt-5.4',
+      'gpt-5.4-mini',
+      'gpt-5.4-nano',
+      'gpt-5.1',
+      'gpt-5-mini',
+      'gpt-5-nano',
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'gpt-4.1-nano',
+      'gpt-4o',
+      'gpt-4o-mini',
     ],
-    'Anthropic': ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+    'Google': [
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash',
+    ],
+    'Anthropic': [
+      'claude-opus-4-1',
+      'claude-sonnet-4-0',
+      'claude-3-7-sonnet-latest',
+      'claude-3-5-haiku-latest',
+    ],
   };
 
   // ==================== Getters ====================
 
   String get selectedProvider => _selectedProvider;
   String get selectedModel => _selectedModel;
-  String? get rawProviderUrl => _providerUrl;
-  List<String> get customModels => List.unmodifiable(_customModels);
+  String? get rawProviderUrl => _providerUrls[_selectedProvider];
+  List<String> get customModels =>
+      List.unmodifiable(_customModelsByProvider[_selectedProvider] ?? const []);
 
-  /// 获取当前选定提供商的所有可用模型（包括自定义）
+  /// 获取当前选定提供商的所有可用模型（预设 + 自定义 provider + 当前 provider 附加模型）
   List<String> get availableModels {
-    List<String> modelsToShow = [];
-    if (_categorizedPresetModels.containsKey(_selectedProvider)) {
-      modelsToShow.addAll(_categorizedPresetModels[_selectedProvider] ?? []);
-    } else if (_customProviders.containsKey(_selectedProvider)) {
-      modelsToShow.addAll(_customProviders[_selectedProvider] ?? []);
-    }
-    modelsToShow.addAll(_customModels);
-    return List.unmodifiable(modelsToShow.toSet().toList());
+    return _buildAvailableModelsForProvider(_selectedProvider);
   }
 
   /// 获取所有提供商名称（预设 + 自定义）
   List<String> get allProviderNames {
-    final names = defaultBaseUrls.keys.toList();
-    names.addAll(_customProviders.keys);
+    final names = <String>[
+      ...defaultBaseUrls.keys,
+      ..._customProviders.keys,
+      ..._customModelsByProvider.keys,
+      ..._providerUrls.keys,
+      ..._providerSelectedModels.keys,
+    ];
     return List.unmodifiable(names.toSet().toList());
   }
 
-  /// 获取提供商 URL（优先使用自定义，否则使用默认）
-  /// 对于自定义提供商（OpenAI兼容接口），规范化URL格式
-  String get providerUrl {
-    String baseUrl = _providerUrl?.trim() ??
-        defaultBaseUrls[_selectedProvider] ??
-        defaultBaseUrls['OpenAI']!;
-    
-    // 移除尾部斜杠
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-    }
-    
-    // 对于自定义提供商（OpenAI兼容接口），规范化URL
-    if (!defaultBaseUrls.containsKey(_selectedProvider)) {
-      // 移除可能的API端点路径（如 /chat/completions, /v1/chat/completions 等）
-      baseUrl = baseUrl.replaceAll(RegExp(r'/chat/completions.*$'), '');
-      baseUrl = baseUrl.replaceAll(RegExp(r'/models(?!/v\d+).*$'), '');
-      
-      // 移除尾部斜杠（再次处理，因为可能移除了路径）
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-      }
-      
-      // 解析URL以检查路径
-      try {
-        final uri = Uri.parse(baseUrl);
-        final path = uri.path;
-        
-        // 检查是否已包含版本号路径（如 /v1, /v1beta, /v1alpha）
-        final hasVersionPath = RegExp(r'/(v\d+|v\d+beta|v\d+alpha)$').hasMatch(path);
-        
-        // 如果URL不包含版本号路径，且路径为空或只有根路径，添加 /v1（OpenAI兼容标准）
-        if (!hasVersionPath && (path.isEmpty || path == '/')) {
-          baseUrl = '${uri.scheme}://${uri.host}${uri.port != 80 && uri.port != 443 ? ':${uri.port}' : ''}/v1';
-        }
-      } catch (e) {
-        // 如果URL解析失败，保持原样（可能是格式错误的URL，让调用方处理）
-        // 但如果看起来像是基础域名，尝试添加 /v1
-        if (!baseUrl.contains('/v') && !baseUrl.contains('/api/')) {
-          baseUrl = '$baseUrl/v1';
-        }
-      }
-    }
-    
-    return baseUrl;
-  }
+  /// 获取当前提供商的解析后 URL（优先自定义，其次默认）
+  String get providerUrl => _resolveProviderUrlForProvider(_selectedProvider);
 
   // ==================== 初始化 ====================
 
@@ -130,29 +117,59 @@ class ChatModelProvider with ChangeNotifier {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
-    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
-    _providerUrl = prefs.getString(_providerUrlKey);
-    _customModels = prefs.getStringList(_customModelsKey) ?? [];
 
-    // 加载自定义提供商
-    final String? customProvidersString = prefs.getString(_customProvidersKey);
-    if (customProvidersString != null) {
-      try {
-        _customProviders = Map<String, List<String>>.from(
-          json
-              .decode(customProvidersString)
-              .map((key, value) => MapEntry(key, List<String>.from(value))),
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('Error loading custom providers: $e');
-        }
-        _customProviders = {};
-      }
+    _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
+    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-5.5';
+
+    _customProviders = _decodeStringListMap(
+      prefs.getString(_customProvidersKey),
+      'Error loading custom providers',
+    );
+    _customModelsByProvider = _decodeStringListMap(
+      prefs.getString(_customModelsByProviderKey),
+      'Error loading provider custom models',
+    );
+    _providerUrls = _decodeStringMap(
+      prefs.getString(_providerUrlsKey),
+      'Error loading provider URL map',
+    );
+    _providerSelectedModels = _decodeStringMap(
+      prefs.getString(_providerSelectedModelsKey),
+      'Error loading provider selected model map',
+    );
+
+    final legacyProviderUrl = _normalizeNullableInput(
+      prefs.getString(_providerUrlKey),
+    );
+    if (legacyProviderUrl != null &&
+        !_providerUrls.containsKey(_selectedProvider)) {
+      _providerUrls[_selectedProvider] = legacyProviderUrl;
     }
 
+    final legacyCustomModels =
+        prefs.getStringList(_legacyCustomModelsKey) ?? const <String>[];
+    if (legacyCustomModels.isNotEmpty &&
+        (_customModelsByProvider[_selectedProvider] ?? const <String>[])
+            .isEmpty) {
+      _customModelsByProvider[_selectedProvider] =
+          legacyCustomModels
+              .map((model) => model.trim())
+              .where((model) => model.isNotEmpty)
+              .toSet()
+              .toList();
+    }
+
+    if (!defaultBaseUrls.containsKey(_selectedProvider) &&
+        !_hasAnyModelsForProvider(_selectedProvider) &&
+        _selectedModel.trim().isNotEmpty) {
+      _customProviders[_selectedProvider] = <String>[_selectedModel];
+    }
+
+    _providerSelectedModels[_selectedProvider] = _selectedModel;
     _validateSelectedModelForProvider();
+    await _persistProviderMaps(prefs);
+    await _persistLegacySelectedProviderState(prefs);
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
@@ -160,73 +177,171 @@ class ChatModelProvider with ChangeNotifier {
 
   /// 设置选定的聊天模型
   Future<void> setSelectedModel(String model) async {
-    if (_selectedModel != model) {
-      _selectedModel = model;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedModelKey, model);
-      await syncModelsToRegistry();
-      notifyListeners();
+    final normalizedModel = model.trim();
+    if (normalizedModel.isEmpty) {
+      return;
     }
+
+    final available = _buildAvailableModelsForProvider(_selectedProvider);
+    if (!available.contains(normalizedModel) ||
+        _selectedModel == normalizedModel) {
+      return;
+    }
+
+    _selectedModel = normalizedModel;
+    _providerSelectedModels[_selectedProvider] = normalizedModel;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_selectedModelKey, normalizedModel);
+    await _persistProviderSelectedModels(prefs);
+    await syncModelsToRegistry();
+    notifyListeners();
   }
 
   /// 设置选定的提供商
   Future<void> setSelectedProvider(String provider) async {
-    if (_selectedProvider != provider) {
-      _selectedProvider = provider;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_selectedProviderKey, provider);
-      _validateSelectedModelForProvider();
-      await syncModelsToRegistry();
-      notifyListeners();
+    final normalizedProvider = provider.trim();
+    if (normalizedProvider.isEmpty || _selectedProvider == normalizedProvider) {
+      return;
     }
+
+    _selectedProvider = normalizedProvider;
+    _validateSelectedModelForProvider();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_selectedProviderKey, _selectedProvider);
+    await prefs.setString(_selectedModelKey, _selectedModel);
+    await _persistProviderMaps(prefs);
+    await _persistLegacySelectedProviderState(prefs);
+    await syncModelsToRegistry();
+    notifyListeners();
   }
 
-  /// 设置自定义提供商 URL
-  Future<void> setProviderUrl(String? url) async {
-    _providerUrl = url;
-    final prefs = await SharedPreferences.getInstance();
-    if (url != null) {
-      await prefs.setString(_providerUrlKey, url);
-    } else {
-      await prefs.remove(_providerUrlKey);
+  /// 设置当前或指定提供商的 URL
+  Future<void> setProviderUrl(String? url, {String? provider}) async {
+    final targetProvider = (provider ?? _selectedProvider).trim();
+    if (targetProvider.isEmpty) {
+      return;
     }
+
+    final normalizedUrl = _normalizeNullableInput(url);
+    final storedKey = _findStoredProviderKey(_providerUrls, targetProvider);
+
+    if (normalizedUrl == null) {
+      _providerUrls.remove(storedKey ?? targetProvider);
+    } else {
+      _providerUrls[storedKey ?? targetProvider] = normalizedUrl;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persistProviderUrls(prefs);
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
   // ==================== 自定义模型管理 ====================
 
-  /// 添加自定义模型
+  /// 添加当前提供商的附加自定义模型
   Future<void> addCustomModel(String model) async {
-    if (!_customModels.contains(model)) {
-      _customModels.add(model);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_customModelsKey, _customModels);
-      notifyListeners();
+    final normalizedModel = model.trim();
+    if (normalizedModel.isEmpty) {
+      return;
     }
-  }
 
-  /// 移除自定义模型
-  Future<void> removeCustomModel(String model) async {
-    if (_customModels.remove(model)) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_customModelsKey, _customModels);
-      notifyListeners();
+    final currentModels = _customModelsByProvider.putIfAbsent(
+      _selectedProvider,
+      () => <String>[],
+    );
+    if (_buildAvailableModelsForProvider(_selectedProvider).contains(
+      normalizedModel,
+    )) {
+      return;
     }
-  }
 
-  /// 添加自定义提供商及其模型
-  Future<void> addCustomProvider(String provider, List<String> models) async {
-    _customProviders[provider] = models;
+    currentModels.add(normalizedModel);
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+    await _persistCustomModelsByProvider(prefs);
+    await syncModelsToRegistry();
+    notifyListeners();
+  }
+
+  /// 移除当前提供商的附加自定义模型
+  Future<void> removeCustomModel(String model) async {
+    final models = _customModelsByProvider[_selectedProvider];
+    if (models == null || !models.remove(model)) {
+      return;
+    }
+
+    if (models.isEmpty) {
+      _customModelsByProvider.remove(_selectedProvider);
+    }
+
+    _validateSelectedModelForProvider();
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persistCustomModelsByProvider(prefs);
+    await prefs.setString(_selectedModelKey, _selectedModel);
+    await _persistProviderSelectedModels(prefs);
+    await syncModelsToRegistry();
+    notifyListeners();
+  }
+
+  /// 添加自定义提供商及其基础模型
+  Future<void> addCustomProvider(String provider, List<String> models) async {
+    final normalizedProvider = provider.trim();
+    final normalizedModels =
+        models
+            .map((model) => model.trim())
+            .where((model) => model.isNotEmpty)
+            .toSet()
+            .toList();
+
+    if (normalizedProvider.isEmpty ||
+        normalizedModels.isEmpty ||
+        defaultBaseUrls.containsKey(normalizedProvider)) {
+      return;
+    }
+
+    final existingModels = _customProviders[normalizedProvider] ?? [];
+    _customProviders[normalizedProvider] = {
+      ...existingModels,
+      ...normalizedModels,
+    }.toList();
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persistCustomProviders(prefs);
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
   /// 移除自定义提供商
   Future<void> removeCustomProvider(String provider) async {
-    _customProviders.remove(provider);
+    final storedProviderKey = _findStoredProviderKey(
+      _customProviders,
+      provider.trim(),
+    );
+    final targetProvider = storedProviderKey ?? provider.trim();
+    if (targetProvider.isEmpty) {
+      return;
+    }
+
+    _customProviders.remove(targetProvider);
+    _customModelsByProvider.remove(targetProvider);
+    _providerUrls.remove(targetProvider);
+    _providerSelectedModels.remove(targetProvider);
+
+    if (_selectedProvider == targetProvider) {
+      _selectedProvider = 'OpenAI';
+      _validateSelectedModelForProvider();
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+    await prefs.setString(_selectedProviderKey, _selectedProvider);
+    await prefs.setString(_selectedModelKey, _selectedModel);
+    await _persistProviderMaps(prefs);
+    await _persistLegacySelectedProviderState(prefs);
+    await syncModelsToRegistry();
     notifyListeners();
   }
 
@@ -234,30 +349,78 @@ class ChatModelProvider with ChangeNotifier {
 
   /// 验证所选模型是否与提供商兼容
   void _validateSelectedModelForProvider() {
-    final available = availableModels;
-    if (!available.contains(_selectedModel)) {
-      // 如果当前模型不可用，选择该提供商的第一个模型
-      if (available.isNotEmpty) {
-        _selectedModel = available.first;
-      } else {
-        // 降级到 OpenAI 的默认模型
-        _selectedProvider = 'OpenAI';
-        _selectedModel = 'gpt-4o';
-      }
+    final available = _buildAvailableModelsForProvider(_selectedProvider);
+    final savedModel = _providerSelectedModels[_selectedProvider];
+
+    if (savedModel != null && available.contains(savedModel)) {
+      _selectedModel = savedModel;
+      return;
     }
+
+    if (available.contains(_selectedModel)) {
+      _providerSelectedModels[_selectedProvider] = _selectedModel;
+      return;
+    }
+
+    if (available.isNotEmpty) {
+      _selectedModel = available.first;
+      _providerSelectedModels[_selectedProvider] = _selectedModel;
+      return;
+    }
+
+    _selectedProvider = 'OpenAI';
+    _selectedModel = _categorizedPresetModels['OpenAI']!.first;
+    _providerSelectedModels[_selectedProvider] = _selectedModel;
   }
 
   /// 将模型同步到模型注册表
   Future<void> syncModelsToRegistry() async {
-    if (modelRegistry != null) {
-      // 注册当前提供商的所有可用模型
-      for (final model in availableModels) {
+    if (modelRegistry == null) {
+      return;
+    }
+
+    modelRegistry!.clearType(available_model.ModelType.text);
+
+    for (final entry in _categorizedPresetModels.entries) {
+      for (final model in entry.value) {
         modelRegistry!.registerModel(
           AvailableModel(
             id: model,
             name: model,
-            provider: _selectedProvider,
+            provider: entry.key,
             type: available_model.ModelType.text,
+            supportsStreaming: entry.key != 'Google',
+            baseUrl: _resolveProviderUrlForProvider(entry.key),
+          ),
+        );
+      }
+    }
+
+    for (final entry in _customProviders.entries) {
+      for (final model in entry.value) {
+        modelRegistry!.registerModel(
+          AvailableModel(
+            id: model,
+            name: model,
+            provider: entry.key,
+            type: available_model.ModelType.text,
+            supportsStreaming: true,
+            baseUrl: _resolveProviderUrlForProvider(entry.key),
+          ),
+        );
+      }
+    }
+
+    for (final entry in _customModelsByProvider.entries) {
+      for (final model in entry.value) {
+        modelRegistry!.registerModel(
+          AvailableModel(
+            id: model,
+            name: model,
+            provider: entry.key,
+            type: available_model.ModelType.text,
+            supportsStreaming: entry.key != 'Google',
+            baseUrl: _resolveProviderUrlForProvider(entry.key),
           ),
         );
       }
@@ -271,68 +434,332 @@ class ChatModelProvider with ChangeNotifier {
     return {
       _selectedProviderKey: _selectedProvider,
       _selectedModelKey: _selectedModel,
-      _providerUrlKey: _providerUrl,
-      _customModelsKey: _customModels,
+      _providerUrlKey: rawProviderUrl,
+      _legacyCustomModelsKey: customModels,
       _customProvidersKey: _customProviders,
+      _providerUrlsKey: _providerUrls,
+      _providerSelectedModelsKey: _providerSelectedModels,
+      _customModelsByProviderKey: _customModelsByProvider,
     };
   }
 
   /// 从 Map 导入聊天模型配置
   Future<void> fromMap(Map<String, dynamic> data) async {
-    if (data.containsKey(_selectedProviderKey)) {
-      _selectedProvider = data[_selectedProviderKey];
-    }
-    if (data.containsKey(_selectedModelKey)) {
-      _selectedModel = data[_selectedModelKey];
-    }
-    if (data.containsKey(_providerUrlKey)) {
-      _providerUrl = data[_providerUrlKey];
-    }
-    if (data.containsKey(_customModelsKey)) {
-      _customModels = List<String>.from(data[_customModelsKey] ?? []);
-    }
+    final importedProvider =
+        (data[_selectedProviderKey] as String?)?.trim() ?? _selectedProvider;
+    final importedModel =
+        (data[_selectedModelKey] as String?)?.trim() ?? _selectedModel;
+
+    _selectedProvider = importedProvider.isEmpty ? 'OpenAI' : importedProvider;
+    _selectedModel = importedModel.isEmpty
+        ? _categorizedPresetModels['OpenAI']!.first
+        : importedModel;
+
     if (data.containsKey(_customProvidersKey)) {
-      final customProvidersData = data[_customProvidersKey];
-      if (customProvidersData != null) {
-        Map<String, List<String>> parsedProviders = {};
+      _customProviders = _decodeDynamicStringListMap(
+        data[_customProvidersKey],
+        'Error parsing custom providers JSON',
+      );
+    }
 
-        if (customProvidersData is String && customProvidersData.isNotEmpty) {
-          // Parse JSON string from XML export
-          try {
-            final decoded = json.decode(customProvidersData) as Map<String, dynamic>;
-            parsedProviders = Map<String, List<String>>.from(
-              decoded.map(
-                (key, value) => MapEntry(key, List<String>.from(value as List)),
-              ),
-            );
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('Error parsing custom providers JSON: $e');
-            }
-            parsedProviders = {};
-          }
-        } else if (customProvidersData is Map) {
-          // Already a Map from direct import
-          parsedProviders = Map<String, List<String>>.from(
-            customProvidersData.map(
-              (key, value) => MapEntry(key, List<String>.from(value)),
-            ),
-          );
-        }
-
-        _customProviders = parsedProviders;
+    if (data.containsKey(_customModelsByProviderKey)) {
+      _customModelsByProvider = _decodeDynamicStringListMap(
+        data[_customModelsByProviderKey],
+        'Error parsing provider custom models JSON',
+      );
+    } else if (data.containsKey(_legacyCustomModelsKey)) {
+      final legacyModels = data[_legacyCustomModelsKey];
+      if (legacyModels is List) {
+        _customModelsByProvider[_selectedProvider] =
+            legacyModels
+                .map((model) => model.toString().trim())
+                .where((model) => model.isNotEmpty)
+                .toSet()
+                .toList();
       }
     }
+
+    if (data.containsKey(_providerUrlsKey)) {
+      _providerUrls = _decodeDynamicStringMap(data[_providerUrlsKey]);
+    }
+    final legacyProviderUrl = _normalizeNullableInput(
+      data[_providerUrlKey] as String?,
+    );
+    if (legacyProviderUrl != null) {
+      _providerUrls[_selectedProvider] = legacyProviderUrl;
+    }
+
+    if (data.containsKey(_providerSelectedModelsKey)) {
+      _providerSelectedModels = _decodeDynamicStringMap(
+        data[_providerSelectedModelsKey],
+      );
+    }
+
+    if (!defaultBaseUrls.containsKey(_selectedProvider) &&
+        !_hasAnyModelsForProvider(_selectedProvider) &&
+        _selectedModel.isNotEmpty) {
+      _customProviders[_selectedProvider] = <String>[_selectedModel];
+    }
+
+    _providerSelectedModels[_selectedProvider] = _selectedModel;
+    _validateSelectedModelForProvider();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_selectedProviderKey, _selectedProvider);
     await prefs.setString(_selectedModelKey, _selectedModel);
-    if (_providerUrl != null) {
-      await prefs.setString(_providerUrlKey, _providerUrl!);
-    }
-    await prefs.setStringList(_customModelsKey, _customModels);
-    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
-    _validateSelectedModelForProvider();
+    await _persistProviderMaps(prefs);
+    await _persistLegacySelectedProviderState(prefs);
     await syncModelsToRegistry();
     notifyListeners();
+  }
+
+  // ==================== Internal helpers ====================
+
+  List<String> _buildAvailableModelsForProvider(String provider) {
+    final modelsToShow = <String>[];
+    final presetModels = _categorizedPresetModels[provider];
+    if (presetModels != null) {
+      modelsToShow.addAll(presetModels);
+    }
+
+    final customProviderModels = _customProviders[provider];
+    if (customProviderModels != null) {
+      modelsToShow.addAll(customProviderModels);
+    }
+
+    final customModels = _customModelsByProvider[provider];
+    if (customModels != null) {
+      modelsToShow.addAll(customModels);
+    }
+
+    return List.unmodifiable(modelsToShow.toSet().toList());
+  }
+
+  bool _hasAnyModelsForProvider(String provider) {
+    return _buildAvailableModelsForProvider(provider).isNotEmpty;
+  }
+
+  String _resolveProviderUrlForProvider(String provider) {
+    String baseUrl =
+        _providerUrls[provider]?.trim() ??
+        defaultBaseUrls[provider] ??
+        defaultBaseUrls['OpenAI']!;
+
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+
+    if (defaultBaseUrls.containsKey(provider)) {
+      return baseUrl;
+    }
+
+    baseUrl = baseUrl.replaceAll(RegExp(r'/chat/completions.*$'), '');
+    baseUrl = baseUrl.replaceAll(RegExp(r'/models(?!/v\d+).*$'), '');
+
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+
+    try {
+      final uri = Uri.parse(baseUrl);
+      final path = uri.path;
+      final hasVersionPath =
+          RegExp(r'/(v\d+|v\d+beta|v\d+alpha)$').hasMatch(path);
+
+      if (!hasVersionPath && (path.isEmpty || path == '/')) {
+        final buffer = StringBuffer('${uri.scheme}://${uri.host}');
+        if (uri.hasPort && uri.port != 80 && uri.port != 443) {
+          buffer.write(':${uri.port}');
+        }
+        buffer.write('/v1');
+        return buffer.toString();
+      }
+    } catch (_) {
+      if (!baseUrl.contains('/v') && !baseUrl.contains('/api/')) {
+        return '$baseUrl/v1';
+      }
+    }
+
+    return baseUrl;
+  }
+
+  Future<void> _persistProviderMaps(SharedPreferences prefs) async {
+    await _persistCustomProviders(prefs);
+    await _persistCustomModelsByProvider(prefs);
+    await _persistProviderUrls(prefs);
+    await _persistProviderSelectedModels(prefs);
+  }
+
+  Future<void> _persistCustomProviders(SharedPreferences prefs) async {
+    if (_customProviders.isEmpty) {
+      await prefs.remove(_customProvidersKey);
+      return;
+    }
+    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
+  }
+
+  Future<void> _persistCustomModelsByProvider(SharedPreferences prefs) async {
+    final currentModels = _customModelsByProvider[_selectedProvider] ?? const [];
+    await prefs.setStringList(_legacyCustomModelsKey, currentModels);
+
+    if (_customModelsByProvider.isEmpty) {
+      await prefs.remove(_customModelsByProviderKey);
+      return;
+    }
+    await prefs.setString(
+      _customModelsByProviderKey,
+      json.encode(_customModelsByProvider),
+    );
+  }
+
+  Future<void> _persistProviderUrls(SharedPreferences prefs) async {
+    if (_providerUrls.isEmpty) {
+      await prefs.remove(_providerUrlsKey);
+    } else {
+      await prefs.setString(_providerUrlsKey, json.encode(_providerUrls));
+    }
+    await _persistLegacySelectedProviderState(prefs);
+  }
+
+  Future<void> _persistProviderSelectedModels(SharedPreferences prefs) async {
+    if (_providerSelectedModels.isEmpty) {
+      await prefs.remove(_providerSelectedModelsKey);
+      return;
+    }
+    await prefs.setString(
+      _providerSelectedModelsKey,
+      json.encode(_providerSelectedModels),
+    );
+  }
+
+  Future<void> _persistLegacySelectedProviderState(
+    SharedPreferences prefs,
+  ) async {
+    final currentRawUrl = rawProviderUrl;
+    if (currentRawUrl == null) {
+      await prefs.remove(_providerUrlKey);
+    } else {
+      await prefs.setString(_providerUrlKey, currentRawUrl);
+    }
+  }
+
+  Map<String, String> _decodeStringMap(String? encoded, String debugLabel) {
+    if (encoded == null || encoded.isEmpty) {
+      return {};
+    }
+
+    try {
+      final decoded = json.decode(encoded) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(key, value?.toString().trim() ?? ''),
+      )..removeWhere((key, value) => value.isEmpty);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('$debugLabel: $error');
+      }
+      return {};
+    }
+  }
+
+  Map<String, String> _decodeDynamicStringMap(dynamic rawValue) {
+    if (rawValue == null) {
+      return {};
+    }
+
+    if (rawValue is String) {
+      return _decodeStringMap(rawValue, 'Error parsing provider string map');
+    }
+
+    if (rawValue is Map) {
+      return rawValue.map(
+        (key, value) => MapEntry(
+          key.toString(),
+          value?.toString().trim() ?? '',
+        ),
+      )..removeWhere((key, value) => value.isEmpty);
+    }
+
+    return {};
+  }
+
+  Map<String, List<String>> _decodeStringListMap(
+    String? encoded,
+    String debugLabel,
+  ) {
+    if (encoded == null || encoded.isEmpty) {
+      return {};
+    }
+
+    try {
+      final decoded = json.decode(encoded) as Map<String, dynamic>;
+      return decoded.map(
+        (key, value) => MapEntry(
+          key,
+          (value as List)
+              .map((item) => item.toString().trim())
+              .where((item) => item.isNotEmpty)
+              .toSet()
+              .toList(),
+        ),
+      )..removeWhere((key, value) => value.isEmpty);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('$debugLabel: $error');
+      }
+      return {};
+    }
+  }
+
+  Map<String, List<String>> _decodeDynamicStringListMap(
+    dynamic rawValue,
+    String debugLabel,
+  ) {
+    if (rawValue == null) {
+      return {};
+    }
+
+    if (rawValue is String) {
+      return _decodeStringListMap(rawValue, debugLabel);
+    }
+
+    if (rawValue is Map) {
+      return rawValue.map(
+        (key, value) => MapEntry(
+          key.toString(),
+          (value as List)
+              .map((item) => item.toString().trim())
+              .where((item) => item.isNotEmpty)
+              .toSet()
+              .toList(),
+        ),
+      )..removeWhere((key, value) => value.isEmpty);
+    }
+
+    return {};
+  }
+
+  String? _normalizeNullableInput(String? value) {
+    if (value == null) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  String? _findStoredProviderKey(
+    Map<String, dynamic> values,
+    String targetProvider,
+  ) {
+    if (values.containsKey(targetProvider)) {
+      return targetProvider;
+    }
+
+    for (final provider in values.keys) {
+      if (provider.toLowerCase() == targetProvider.toLowerCase()) {
+        return provider;
+      }
+    }
+
+    return null;
   }
 }

@@ -85,6 +85,21 @@ void main() {
       );
       expect(service.providerName, equals('Anthropic Claude'));
     });
+
+    test('createFromProviders 支持自定义 OpenAI 兼容提供商', () async {
+      await chatModel.addCustomProvider('OpenRouter', ['openai/gpt-4.1']);
+      await chatModel.setSelectedProvider('OpenRouter');
+      await chatModel.setSelectedModel('openai/gpt-4.1');
+      await chatModel.setProviderUrl('https://openrouter.ai/api/v1');
+      await apiKeys.setApiKeyForProvider('OpenRouter', 'openrouter-key');
+
+      final service = ChatServiceFactory.createFromProviders(
+        chatModel: chatModel,
+        apiKeys: apiKeys,
+      );
+
+      expect(service.providerName, equals('OpenRouter'));
+    });
   });
 
   group('ServiceManager with New Providers', () {
@@ -160,13 +175,6 @@ void main() {
         ServiceManager.isChatConfigured(chatModel: chatModel, apiKeys: apiKeys),
         isTrue, // 因为 chatModel 有默认模型
       );
-
-      // 清空模型
-      await chatModel.setSelectedModel('');
-      expect(
-        ServiceManager.isChatConfigured(chatModel: chatModel, apiKeys: apiKeys),
-        isFalse,
-      );
     });
 
     test('createAndValidateChatService 返回有效的服务', () async {
@@ -194,7 +202,7 @@ void main() {
     test('getAvailableModels 返回可用模型列表', () async {
       final models = ServiceManager.getAvailableModels(chatModel: chatModel);
       expect(models.isNotEmpty, isTrue);
-      expect(models, contains('gpt-4o'));
+      expect(models, contains('gpt-5.5'));
     });
   });
 

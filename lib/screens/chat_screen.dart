@@ -464,7 +464,14 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
     _scrollToBottom();
 
-    if (apiKeys.apiKey == null || apiKeys.apiKey!.isEmpty) {
+    final chatModelProvider = Provider.of<ChatModelProvider>(
+      context,
+      listen: false,
+    );
+    final providerApiKey = apiKeys.getApiKeyForProvider(
+      chatModelProvider.selectedProvider,
+    );
+    if (providerApiKey == null || providerApiKey.isEmpty) {
       _appendAiMessage(AppLocalizations.of(context)!.apiKeyNotSetError);
       return;
     }
@@ -479,11 +486,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final chatModelProvider = Provider.of<ChatModelProvider>(
-        context,
-        listen: false,
-      );
-
       final chatService = ServiceManager.createChatService(
         chatModel: chatModelProvider,
         apiKeys: apiKeys,

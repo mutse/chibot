@@ -22,11 +22,10 @@ class ClaudeService extends BaseApiService implements ChatService {
 
   @override
   List<String> get supportedModels => [
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022', 
-    'claude-3-opus-20240229',
-    'claude-3-sonnet-20240229',
-    'claude-3-haiku-20240307',
+    'claude-opus-4-1',
+    'claude-sonnet-4-0',
+    'claude-3-7-sonnet-latest',
+    'claude-3-5-haiku-latest',
   ];
 
   @override
@@ -56,7 +55,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
       
       final requestBody = _buildMessagesRequest(
-        'claude-3-5-haiku-20241022', 
+        'claude-3-5-haiku-latest',
         testMessage, 
         {'max_tokens': 10}
       );
@@ -177,7 +176,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
       
       final requestBody = _buildMessagesRequest(
-        'claude-3-5-haiku-20241022',
+        'claude-3-5-haiku-latest',
         requestMessages,
         {'max_tokens': 20},
       );
