@@ -45,6 +45,23 @@ void main() {
       );
       expect(apiKeys.openaiApiKey, isNull);
     });
+
+    test('Stability AI 图像 API 密钥可以单独保存和读取', () async {
+      await apiKeys.setImageApiKeyForProvider('Stability AI', 'stability-key');
+
+      expect(
+        apiKeys.getImageApiKeyForProvider('Stability AI'),
+        equals('stability-key'),
+      );
+      expect(apiKeys.openaiApiKey, isNull);
+    });
+
+    test('自定义图像 provider 使用独立的 API 密钥', () async {
+      await apiKeys.setImageApiKeyForProvider('Fal', 'fal-image-key');
+
+      expect(apiKeys.getImageApiKeyForProvider('Fal'), equals('fal-image-key'));
+      expect(apiKeys.openaiApiKey, isNull);
+    });
   });
 
   group('ChatModelProvider', () {
@@ -97,10 +114,7 @@ void main() {
       await chatModel.setProviderUrl('https://api.openai.com/v1');
 
       await chatModel.setSelectedProvider('OpenRouter');
-      expect(
-        chatModel.rawProviderUrl,
-        equals('https://openrouter.ai/api/v1'),
-      );
+      expect(chatModel.rawProviderUrl, equals('https://openrouter.ai/api/v1'));
     });
   });
 

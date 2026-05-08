@@ -393,20 +393,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ImageModelProvider imageModel,
     String apiKey,
   ) async {
-    switch (imageModel.selectedImageProvider) {
-      case 'OpenAI':
-        await apiKeys.setOpenaiApiKey(apiKey);
-        break;
-      case 'Google':
-        await apiKeys.setGoogleApiKey(apiKey);
-        break;
-      case 'Black Forest Labs':
-        await apiKeys.setFluxKontextApiKey(apiKey);
-        break;
-      default:
-        await apiKeys.setOpenaiApiKey(apiKey);
-        break;
-    }
+    await apiKeys.setImageApiKeyForProvider(
+      imageModel.selectedImageProvider,
+      apiKey,
+    );
   }
 
   @override
@@ -1183,8 +1173,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       chatModel.selectedProvider,
                     )
                     ? l10n.defaultUrl(
-                      ChatModelProvider
-                              .defaultBaseUrls[chatModel.selectedProvider] ??
+                      ChatModelProvider.defaultBaseUrls[chatModel
+                              .selectedProvider] ??
                           '',
                     )
                     : 'OpenAI compatible base URL, for example http://localhost:11434/v1',

@@ -86,7 +86,9 @@ class UnifiedSettingsProvider with ChangeNotifier {
   // ==================== API Key 相关的向后兼容 API ====================
 
   String? get apiKey => apiKeyProvider.apiKey;
-  String? get imageApiKey => apiKeyProvider.googleApiKey;
+  String? get imageApiKey => apiKeyProvider.getImageApiKeyForProvider(
+    imageModelProvider.selectedImageProvider,
+  );
   String? get claudeApiKey => apiKeyProvider.claudeApiKey;
   String? get tavilyApiKey => apiKeyProvider.tavilyApiKey;
   String? get fluxKontextApiKey => apiKeyProvider.fluxKontextApiKey;
@@ -98,8 +100,8 @@ class UnifiedSettingsProvider with ChangeNotifier {
   }
 
   Future<void> setApiKey(String? key) => apiKeyProvider.setOpenaiApiKey(key);
-  Future<void> setImageApiKey(String? key) =>
-      apiKeyProvider.setGoogleApiKey(key);
+  Future<void> setImageApiKey(String? key) => apiKeyProvider
+      .setImageApiKeyForProvider(imageModelProvider.selectedImageProvider, key);
   Future<void> setClaudeApiKey(String? key) =>
       apiKeyProvider.setClaudeApiKey(key);
   Future<void> setTavilyApiKey(String? key) =>
@@ -323,6 +325,7 @@ class UnifiedSettingsProvider with ChangeNotifier {
       'google_search_api_key',
       'google_search_engine_id',
       'custom_provider_api_keys_map',
+      'custom_image_provider_api_keys_map',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {

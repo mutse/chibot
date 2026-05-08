@@ -39,6 +39,11 @@ class ApiKeyProvider with ChangeNotifier {
   static const String _customProviderApiKeysKey =
       'custom_provider_api_keys_map';
 
+  // 自定义图像提供商 API Key（按 provider 保存）
+  Map<String, String> _customImageProviderApiKeys = {};
+  static const String _customImageProviderApiKeysKey =
+      'custom_image_provider_api_keys_map';
+
   // ==================== Getters ====================
 
   String? get openaiApiKey => _openaiApiKey;
@@ -50,6 +55,8 @@ class ApiKeyProvider with ChangeNotifier {
   String? get googleSearchEngineId => _googleSearchEngineId;
   Map<String, String> get customProviderApiKeys =>
       Map.unmodifiable(_customProviderApiKeys);
+  Map<String, String> get customImageProviderApiKeys =>
+      Map.unmodifiable(_customImageProviderApiKeys);
 
   // 便利 getter：用于向后兼容（旧代码中使用 apiKey 指代 OpenAI）
   String? get apiKey => _openaiApiKey;
@@ -72,16 +79,24 @@ class ApiKeyProvider with ChangeNotifier {
   }
 
   String? getImageApiKeyForProvider(String provider) {
-    switch (provider.toLowerCase()) {
+    switch (provider.trim().toLowerCase()) {
       case 'openai':
         return _openaiApiKey;
       case 'google':
+      case 'gemini':
         return _googleApiKey;
       case 'black forest labs':
+      case 'blackforestlabs':
       case 'flux':
+      case 'bfl':
         return _fluxKontextApiKey;
+      case 'stability ai':
+      case 'stabilityai':
+      case 'stability':
+        return _getCustomImageProviderApiKey('Stability AI');
       default:
-        return null;
+        return _getCustomImageProviderApiKey(provider) ??
+            _getCustomProviderApiKey(provider);
     }
   }
 
@@ -103,6 +118,31 @@ class ApiKeyProvider with ChangeNotifier {
     }
   }
 
+  Future<void> setImageApiKeyForProvider(String provider, String? key) async {
+    switch (provider.trim().toLowerCase()) {
+      case 'openai':
+        await setOpenaiApiKey(key);
+        return;
+      case 'google':
+      case 'gemini':
+        await setGoogleApiKey(key);
+        return;
+      case 'black forest labs':
+      case 'blackforestlabs':
+      case 'flux':
+      case 'bfl':
+        await setFluxKontextApiKey(key);
+        return;
+      case 'stability ai':
+      case 'stabilityai':
+      case 'stability':
+        await _setCustomImageProviderApiKey('Stability AI', key);
+        return;
+      default:
+        await _setCustomImageProviderApiKey(provider, key);
+    }
+  }
+
   // ==================== 初始化 ====================
 
   ApiKeyProvider() {
@@ -121,6 +161,10 @@ class ApiKeyProvider with ChangeNotifier {
     _customProviderApiKeys = _decodeStringMap(
       prefs.getString(_customProviderApiKeysKey),
       'Error loading custom provider API keys',
+    );
+    _customImageProviderApiKeys = _decodeStringMap(
+      prefs.getString(_customImageProviderApiKeysKey),
+      'Error loading custom image provider API keys',
     );
     notifyListeners();
   }
@@ -201,7 +245,8 @@ class ApiKeyProvider with ChangeNotifier {
     return _hasConfiguredValue(_openaiApiKey) ||
         _hasConfiguredValue(_googleApiKey) ||
         _hasConfiguredValue(_claudeApiKey) ||
-        _customProviderApiKeys.values.any(_hasConfiguredValue);
+        _customProviderApiKeys.values.any(_hasConfiguredValue) ||
+        _customImageProviderApiKeys.values.any(_hasConfiguredValue);
   }
 
   // ==================== 导入/导出 ====================
@@ -217,6 +262,7 @@ class ApiKeyProvider with ChangeNotifier {
       _googleSearchApiKeyKey: _googleSearchApiKey,
       _googleSearchEngineIdKey: _googleSearchEngineId,
       _customProviderApiKeysKey: _customProviderApiKeys,
+      _customImageProviderApiKeysKey: _customImageProviderApiKeys,
     };
   }
 
@@ -246,6 +292,11 @@ class ApiKeyProvider with ChangeNotifier {
     if (data.containsKey(_customProviderApiKeysKey)) {
       await _importCustomProviderApiKeys(data[_customProviderApiKeysKey]);
     }
+    if (data.containsKey(_customImageProviderApiKeysKey)) {
+      await _importCustomImageProviderApiKeys(
+        data[_customImageProviderApiKeysKey],
+      );
+    }
   }
 
   // ==================== Internal helpers ====================
@@ -256,18 +307,19 @@ class ApiKeyProvider with ChangeNotifier {
       return null;
     }
 
-    final directMatch = _customProviderApiKeys[normalizedProvider];
-    if (directMatch != null) {
-      return directMatch;
+    return _getStoredStringMapValue(_customProviderApiKeys, normalizedProvider);
+  }
+
+  String? _getCustomImageProviderApiKey(String provider) {
+    final normalizedProvider = provider.trim();
+    if (normalizedProvider.isEmpty) {
+      return null;
     }
 
-    for (final entry in _customProviderApiKeys.entries) {
-      if (entry.key.toLowerCase() == normalizedProvider.toLowerCase()) {
-        return entry.value;
-      }
-    }
-
-    return null;
+    return _getStoredStringMapValue(
+      _customImageProviderApiKeys,
+      normalizedProvider,
+    );
   }
 
   Future<void> _setCustomProviderApiKey(String provider, String? key) async {
@@ -277,7 +329,10 @@ class ApiKeyProvider with ChangeNotifier {
     }
 
     final normalizedKey = _normalizeNullableInput(key);
-    final storedKey = _findStoredCustomProviderKey(normalizedProvider);
+    final storedKey = _findStoredStringMapKey(
+      _customProviderApiKeys,
+      normalizedProvider,
+    );
     if (normalizedKey == null) {
       _customProviderApiKeys.remove(storedKey ?? normalizedProvider);
     } else {
@@ -285,14 +340,11 @@ class ApiKeyProvider with ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    if (_customProviderApiKeys.isEmpty) {
-      await prefs.remove(_customProviderApiKeysKey);
-    } else {
-      await prefs.setString(
-        _customProviderApiKeysKey,
-        json.encode(_customProviderApiKeys),
-      );
-    }
+    await _persistStringMap(
+      prefs,
+      _customProviderApiKeysKey,
+      _customProviderApiKeys,
+    );
     notifyListeners();
   }
 
@@ -301,29 +353,83 @@ class ApiKeyProvider with ChangeNotifier {
     _customProviderApiKeys = parsed;
 
     final prefs = await SharedPreferences.getInstance();
-    if (_customProviderApiKeys.isEmpty) {
-      await prefs.remove(_customProviderApiKeysKey);
-    } else {
-      await prefs.setString(
-        _customProviderApiKeysKey,
-        json.encode(_customProviderApiKeys),
-      );
-    }
+    await _persistStringMap(
+      prefs,
+      _customProviderApiKeysKey,
+      _customProviderApiKeys,
+    );
     notifyListeners();
   }
 
-  String? _findStoredCustomProviderKey(String provider) {
-    if (_customProviderApiKeys.containsKey(provider)) {
-      return provider;
+  Future<void> _setCustomImageProviderApiKey(
+    String provider,
+    String? key,
+  ) async {
+    final normalizedProvider = provider.trim();
+    if (normalizedProvider.isEmpty) {
+      return;
     }
 
-    for (final key in _customProviderApiKeys.keys) {
-      if (key.toLowerCase() == provider.toLowerCase()) {
-        return key;
+    final normalizedKey = _normalizeNullableInput(key);
+    final storedKey = _findStoredStringMapKey(
+      _customImageProviderApiKeys,
+      normalizedProvider,
+    );
+    if (normalizedKey == null) {
+      _customImageProviderApiKeys.remove(storedKey ?? normalizedProvider);
+    } else {
+      _customImageProviderApiKeys[storedKey ?? normalizedProvider] =
+          normalizedKey;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persistStringMap(
+      prefs,
+      _customImageProviderApiKeysKey,
+      _customImageProviderApiKeys,
+    );
+    notifyListeners();
+  }
+
+  Future<void> _importCustomImageProviderApiKeys(dynamic rawValue) async {
+    final parsed = _decodeDynamicStringMap(rawValue);
+    _customImageProviderApiKeys = parsed;
+
+    final prefs = await SharedPreferences.getInstance();
+    await _persistStringMap(
+      prefs,
+      _customImageProviderApiKeysKey,
+      _customImageProviderApiKeys,
+    );
+    notifyListeners();
+  }
+
+  String? _findStoredStringMapKey(Map<String, String> values, String key) {
+    if (values.containsKey(key)) {
+      return key;
+    }
+
+    for (final storedKey in values.keys) {
+      if (storedKey.toLowerCase() == key.toLowerCase()) {
+        return storedKey;
       }
     }
 
     return null;
+  }
+
+  String? _getStoredStringMapValue(Map<String, String> values, String key) {
+    final directMatch = values[key];
+    if (directMatch != null) {
+      return directMatch;
+    }
+
+    final storedKey = _findStoredStringMapKey(values, key);
+    if (storedKey == null) {
+      return null;
+    }
+
+    return values[storedKey];
   }
 
   Map<String, String> _decodeStringMap(String? encoded, String debugLabel) {
@@ -333,9 +439,8 @@ class ApiKeyProvider with ChangeNotifier {
 
     try {
       final decoded = json.decode(encoded) as Map<String, dynamic>;
-      return decoded.map(
-        (key, value) => MapEntry(key, value?.toString() ?? ''),
-      )..removeWhere((key, value) => value.trim().isEmpty);
+      return decoded.map((key, value) => MapEntry(key, value?.toString() ?? ''))
+        ..removeWhere((key, value) => value.trim().isEmpty);
     } catch (error) {
       if (kDebugMode) {
         debugPrint('$debugLabel: $error');
@@ -350,15 +455,16 @@ class ApiKeyProvider with ChangeNotifier {
     }
 
     if (rawValue is String) {
-      return _decodeStringMap(rawValue, 'Error parsing custom provider API map');
+      return _decodeStringMap(
+        rawValue,
+        'Error parsing custom provider API map',
+      );
     }
 
     if (rawValue is Map) {
       return rawValue.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          value?.toString().trim() ?? '',
-        ),
+        (key, value) =>
+            MapEntry(key.toString(), value?.toString().trim() ?? ''),
       )..removeWhere((key, value) => value.isEmpty);
     }
 
@@ -383,6 +489,18 @@ class ApiKeyProvider with ChangeNotifier {
       return;
     }
     await prefs.setString(key, value);
+  }
+
+  Future<void> _persistStringMap(
+    SharedPreferences prefs,
+    String key,
+    Map<String, String> values,
+  ) async {
+    if (values.isEmpty) {
+      await prefs.remove(key);
+      return;
+    }
+    await prefs.setString(key, json.encode(values));
   }
 
   bool _hasConfiguredValue(String? value) {
