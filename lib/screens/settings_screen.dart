@@ -15,8 +15,15 @@ import 'dart:io';
 import 'package:chibot/models/available_model.dart' as available_model;
 import 'package:chibot/screens/mobile/mobile_ui.dart';
 
+enum SettingsScreenSection { overview, models, search, data }
+
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final SettingsScreenSection section;
+
+  const SettingsScreen({
+    super.key,
+    this.section = SettingsScreenSection.overview,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -299,6 +306,471 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  bool get _isMobileSettingsHub => Platform.isAndroid || Platform.isIOS;
+
+  bool get _showsOverviewHub =>
+      _isMobileSettingsHub && widget.section == SettingsScreenSection.overview;
+
+  bool _isTextLikeModelType(available_model.ModelType type) {
+    return type == available_model.ModelType.text ||
+        type == available_model.ModelType.customOpenAI;
+  }
+
+  String _pageTitle() {
+    switch (widget.section) {
+      case SettingsScreenSection.models:
+        return 'Models';
+      case SettingsScreenSection.search:
+        return 'Search';
+      case SettingsScreenSection.data:
+        return 'Config';
+      case SettingsScreenSection.overview:
+        return l10n.settings;
+    }
+  }
+
+  String _pageSubtitle() {
+    switch (widget.section) {
+      case SettingsScreenSection.models:
+        return 'Providers, models, and API keys';
+      case SettingsScreenSection.search:
+        return 'Web search engines and related keys';
+      case SettingsScreenSection.data:
+        return 'Import and export your app configuration';
+      case SettingsScreenSection.overview:
+        return _isMobileSettingsHub
+            ? 'Models, search, backup, and provider health'
+            : 'API keys, models, providers, and search settings';
+    }
+  }
+
+  void _openSection(SettingsScreenSection section) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => SettingsScreen(section: section)));
+  }
+
+  String _modelTypeLabel(available_model.ModelType type) {
+    switch (type) {
+      case available_model.ModelType.text:
+        return l10n.textModel;
+      case available_model.ModelType.image:
+        return l10n.imageModel;
+      case available_model.ModelType.video:
+        return '视频模型';
+      case available_model.ModelType.customOpenAI:
+        return 'Custom OpenAI';
+    }
+  }
+
+  String _searchStatusLabel(SearchProvider search) {
+    final active = <String>[];
+    if (search.tavilySearchEnabled) {
+      active.add('Tavily');
+    }
+    if (search.googleSearchEnabled) {
+      active.add('Google');
+    }
+    if (active.isEmpty) {
+      return 'No search engines enabled';
+    }
+
+    final suffix =
+        search.googleSearchEnabled
+            ? ' • ${search.googleSearchResultCount} results'
+            : '';
+    return '${active.join(' + ')}$suffix';
+  }
+
+  Widget _buildSummaryRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? accentColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: MobilePalette.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MobilePalette.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: (accentColor ?? MobilePalette.primary).withValues(
+                alpha: 0.12,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: accentColor ?? MobilePalette.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: MobilePalette.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: MobilePalette.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewLinkCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String detail,
+    required VoidCallback onTap,
+    Color accentColor = MobilePalette.primary,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: _buildGlassCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: accentColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: MobilePalette.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: MobilePalette.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: MobilePalette.textSecondary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              detail,
+              style: const TextStyle(
+                color: MobilePalette.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewHeroCard({
+    required UnifiedSettingsProvider unifiedSettings,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+    required VideoModelProvider videoModel,
+    required SearchProvider search,
+  }) {
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const MobileSectionLabel(title: 'Quick Overview'),
+          const SizedBox(height: 6),
+          Text(
+            '把模型配置、搜索能力和配置备份集中到一个入口里。',
+            style: const TextStyle(
+              color: MobilePalette.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildGlassChip(
+                label: _modelTypeLabel(available_model.ModelType.text),
+                selected: _isTextLikeModelType(
+                  unifiedSettings.selectedModelType,
+                ),
+                onSelected: (selected) {
+                  if (selected) {
+                    unifiedSettings.setSelectedModelType(
+                      available_model.ModelType.text,
+                    );
+                  }
+                },
+              ),
+              _buildGlassChip(
+                label: _modelTypeLabel(available_model.ModelType.image),
+                selected:
+                    unifiedSettings.selectedModelType ==
+                    available_model.ModelType.image,
+                onSelected: (selected) {
+                  if (selected) {
+                    unifiedSettings.setSelectedModelType(
+                      available_model.ModelType.image,
+                    );
+                  }
+                },
+              ),
+              _buildGlassChip(
+                label: _modelTypeLabel(available_model.ModelType.video),
+                selected:
+                    unifiedSettings.selectedModelType ==
+                    available_model.ModelType.video,
+                onSelected: (selected) {
+                  if (selected) {
+                    unifiedSettings.setSelectedModelType(
+                      available_model.ModelType.video,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          _buildSummaryRow(
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'Chat',
+            value: '${chatModel.selectedProvider} • ${chatModel.selectedModel}',
+          ),
+          _buildSummaryRow(
+            icon: Icons.image_outlined,
+            label: 'Image',
+            value:
+                '${imageModel.selectedImageProvider} • ${imageModel.selectedImageModel}',
+            accentColor: MobilePalette.secondary,
+          ),
+          _buildSummaryRow(
+            icon: Icons.smart_display_outlined,
+            label: 'Video',
+            value:
+                '${videoModel.selectedVideoProvider} • ${videoModel.videoResolution} • ${videoModel.videoAspectRatio}',
+            accentColor: MobilePalette.textPrimary,
+          ),
+          _buildSummaryRow(
+            icon: Icons.travel_explore_rounded,
+            label: 'Search',
+            value: _searchStatusLabel(search),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProviderHealthRow({
+    required String title,
+    required bool connected,
+    required String usageLabel,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: MobilePalette.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: MobilePalette.border),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor:
+                connected
+                    ? MobilePalette.primarySoft
+                    : MobilePalette.surfaceStrong,
+            child: Icon(
+              connected ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+              size: 16,
+              color:
+                  connected
+                      ? MobilePalette.primary
+                      : MobilePalette.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: MobilePalette.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            usageLabel,
+            style: TextStyle(
+              color:
+                  connected
+                      ? MobilePalette.primary
+                      : MobilePalette.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProviderHealthCard({
+    required ApiKeyProvider apiKeys,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+  }) {
+    bool hasKey(String? key) => key != null && key.trim().isNotEmpty;
+
+    return _buildGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const MobileSectionLabel(title: 'Provider Health'),
+          const SizedBox(height: 6),
+          const Text(
+            '快速查看当前常用服务是否已经完成连接。',
+            style: TextStyle(color: MobilePalette.textSecondary, fontSize: 12),
+          ),
+          _buildProviderHealthRow(
+            title: 'OpenAI',
+            connected: hasKey(apiKeys.openaiApiKey),
+            usageLabel:
+                chatModel.selectedProvider == 'OpenAI'
+                    ? 'Chat active'
+                    : imageModel.selectedImageProvider == 'OpenAI'
+                    ? 'Image active'
+                    : 'Ready',
+          ),
+          _buildProviderHealthRow(
+            title: 'Google',
+            connected: hasKey(apiKeys.googleApiKey),
+            usageLabel:
+                chatModel.selectedProvider == 'Google'
+                    ? 'Chat active'
+                    : imageModel.selectedImageProvider == 'Google'
+                    ? 'Image active'
+                    : 'Video active',
+          ),
+          _buildProviderHealthRow(
+            title: 'Anthropic',
+            connected: hasKey(apiKeys.claudeApiKey),
+            usageLabel:
+                chatModel.selectedProvider == 'Anthropic'
+                    ? 'Chat active'
+                    : 'Ready',
+          ),
+          _buildProviderHealthRow(
+            title: 'Black Forest Labs',
+            connected: hasKey(apiKeys.fluxKontextApiKey),
+            usageLabel:
+                imageModel.selectedImageProvider == 'Black Forest Labs'
+                    ? 'Image active'
+                    : 'Ready',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewBody({
+    required UnifiedSettingsProvider unifiedSettings,
+    required ApiKeyProvider apiKeys,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+    required VideoModelProvider videoModel,
+    required SearchProvider search,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      children: [
+        _buildOverviewHeroCard(
+          unifiedSettings: unifiedSettings,
+          chatModel: chatModel,
+          imageModel: imageModel,
+          videoModel: videoModel,
+          search: search,
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.layers_outlined,
+          title: 'Models',
+          subtitle: 'Providers, model selection, API keys, and custom models',
+          detail:
+              'Current mode: ${_modelTypeLabel(unifiedSettings.selectedModelType)}',
+          onTap: () => _openSection(SettingsScreenSection.models),
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.travel_explore_rounded,
+          title: 'Search',
+          subtitle: 'Tavily, Google Custom Search, and result controls',
+          detail: _searchStatusLabel(search),
+          accentColor: MobilePalette.secondary,
+          onTap: () => _openSection(SettingsScreenSection.search),
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.import_export_rounded,
+          title: 'Config & Backup',
+          subtitle: 'Import and export your XML configuration files',
+          detail: 'Move or restore your setup without changing functionality',
+          accentColor: MobilePalette.textPrimary,
+          onTap: () => _openSection(SettingsScreenSection.data),
+        ),
+        _buildProviderHealthCard(
+          apiKeys: apiKeys,
+          chatModel: chatModel,
+          imageModel: imageModel,
+        ),
+      ],
+    );
+  }
+
   late TextEditingController _providerUrlController;
   late TextEditingController _imageProviderUrlController;
   late TextEditingController _customModelController;
@@ -433,7 +905,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ImageModelProvider imageModel,
   }) {
     String expectedApiKey;
-    if (unifiedSettings.selectedModelType == available_model.ModelType.text) {
+    if (_isTextLikeModelType(unifiedSettings.selectedModelType)) {
       expectedApiKey = _getProviderApiKey(apiKeys, chatModel);
     } else if (unifiedSettings.selectedModelType ==
         available_model.ModelType.image) {
@@ -512,7 +984,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) async {
     final apiKeyText = _apiKeyController.text.trim();
 
-    if (unifiedSettings.selectedModelType == available_model.ModelType.text) {
+    if (_isTextLikeModelType(unifiedSettings.selectedModelType)) {
       await _saveTextSettings(
         apiKeys: apiKeys,
         chatModel: chatModel,
@@ -916,9 +1388,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               _buildGlassChip(
                 label: l10n.textModel,
-                selected:
-                    unifiedSettings.selectedModelType ==
-                    available_model.ModelType.text,
+                selected: _isTextLikeModelType(
+                  unifiedSettings.selectedModelType,
+                ),
                 onSelected: (selected) {
                   if (selected) {
                     unifiedSettings.setSelectedModelType(
@@ -1101,7 +1573,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ApiKeyProvider apiKeys,
     required ChatModelProvider chatModel,
     required ImageModelProvider imageModel,
-    required SearchProvider search,
     required SettingsModelsProvider settingsModels,
     required UnifiedSettingsProvider unifiedSettings,
   }) {
@@ -1282,7 +1753,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-        _buildGlassCard(child: _buildSearchSettingsSection(search)),
       ],
     );
   }
@@ -1620,6 +2090,249 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildModelsBody({
+    required BuildContext context,
+    required UnifiedSettingsProvider unifiedSettings,
+    required SettingsModelsProvider settingsModels,
+    required ApiKeyProvider apiKeys,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+    required VideoModelProvider videoModel,
+    required SearchProvider search,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      children: <Widget>[
+        _buildModelTypeCard(unifiedSettings),
+        _buildAddProviderCard(context, unifiedSettings),
+        if (_isTextLikeModelType(unifiedSettings.selectedModelType)) ...[
+          _buildTextSettingsSection(
+            apiKeys: apiKeys,
+            chatModel: chatModel,
+            imageModel: imageModel,
+            settingsModels: settingsModels,
+            unifiedSettings: unifiedSettings,
+          ),
+        ] else if (unifiedSettings.selectedModelType ==
+            available_model.ModelType.image) ...[
+          _buildImageSettingsSection(
+            apiKeys: apiKeys,
+            imageModel: imageModel,
+            settingsModels: settingsModels,
+          ),
+        ] else if (unifiedSettings.selectedModelType ==
+            available_model.ModelType.video) ...[
+          _buildVideoSettingsSection(apiKeys: apiKeys, videoModel: videoModel),
+        ],
+        const SizedBox(height: 8),
+        _buildActionPanel(
+          context: context,
+          unifiedSettings: unifiedSettings,
+          apiKeys: apiKeys,
+          chatModel: chatModel,
+          imageModel: imageModel,
+          search: search,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchActionPanel({
+    required BuildContext context,
+    required SearchProvider search,
+  }) {
+    return _buildGlassCard(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: _buildGlassButton(
+          label: l10n.saveSettings,
+          icon: Icons.save_outlined,
+          backgroundColor: MobilePalette.primary,
+          onPressed: () async {
+            await _saveSearchSettings(search);
+            if (!mounted || !context.mounted) return;
+            _showSettingsSavedSnackBar(context);
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBody({
+    required BuildContext context,
+    required SearchProvider search,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      children: [
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MobileSectionLabel(title: 'Search Overview'),
+              const SizedBox(height: 6),
+              Text(
+                _searchStatusLabel(search),
+                style: const TextStyle(
+                  color: MobilePalette.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '在这里管理网页搜索引擎、相关 API key 和结果条数。',
+                style: TextStyle(
+                  color: MobilePalette.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        _buildGlassCard(child: _buildSearchSettingsSection(search)),
+        _buildSearchActionPanel(context: context, search: search),
+      ],
+    );
+  }
+
+  Widget _buildDataToolsPanel({
+    required BuildContext context,
+    required UnifiedSettingsProvider unifiedSettings,
+  }) {
+    final exportButton = _buildGlassButton(
+      label: l10n.exportConfig,
+      icon: Icons.file_upload_outlined,
+      backgroundColor: MobilePalette.textPrimary,
+      onPressed: () => _exportSettings(context, unifiedSettings),
+    );
+    final importButton = _buildGlassButton(
+      label: l10n.importConfig,
+      icon: Icons.file_download_outlined,
+      backgroundColor: MobilePalette.secondary,
+      onPressed: () => _showImportOptions(context, unifiedSettings),
+    );
+
+    return _buildGlassCard(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 640;
+          if (isWide) {
+            return Row(
+              children: [
+                Expanded(child: exportButton),
+                const SizedBox(width: 12),
+                Expanded(child: importButton),
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              SizedBox(width: double.infinity, child: exportButton),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: importButton),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDataBody({
+    required BuildContext context,
+    required UnifiedSettingsProvider unifiedSettings,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      children: [
+        _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MobileSectionLabel(title: 'Config Files'),
+              const SizedBox(height: 6),
+              const Text(
+                '导出当前配置用于备份，或导入 XML 文件恢复现有设置。',
+                style: TextStyle(
+                  color: MobilePalette.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              _buildSummaryRow(
+                icon: Icons.file_upload_outlined,
+                label: 'Export',
+                value: '备份当前模型、搜索、API key 和自定义配置',
+              ),
+              _buildSummaryRow(
+                icon: Icons.file_download_outlined,
+                label: 'Import',
+                value: '从已有 XML 配置恢复应用设置',
+                accentColor: MobilePalette.secondary,
+              ),
+            ],
+          ),
+        ),
+        _buildDataToolsPanel(
+          context: context,
+          unifiedSettings: unifiedSettings,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegacyFormBody({
+    required BuildContext context,
+    required UnifiedSettingsProvider unifiedSettings,
+    required SettingsModelsProvider settingsModels,
+    required ApiKeyProvider apiKeys,
+    required ChatModelProvider chatModel,
+    required ImageModelProvider imageModel,
+    required VideoModelProvider videoModel,
+    required SearchProvider search,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+      children: <Widget>[
+        _buildModelTypeCard(unifiedSettings),
+        _buildAddProviderCard(context, unifiedSettings),
+        if (_isTextLikeModelType(unifiedSettings.selectedModelType)) ...[
+          _buildTextSettingsSection(
+            apiKeys: apiKeys,
+            chatModel: chatModel,
+            imageModel: imageModel,
+            settingsModels: settingsModels,
+            unifiedSettings: unifiedSettings,
+          ),
+          _buildGlassCard(child: _buildSearchSettingsSection(search)),
+        ] else if (unifiedSettings.selectedModelType ==
+            available_model.ModelType.image) ...[
+          _buildImageSettingsSection(
+            apiKeys: apiKeys,
+            imageModel: imageModel,
+            settingsModels: settingsModels,
+          ),
+        ] else if (unifiedSettings.selectedModelType ==
+            available_model.ModelType.video) ...[
+          _buildVideoSettingsSection(apiKeys: apiKeys, videoModel: videoModel),
+        ],
+        const SizedBox(height: 8),
+        _buildActionPanel(
+          context: context,
+          unifiedSettings: unifiedSettings,
+          apiKeys: apiKeys,
+          chatModel: chatModel,
+          imageModel: imageModel,
+          search: search,
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionPanel({
     required BuildContext context,
     required UnifiedSettingsProvider unifiedSettings,
@@ -1716,6 +2429,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     _syncSearchControllers(search);
 
+    late final Widget body;
+    if (_showsOverviewHub) {
+      body = _buildOverviewBody(
+        unifiedSettings: unifiedSettings,
+        apiKeys: apiKeys,
+        chatModel: chatModel,
+        imageModel: imageModel,
+        videoModel: videoModel,
+        search: search,
+      );
+    } else if (widget.section == SettingsScreenSection.models) {
+      body = _buildModelsBody(
+        context: context,
+        unifiedSettings: unifiedSettings,
+        settingsModels: settingsModels,
+        apiKeys: apiKeys,
+        chatModel: chatModel,
+        imageModel: imageModel,
+        videoModel: videoModel,
+        search: search,
+      );
+    } else if (widget.section == SettingsScreenSection.search) {
+      body = _buildSearchBody(context: context, search: search);
+    } else if (widget.section == SettingsScreenSection.data) {
+      body = _buildDataBody(context: context, unifiedSettings: unifiedSettings);
+    } else {
+      body = _buildLegacyFormBody(
+        context: context,
+        unifiedSettings: unifiedSettings,
+        settingsModels: settingsModels,
+        apiKeys: apiKeys,
+        chatModel: chatModel,
+        imageModel: imageModel,
+        videoModel: videoModel,
+        search: search,
+      );
+    }
+
     return Scaffold(
       backgroundColor: MobilePalette.background,
       body: DecoratedBox(
@@ -1734,51 +2485,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? () => Navigator.maybePop(context)
                           : null,
                 ),
-                title: l10n.settings,
-                subtitle: 'API keys, models, providers, and search settings',
+                title: _pageTitle(),
+                subtitle: _pageSubtitle(),
               ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                  children: <Widget>[
-                    _buildModelTypeCard(unifiedSettings),
-                    _buildAddProviderCard(context, unifiedSettings),
-                    if (unifiedSettings.selectedModelType ==
-                        available_model.ModelType.text) ...[
-                      _buildTextSettingsSection(
-                        apiKeys: apiKeys,
-                        chatModel: chatModel,
-                        imageModel: imageModel,
-                        search: search,
-                        settingsModels: settingsModels,
-                        unifiedSettings: unifiedSettings,
-                      ),
-                    ] else if (unifiedSettings.selectedModelType ==
-                        available_model.ModelType.image) ...[
-                      _buildImageSettingsSection(
-                        apiKeys: apiKeys,
-                        imageModel: imageModel,
-                        settingsModels: settingsModels,
-                      ),
-                    ] else if (unifiedSettings.selectedModelType ==
-                        available_model.ModelType.video) ...[
-                      _buildVideoSettingsSection(
-                        apiKeys: apiKeys,
-                        videoModel: videoModel,
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    _buildActionPanel(
-                      context: context,
-                      unifiedSettings: unifiedSettings,
-                      apiKeys: apiKeys,
-                      chatModel: chatModel,
-                      imageModel: imageModel,
-                      search: search,
-                    ),
-                  ],
-                ),
-              ),
+              Expanded(child: body),
             ],
           ),
         ),

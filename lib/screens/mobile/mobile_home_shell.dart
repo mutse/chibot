@@ -6,9 +6,9 @@ import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/screens/mobile/mobile_chat_page.dart';
 import 'package:chibot/screens/mobile/mobile_history_page.dart';
 import 'package:chibot/screens/mobile/mobile_image_studio_page.dart';
-import 'package:chibot/screens/mobile/mobile_models_page.dart';
 import 'package:chibot/screens/mobile/mobile_ui.dart';
 import 'package:chibot/screens/mobile/mobile_video_studio_page.dart';
+import 'package:chibot/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -78,6 +78,12 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
     _historyKey.currentState?.refreshData();
   }
 
+  void _openSettingsSection(SettingsScreenSection section) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => SettingsScreen(section: section)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -85,21 +91,21 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
         key: _chatKey,
         onOpenImages: () => _switchTo(1),
         onOpenVideo: () => _switchTo(2),
-        onOpenModels: () => _switchTo(3),
+        onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onOpenHistory: () => _switchTo(4),
         onDataChanged: _refreshHistory,
       ),
       MobileImageStudioPage(
         key: _imageKey,
-        onOpenModels: () => _switchTo(3),
+        onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
       MobileVideoStudioPage(
         key: _videoKey,
-        onOpenModels: () => _switchTo(3),
+        onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
-      const MobileModelsPage(),
+      const SettingsScreen(),
       MobileHistoryPage(
         key: _historyKey,
         onOpenChatSession: _openChatSession,
@@ -150,8 +156,8 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
                   onTap: () => _switchTo(2),
                 ),
                 _NavItem(
-                  label: 'Models',
-                  icon: Icons.layers_outlined,
+                  label: 'Settings',
+                  icon: Icons.settings_outlined,
                   selected: _currentIndex == 3,
                   onTap: () => _switchTo(3),
                 ),

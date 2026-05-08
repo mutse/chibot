@@ -101,7 +101,7 @@ class MobileChatPageState extends State<MobileChatPage> {
       search: searchProvider,
       apiKeys: apiKeys,
     )) {
-      _appendAiMessage('未启用任何网络搜索功能，请先在模型页或设置页完成配置。');
+      _appendAiMessage('未启用任何网络搜索功能，请先在设置页完成模型或搜索配置。');
       return null;
     }
 
@@ -420,7 +420,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                           widget.onOpenModels?.call();
                         },
                         icon: const Icon(Icons.tune_rounded),
-                        label: const Text('Open full model center'),
+                        label: const Text('Open model settings'),
                         style: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.primary,
                         ),
