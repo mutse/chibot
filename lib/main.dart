@@ -11,6 +11,7 @@ import 'providers/search_provider.dart';
 import 'providers/unified_settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
 import 'package:chibot/screens/mobile/mobile_home_shell.dart';
+import 'package:chibot/screens/mobile/mobile_ui.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
@@ -43,6 +44,12 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
   @override
   Widget build(BuildContext context) {
     final modelRegistry = ModelRegistry();
+    final usesMobileShell =
+        Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS;
+
     return MultiProvider(
       providers: [
         // Legacy SettingsProvider for backward compatibility
@@ -84,10 +91,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       ],
       child: MaterialApp(
         title: "Chi AI Chatbot",
-        home:
-            Platform.isAndroid || Platform.isIOS
-                ? const MobileHomeShell()
-                : const ChatScreen(),
+        home: usesMobileShell ? const MobileHomeShell() : const ChatScreen(),
         theme: _buildModernTheme(),
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
@@ -108,16 +112,27 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
   }
 
   ThemeData _buildModernTheme() {
-    const seedColor = Color(0xFF6750A4); // Material 3 purple
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
+      seedColor: MobilePalette.primary,
       brightness: Brightness.light,
+    ).copyWith(
+      primary: MobilePalette.primary,
+      secondary: MobilePalette.secondary,
+      surface: MobilePalette.surfaceStrong,
+      surfaceContainerHighest: MobilePalette.surface,
+      onSurface: MobilePalette.textPrimary,
+      onSurfaceVariant: MobilePalette.textSecondary,
+      outline: MobilePalette.border,
+      outlineVariant: const Color(0xFFE9E2D8),
+      surfaceTint: Colors.transparent,
+      error: const Color(0xFFD95C45),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
+      scaffoldBackgroundColor: MobilePalette.background,
 
       // Typography
       textTheme: const TextTheme(
@@ -149,62 +164,55 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       ),
 
       appBarTheme: AppBarTheme(
-        backgroundColor:
-            Platform.isMacOS
-                ? colorScheme.surface.withValues(alpha: 0.8)
-                : colorScheme.surface,
-        elevation: Platform.isMacOS ? 0 : 1,
-        surfaceTintColor: colorScheme.surfaceTint,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         iconTheme: IconThemeData(color: colorScheme.onSurface),
         titleTextStyle: TextStyle(
           color: colorScheme.onSurface,
           fontSize: 22,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
         ),
         systemOverlayStyle: Platform.isMacOS ? SystemUiOverlayStyle.dark : null,
       ),
 
       // Cards and Surfaces
       cardTheme: CardThemeData(
-        elevation: Platform.isMacOS ? 1 : 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 12),
-        ),
-        surfaceTintColor: colorScheme.surfaceTint,
+        color: MobilePalette.surfaceStrong,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        surfaceTintColor: Colors.transparent,
       ),
 
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        fillColor: MobilePalette.surface,
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16.0,
           vertical: 16.0,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withValues(alpha: 0.5),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 24),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
 
       // Buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: Platform.isMacOS ? 1 : 3,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 20),
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
@@ -212,8 +220,10 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: MobilePalette.primary,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 20),
+            borderRadius: BorderRadius.circular(18),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
@@ -223,50 +233,45 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 12),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),
 
       // Floating Action Button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        elevation: Platform.isMacOS ? 2 : 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 16),
-        ),
+        backgroundColor: MobilePalette.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
 
       // List Tiles
       listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 6 : 12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
 
       // Drawer
       drawerTheme: DrawerThemeData(
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: colorScheme.surfaceTint,
-        elevation: Platform.isMacOS ? 1 : 16,
-        shape:
-            Platform.isMacOS
-                ? null
-                : const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                ),
+        backgroundColor: MobilePalette.surfaceStrong,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
       ),
 
       // Snackbar
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Platform.isMacOS ? 8 : 12),
-        ),
-        elevation: Platform.isMacOS ? 2 : 6,
+        backgroundColor: MobilePalette.textPrimary,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        elevation: 0,
       ),
 
       // Divider

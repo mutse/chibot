@@ -250,6 +250,10 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
     widget.onDataChanged?.call();
   }
 
+  Future<void> _exportSession(ImageSession session) async {
+    await ImageSaveService.exportImageHistory(session, context);
+  }
+
   void _showSessionSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -334,11 +338,25 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                                         color: MobilePalette.textSecondary,
                                       ),
                                     ),
-                                    trailing: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                      ),
-                                      onPressed: () => _deleteSession(session),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.ios_share_rounded,
+                                          ),
+                                          tooltip: 'Export history',
+                                          onPressed:
+                                              () => _exportSession(session),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                          ),
+                                          onPressed:
+                                              () => _deleteSession(session),
+                                        ),
+                                      ],
                                     ),
                                     onTap: () {
                                       Navigator.pop(context);

@@ -10,6 +10,7 @@ import 'package:chibot/screens/mobile/mobile_ui.dart';
 import 'package:chibot/screens/settings_screen.dart';
 import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/exceptions/missing_api_key_exception.dart';
+import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/services/search_service_factory.dart';
 import 'package:chibot/services/service_manager.dart';
 import 'package:chibot/widgets/chat_markdown.dart';
@@ -336,6 +337,22 @@ class MobileChatPageState extends State<MobileChatPage> {
     widget.onDataChanged?.call();
   }
 
+  Future<void> _exportSession(ChatSession session) async {
+    await MarkdownExportService.exportToMarkdown(session, context);
+  }
+
+  Future<void> _exportAllSessions() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_sessions.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noChatSessionsToExport)));
+      return;
+    }
+
+    await MarkdownExportService.exportMultipleToMarkdown(_sessions, context);
+  }
+
   void _showModelSheet() {
     final theme = Theme.of(context);
     final chatModel = context.read<ChatModelProvider>();
@@ -505,6 +522,15 @@ class MobileChatPageState extends State<MobileChatPage> {
                             );
                           },
                         ),
+                        ActionChip(
+                          label: Text(
+                            AppLocalizations.of(context)!.exportAllChats,
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            await _exportAllSessions();
+                          },
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -557,11 +583,28 @@ class MobileChatPageState extends State<MobileChatPage> {
                                                 : MobilePalette.textSecondary,
                                       ),
                                     ),
-                                    trailing: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                      ),
-                                      onPressed: () => _deleteSession(session),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.ios_share_rounded,
+                                          ),
+                                          tooltip:
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.exportToMarkdown,
+                                          onPressed:
+                                              () => _exportSession(session),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                          ),
+                                          onPressed:
+                                              () => _deleteSession(session),
+                                        ),
+                                      ],
                                     ),
                                     onTap: () {
                                       Navigator.pop(context);

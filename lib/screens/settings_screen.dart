@@ -8,6 +8,9 @@ import 'package:chibot/providers/search_provider.dart';
 import 'package:chibot/providers/settings_models_provider.dart';
 import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/l10n/app_localizations.dart';
+import 'package:chibot/screens/about_screen.dart';
+import 'package:chibot/screens/update_dialog.dart';
+import 'package:chibot/services/update_service.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -306,7 +309,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  bool get _isMobileSettingsHub => Platform.isAndroid || Platform.isIOS;
+  bool get _isMobileSettingsHub =>
+      Platform.isAndroid ||
+      Platform.isIOS ||
+      Platform.isWindows ||
+      Platform.isMacOS;
 
   bool get _showsOverviewHub =>
       _isMobileSettingsHub && widget.section == SettingsScreenSection.overview;
@@ -339,7 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'Import and export your app configuration';
       case SettingsScreenSection.overview:
         return _isMobileSettingsHub
-            ? 'Models, search, backup, and provider health'
+            ? 'Models, search, backup, app info, and provider health'
             : 'API keys, models, providers, and search settings';
     }
   }
@@ -348,6 +355,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => SettingsScreen(section: section)));
+  }
+
+  void _openAbout() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
+  }
+
+  Future<void> _checkForUpdates() async {
+    final release = await UpdateService.fetchLatestRelease();
+    if (!mounted) return;
+
+    if (release == null) {
+      _showSimpleStatusMessage(
+        context,
+        message: '检查更新失败，请稍后重试',
+        backgroundColor: Colors.red,
+      );
+      return;
+    }
+
+    final latestVersion = release['tag_name'] ?? '';
+    final downloadUrl = UpdateService.getDownloadUrl(release);
+    if (downloadUrl == null) {
+      _showSimpleStatusMessage(
+        context,
+        message: '未找到适用于当前平台的安装包',
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+
+    final fileName = downloadUrl.split('/').last;
+    final releaseNotes = release['body'] ?? '';
+    showDialog(
+      context: context,
+      builder:
+          (_) => UpdateDialog(
+            latestVersion: latestVersion,
+            releaseNotes: releaseNotes,
+            downloadUrl: downloadUrl,
+            fileName: fileName,
+          ),
+    );
   }
 
   String _modelTypeLabel(available_model.ModelType type) {
@@ -761,6 +812,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           detail: 'Move or restore your setup without changing functionality',
           accentColor: MobilePalette.textPrimary,
           onTap: () => _openSection(SettingsScreenSection.data),
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.info_outline_rounded,
+          title: 'About',
+          subtitle: 'Version details, features, and support information',
+          detail: 'Review the current build and app capabilities',
+          accentColor: const Color(0xFF31586E),
+          onTap: _openAbout,
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.system_update_alt_rounded,
+          title: 'Check Updates',
+          subtitle: 'Look for the latest installer package for this platform',
+          detail: 'Download a newer build when one is available',
+          accentColor: MobilePalette.secondary,
+          onTap: _checkForUpdates,
         ),
         _buildProviderHealthCard(
           apiKeys: apiKeys,
