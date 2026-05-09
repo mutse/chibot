@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chibot/models/available_model.dart' as available_model;
 import 'package:chibot/models/chat_session.dart';
 import 'package:chibot/models/image_session.dart';
@@ -20,6 +22,7 @@ class MobileHomeShell extends StatefulWidget {
 }
 
 class _MobileHomeShellState extends State<MobileHomeShell> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<MobileChatPageState> _chatKey =
       GlobalKey<MobileChatPageState>();
   final GlobalKey<MobileImageStudioPageState> _imageKey =
@@ -30,6 +33,8 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       GlobalKey<MobileHistoryPageState>();
 
   int _currentIndex = 0;
+
+  bool get _usesDrawerMenu => Platform.isAndroid || Platform.isIOS;
 
   void _syncSelectedMode(int index) {
     final settings = context.read<UnifiedSettingsProvider>();
@@ -84,11 +89,70 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
     ).push(MaterialPageRoute(builder: (_) => SettingsScreen(section: section)));
   }
 
+  void _openAppMenu() {
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  void _selectDrawerDestination(int index) {
+    Navigator.of(context).pop();
+    _switchTo(index);
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: MobilePalette.surfaceStrong,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Chibot',
+                style: TextStyle(
+                  color: MobilePalette.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Quick access',
+                style: TextStyle(
+                  color: MobilePalette.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 28),
+              _DrawerItem(
+                label: 'History',
+                icon: Icons.history_rounded,
+                selected: _currentIndex == 4,
+                onTap: () => _selectDrawerDestination(4),
+              ),
+              const Spacer(),
+              const Divider(height: 1, color: MobilePalette.border),
+              const SizedBox(height: 18),
+              _DrawerItem(
+                label: 'Settings',
+                icon: Icons.settings_outlined,
+                selected: _currentIndex == 3,
+                onTap: () => _selectDrawerDestination(3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
       MobileChatPage(
         key: _chatKey,
+        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
         onOpenImages: () => _switchTo(1),
         onOpenVideo: () => _switchTo(2),
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
@@ -97,17 +161,20 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       ),
       MobileImageStudioPage(
         key: _imageKey,
+        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
       MobileVideoStudioPage(
         key: _videoKey,
+        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
       const SettingsScreen(),
       MobileHistoryPage(
         key: _historyKey,
+        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
         onOpenChatSession: _openChatSession,
         onOpenImageSession: _openImageSession,
         onOpenVideoSession: _openVideoSession,
@@ -115,7 +182,9 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
     ];
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: MobilePalette.background,
+      drawer: _usesDrawerMenu ? _buildDrawer() : null,
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -155,21 +224,77 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
                   selected: _currentIndex == 2,
                   onTap: () => _switchTo(2),
                 ),
-                _NavItem(
-                  label: 'Settings',
-                  icon: Icons.settings_outlined,
-                  selected: _currentIndex == 3,
-                  onTap: () => _switchTo(3),
-                ),
-                _NavItem(
-                  label: 'History',
-                  icon: Icons.history_rounded,
-                  selected: _currentIndex == 4,
-                  onTap: () => _switchTo(4),
-                ),
+                if (!_usesDrawerMenu) ...[
+                  _NavItem(
+                    label: 'Settings',
+                    icon: Icons.settings_outlined,
+                    selected: _currentIndex == 3,
+                    onTap: () => _switchTo(3),
+                  ),
+                  _NavItem(
+                    label: 'History',
+                    icon: Icons.history_rounded,
+                    selected: _currentIndex == 4,
+                    onTap: () => _switchTo(4),
+                  ),
+                ],
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DrawerItem({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground =
+        selected ? MobilePalette.primary : MobilePalette.textPrimary;
+    final background =
+        selected ? MobilePalette.primarySoft : Colors.transparent;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(18),
+          border:
+              selected
+                  ? Border.all(
+                    color: MobilePalette.primary.withValues(alpha: 0.2),
+                  )
+                  : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: foreground, size: 22),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

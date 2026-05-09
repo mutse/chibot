@@ -14,12 +14,14 @@ import 'package:flutter/material.dart';
 enum MobileHistoryFilter { all, images, videos, chats, projects }
 
 class MobileHistoryPage extends StatefulWidget {
+  final VoidCallback? onOpenAppMenu;
   final ValueChanged<ChatSession> onOpenChatSession;
   final ValueChanged<ImageSession> onOpenImageSession;
   final ValueChanged<VideoSession> onOpenVideoSession;
 
   const MobileHistoryPage({
     super.key,
+    this.onOpenAppMenu,
     required this.onOpenChatSession,
     required this.onOpenImageSession,
     required this.onOpenVideoSession,
@@ -449,8 +451,11 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
         children: [
           MobileTopBar(
             leading: MobileIconCircleButton(
-              icon: Icons.folder_open_outlined,
-              onTap: () {},
+              icon:
+                  widget.onOpenAppMenu != null
+                      ? Icons.menu_rounded
+                      : Icons.folder_open_outlined,
+              onTap: widget.onOpenAppMenu,
             ),
             title: 'History',
             subtitle: 'Your chats, images, and videos',

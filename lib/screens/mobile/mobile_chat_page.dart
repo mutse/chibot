@@ -19,6 +19,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 
 class MobileChatPage extends StatefulWidget {
+  final VoidCallback? onOpenAppMenu;
   final VoidCallback? onOpenImages;
   final VoidCallback? onOpenVideo;
   final VoidCallback? onOpenModels;
@@ -27,6 +28,7 @@ class MobileChatPage extends StatefulWidget {
 
   const MobileChatPage({
     super.key,
+    this.onOpenAppMenu,
     this.onOpenImages,
     this.onOpenVideo,
     this.onOpenModels,
@@ -849,13 +851,25 @@ class MobileChatPageState extends State<MobileChatPage> {
           MobileTopBar(
             leading: MobileIconCircleButton(
               icon: Icons.menu_rounded,
-              onTap: _showSessionSheet,
+              onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: 'Chibot',
             subtitle: 'One AI. Any modality.',
-            trailing: MobileIconCircleButton(
-              icon: Icons.edit_note_rounded,
-              onTap: startNewChat,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.onOpenAppMenu != null) ...[
+                  MobileIconCircleButton(
+                    icon: Icons.view_list_rounded,
+                    onTap: _showSessionSheet,
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                MobileIconCircleButton(
+                  icon: Icons.edit_note_rounded,
+                  onTap: startNewChat,
+                ),
+              ],
             ),
           ),
           Padding(

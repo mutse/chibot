@@ -16,11 +16,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class MobileVideoStudioPage extends StatefulWidget {
+  final VoidCallback? onOpenAppMenu;
   final VoidCallback? onOpenModels;
   final VoidCallback? onDataChanged;
 
   const MobileVideoStudioPage({
     super.key,
+    this.onOpenAppMenu,
     this.onOpenModels,
     this.onDataChanged,
   });
@@ -480,8 +482,11 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
         children: [
           MobileTopBar(
             leading: MobileIconCircleButton(
-              icon: Icons.arrow_back_ios_new_rounded,
-              onTap: _showSessionSheet,
+              icon:
+                  widget.onOpenAppMenu != null
+                      ? Icons.menu_rounded
+                      : Icons.arrow_back_ios_new_rounded,
+              onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: 'Create Video',
             subtitle: videoModel.selectedVideoProvider,
