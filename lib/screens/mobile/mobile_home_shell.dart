@@ -126,6 +126,27 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
               ),
               const SizedBox(height: 28),
               _DrawerItem(
+                label: 'Chat',
+                icon: Icons.chat_bubble_outline_rounded,
+                selected: _currentIndex == 0,
+                onTap: () => _selectDrawerDestination(0),
+              ),
+              const SizedBox(height: 8),
+              _DrawerItem(
+                label: 'Images',
+                icon: Icons.image_outlined,
+                selected: _currentIndex == 1,
+                onTap: () => _selectDrawerDestination(1),
+              ),
+              const SizedBox(height: 8),
+              _DrawerItem(
+                label: 'Video',
+                icon: Icons.smart_display_outlined,
+                selected: _currentIndex == 2,
+                onTap: () => _selectDrawerDestination(2),
+              ),
+              const SizedBox(height: 8),
+              _DrawerItem(
                 label: 'History',
                 icon: Icons.history_rounded,
                 selected: _currentIndex == 4,
@@ -186,63 +207,69 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       backgroundColor: MobilePalette.background,
       drawer: _usesDrawerMenu ? _buildDrawer() : null,
       body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            decoration: BoxDecoration(
-              color: MobilePalette.surfaceStrong.withValues(alpha: 0.96),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: MobilePalette.border),
-              boxShadow: const [
-                BoxShadow(
-                  color: MobilePalette.shadow,
-                  blurRadius: 26,
-                  offset: Offset(0, 12),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _NavItem(
-                  label: 'Chat',
-                  icon: Icons.chat_bubble_outline_rounded,
-                  selected: _currentIndex == 0,
-                  onTap: () => _switchTo(0),
-                ),
-                _NavItem(
-                  label: 'Images',
-                  icon: Icons.image_outlined,
-                  selected: _currentIndex == 1,
-                  onTap: () => _switchTo(1),
-                ),
-                _NavItem(
-                  label: 'Video',
-                  icon: Icons.smart_display_outlined,
-                  selected: _currentIndex == 2,
-                  onTap: () => _switchTo(2),
-                ),
-                if (!_usesDrawerMenu) ...[
-                  _NavItem(
-                    label: 'Settings',
-                    icon: Icons.settings_outlined,
-                    selected: _currentIndex == 3,
-                    onTap: () => _switchTo(3),
+      bottomNavigationBar:
+          _usesDrawerMenu
+              ? null
+              : SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MobilePalette.surfaceStrong.withValues(
+                        alpha: 0.96,
+                      ),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: MobilePalette.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: MobilePalette.shadow,
+                          blurRadius: 26,
+                          offset: Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        _NavItem(
+                          label: 'Chat',
+                          icon: Icons.chat_bubble_outline_rounded,
+                          selected: _currentIndex == 0,
+                          onTap: () => _switchTo(0),
+                        ),
+                        _NavItem(
+                          label: 'Images',
+                          icon: Icons.image_outlined,
+                          selected: _currentIndex == 1,
+                          onTap: () => _switchTo(1),
+                        ),
+                        _NavItem(
+                          label: 'Video',
+                          icon: Icons.smart_display_outlined,
+                          selected: _currentIndex == 2,
+                          onTap: () => _switchTo(2),
+                        ),
+                        _NavItem(
+                          label: 'Settings',
+                          icon: Icons.settings_outlined,
+                          selected: _currentIndex == 3,
+                          onTap: () => _switchTo(3),
+                        ),
+                        _NavItem(
+                          label: 'History',
+                          icon: Icons.history_rounded,
+                          selected: _currentIndex == 4,
+                          onTap: () => _switchTo(4),
+                        ),
+                      ],
+                    ),
                   ),
-                  _NavItem(
-                    label: 'History',
-                    icon: Icons.history_rounded,
-                    selected: _currentIndex == 4,
-                    onTap: () => _switchTo(4),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+                ),
+              ),
     );
   }
 }
