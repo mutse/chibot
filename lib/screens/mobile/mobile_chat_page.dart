@@ -170,7 +170,7 @@ class MobileChatPageState extends State<MobileChatPage> {
     final existing = _sessions.where((item) => item.id == _currentSessionId);
     final current = existing.isEmpty ? null : existing.first;
     final firstMessageText =
-        _messages.isNotEmpty ? _messages.first.text : 'New Chat';
+        _messages.isNotEmpty ? _messages.first.text : '新对话';
     final generatedTitle =
         firstMessageText.length > 34
             ? '${firstMessageText.substring(0, 34)}...'
@@ -293,7 +293,7 @@ class MobileChatPageState extends State<MobileChatPage> {
       if (error is MissingApiKeyException) {
         _replaceLastAiMessage(error.userFriendlyMessage);
       } else {
-        _replaceLastAiMessage('Error: $error');
+        _replaceLastAiMessage('错误：$error');
       }
     } finally {
       if (mounted) {
@@ -375,7 +375,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Chat Model',
+                        '聊天模型',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -439,7 +439,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                           widget.onOpenModels?.call();
                         },
                         icon: const Icon(Icons.tune_rounded),
-                        label: const Text('Open model settings'),
+                        label: const Text('打开模型设置'),
                         style: TextButton.styleFrom(
                           foregroundColor: theme.colorScheme.primary,
                         ),
@@ -477,7 +477,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                     Row(
                       children: [
                         const Text(
-                          'Chat Sessions',
+                          '聊天会话',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -499,21 +499,21 @@ class MobileChatPageState extends State<MobileChatPage> {
                       spacing: 10,
                       children: [
                         ActionChip(
-                          label: const Text('History'),
+                          label: const Text('历史'),
                           onPressed: () {
                             Navigator.pop(context);
                             widget.onOpenHistory?.call();
                           },
                         ),
                         ActionChip(
-                          label: const Text('Models'),
+                          label: const Text('模型'),
                           onPressed: () {
                             Navigator.pop(context);
                             widget.onOpenModels?.call();
                           },
                         ),
                         ActionChip(
-                          label: const Text('Settings'),
+                          label: const Text('设置'),
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.push(
@@ -543,7 +543,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                                 child: Padding(
                                   padding: EdgeInsets.all(24),
                                   child: Text(
-                                    'No chat sessions yet.',
+                                    '还没有聊天会话。',
                                     style: TextStyle(
                                       color: MobilePalette.textSecondary,
                                     ),
@@ -567,7 +567,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      '${formatMobileDate(session.updatedAt)} • ${session.messageCount} msgs',
+                                      '${formatMobileDate(session.updatedAt)} • ${session.messageCount} 条消息',
                                       style: const TextStyle(
                                         color: MobilePalette.textSecondary,
                                       ),
@@ -716,7 +716,7 @@ class MobileChatPageState extends State<MobileChatPage> {
             ),
             const SizedBox(height: 18),
             const Text(
-              'Ask Chibot anything',
+              '想问什么都可以',
               style: TextStyle(
                 color: MobilePalette.textPrimary,
                 fontSize: 22,
@@ -726,7 +726,7 @@ class MobileChatPageState extends State<MobileChatPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Currently using ${chatModel.selectedModel} on ${chatModel.selectedProvider}. Start a fresh conversation or jump into image and video generation below.',
+              '当前使用 ${chatModel.selectedProvider} 的 ${chatModel.selectedModel}。你可以开始一段新对话，或者直接切换到下方的图片与视频创作。',
               style: const TextStyle(
                 color: MobilePalette.textSecondary,
                 fontSize: 14,
@@ -754,13 +754,13 @@ class MobileChatPageState extends State<MobileChatPage> {
               onPressed: widget.onOpenImages,
               icon: const Icon(Icons.image_outlined),
               color: MobilePalette.textSecondary,
-              tooltip: 'Create image',
+              tooltip: '创作图片',
             ),
             IconButton(
               onPressed: widget.onOpenVideo,
               icon: const Icon(Icons.smart_display_outlined),
               color: MobilePalette.textSecondary,
-              tooltip: 'Create video',
+              tooltip: '创作视频',
             ),
             IconButton(
               onPressed: () {
@@ -775,7 +775,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                         ? MobilePalette.primary
                         : MobilePalette.textSecondary,
               ),
-              tooltip: 'Web search',
+              tooltip: '网页搜索',
             ),
             Expanded(
               child: TextField(
@@ -785,7 +785,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (value) => _sendMessage(),
                 decoration: const InputDecoration(
-                  hintText: 'Message Chibot...',
+                  hintText: '输入消息...',
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 4,
@@ -854,7 +854,7 @@ class MobileChatPageState extends State<MobileChatPage> {
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: 'Chibot',
-            subtitle: 'One AI. Any modality.',
+            subtitle: '一个入口，覆盖多种 AI 能力',
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

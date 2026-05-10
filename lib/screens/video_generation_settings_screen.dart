@@ -36,10 +36,7 @@ class _VideoGenerationSettingsScreenState
     final videoModel = Provider.of<VideoModelProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Video Generation Settings'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('视频生成设置'), elevation: 0),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -53,7 +50,7 @@ class _VideoGenerationSettingsScreenState
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Configure Video Generation',
+                      '配置视频生成',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -64,11 +61,8 @@ class _VideoGenerationSettingsScreenState
               ),
               const SizedBox(height: 20),
               const Text(
-                'Video generation settings for Google Veo3 API',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                '为 Google Veo3 API 配置视频生成参数',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 30),
 
@@ -101,7 +95,7 @@ class _VideoGenerationSettingsScreenState
                               controller: _veo3ApiKeyController,
                               obscureText: true,
                               decoration: InputDecoration(
-                                hintText: 'Enter your Google Veo3 API Key',
+                                hintText: '输入 Google Veo3 API Key',
                                 border: const OutlineInputBorder(),
                                 prefixIcon: const Icon(Icons.vpn_key),
                               ),
@@ -110,7 +104,7 @@ class _VideoGenerationSettingsScreenState
                           const SizedBox(width: 8),
                           IconButton(
                             icon: const Icon(Icons.clear),
-                            tooltip: 'Clear',
+                            tooltip: '清空',
                             onPressed: () {
                               setState(() {
                                 _veo3ApiKeyController.clear();
@@ -135,10 +129,14 @@ class _VideoGenerationSettingsScreenState
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.aspect_ratio, size: 18, color: Colors.blue),
+                          Icon(
+                            Icons.aspect_ratio,
+                            size: 18,
+                            color: Colors.blue,
+                          ),
                           SizedBox(width: 8),
                           Text(
-                            'Video Resolution',
+                            '视频分辨率',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -157,11 +155,11 @@ class _VideoGenerationSettingsScreenState
                           ),
                           DropdownMenuItem(
                             value: '720p',
-                            child: Text('720p HD (1280×720)'),
+                            child: Text('720p 高清 (1280×720)'),
                           ),
                           DropdownMenuItem(
                             value: '1080p',
-                            child: Text('1080p Full HD (1920×1080)'),
+                            child: Text('1080p 全高清 (1920×1080)'),
                           ),
                         ],
                         onChanged: (value) {
@@ -172,7 +170,7 @@ class _VideoGenerationSettingsScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Higher resolutions provide better quality but take longer to generate',
+                        '分辨率越高，画质越好，但生成时间也会更长',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -198,7 +196,7 @@ class _VideoGenerationSettingsScreenState
                           Icon(Icons.schedule, size: 18, color: Colors.green),
                           SizedBox(width: 8),
                           Text(
-                            'Video Duration',
+                            '视频时长',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -211,22 +209,10 @@ class _VideoGenerationSettingsScreenState
                         value: videoModel.videoDuration,
                         isExpanded: true,
                         items: const [
-                          DropdownMenuItem(
-                            value: '5s',
-                            child: Text('5 seconds'),
-                          ),
-                          DropdownMenuItem(
-                            value: '10s',
-                            child: Text('10 seconds'),
-                          ),
-                          DropdownMenuItem(
-                            value: '15s',
-                            child: Text('15 seconds'),
-                          ),
-                          DropdownMenuItem(
-                            value: '30s',
-                            child: Text('30 seconds'),
-                          ),
+                          DropdownMenuItem(value: '5s', child: Text('5 秒')),
+                          DropdownMenuItem(value: '10s', child: Text('10 秒')),
+                          DropdownMenuItem(value: '15s', child: Text('15 秒')),
+                          DropdownMenuItem(value: '30s', child: Text('30 秒')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -236,7 +222,7 @@ class _VideoGenerationSettingsScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Longer videos take more time to generate',
+                        '视频越长，生成耗时越久',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -259,10 +245,14 @@ class _VideoGenerationSettingsScreenState
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.high_quality, size: 18, color: Colors.purple),
+                          Icon(
+                            Icons.high_quality,
+                            size: 18,
+                            color: Colors.purple,
+                          ),
                           SizedBox(width: 8),
                           Text(
-                            'Video Quality',
+                            '视频质量',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -277,12 +267,9 @@ class _VideoGenerationSettingsScreenState
                         items: const [
                           DropdownMenuItem(
                             value: 'standard',
-                            child: Text('Standard Quality'),
+                            child: Text('标准质量'),
                           ),
-                          DropdownMenuItem(
-                            value: 'high',
-                            child: Text('High Quality'),
-                          ),
+                          DropdownMenuItem(value: 'high', child: Text('高质量')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -292,7 +279,7 @@ class _VideoGenerationSettingsScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'High quality videos have better visual fidelity',
+                        '高质量模式可获得更好的画面表现',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -318,7 +305,7 @@ class _VideoGenerationSettingsScreenState
                           Icon(Icons.crop, size: 18, color: Colors.orange),
                           SizedBox(width: 8),
                           Text(
-                            'Video Aspect Ratio',
+                            '视频比例',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -333,19 +320,19 @@ class _VideoGenerationSettingsScreenState
                         items: const [
                           DropdownMenuItem(
                             value: '16:9',
-                            child: Text('16:9 (Landscape)'),
+                            child: Text('16:9（横屏）'),
                           ),
                           DropdownMenuItem(
                             value: '9:16',
-                            child: Text('9:16 (Portrait)'),
+                            child: Text('9:16（竖屏）'),
                           ),
                           DropdownMenuItem(
                             value: '1:1',
-                            child: Text('1:1 (Square)'),
+                            child: Text('1:1（方形）'),
                           ),
                           DropdownMenuItem(
                             value: '4:3',
-                            child: Text('4:3 (Traditional)'),
+                            child: Text('4:3（传统）'),
                           ),
                         ],
                         onChanged: (value) {
@@ -356,7 +343,7 @@ class _VideoGenerationSettingsScreenState
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Choose the aspect ratio based on your use case',
+                        '根据你的使用场景选择合适的画面比例',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -378,7 +365,7 @@ class _VideoGenerationSettingsScreenState
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.close),
-                    label: const Text('Cancel'),
+                    label: const Text('取消'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey,
                       foregroundColor: Colors.white,
@@ -398,7 +385,7 @@ class _VideoGenerationSettingsScreenState
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Video settings saved successfully'),
+                            content: Text('视频设置已保存'),
                             backgroundColor: Colors.green,
                             duration: Duration(seconds: 2),
                           ),
@@ -407,7 +394,7 @@ class _VideoGenerationSettingsScreenState
                       }
                     },
                     icon: const Icon(Icons.check),
-                    label: const Text('Save'),
+                    label: const Text('保存'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,

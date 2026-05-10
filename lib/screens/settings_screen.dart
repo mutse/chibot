@@ -326,11 +326,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _pageTitle() {
     switch (widget.section) {
       case SettingsScreenSection.models:
-        return 'Models';
+        return '模型';
       case SettingsScreenSection.search:
-        return 'Search';
+        return '搜索';
       case SettingsScreenSection.data:
-        return 'Config';
+        return '配置';
       case SettingsScreenSection.overview:
         return l10n.settings;
     }
@@ -339,15 +339,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _pageSubtitle() {
     switch (widget.section) {
       case SettingsScreenSection.models:
-        return 'Providers, models, and API keys';
+        return '管理提供商、模型和 API Key';
       case SettingsScreenSection.search:
-        return 'Web search engines and related keys';
+        return '管理网页搜索引擎及相关密钥';
       case SettingsScreenSection.data:
-        return 'Import and export your app configuration';
+        return '导入或导出应用配置';
       case SettingsScreenSection.overview:
         return _isMobileSettingsHub
-            ? 'Models, search, backup, app info, and provider health'
-            : 'API keys, models, providers, and search settings';
+            ? '模型、搜索、备份、应用信息与服务状态'
+            : 'API Key、模型、提供商与搜索设置';
     }
   }
 
@@ -410,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case available_model.ModelType.video:
         return '视频模型';
       case available_model.ModelType.customOpenAI:
-        return 'Custom OpenAI';
+        return '自定义 OpenAI';
     }
   }
 
@@ -423,12 +423,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       active.add('Google');
     }
     if (active.isEmpty) {
-      return 'No search engines enabled';
+      return '未启用搜索引擎';
     }
 
     final suffix =
         search.googleSearchEnabled
-            ? ' • ${search.googleSearchResultCount} results'
+            ? ' • ${search.googleSearchResultCount} 条结果'
             : '';
     return '${active.join(' + ')}$suffix';
   }
@@ -573,7 +573,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MobileSectionLabel(title: 'Quick Overview'),
+          const MobileSectionLabel(title: '快速总览'),
           const SizedBox(height: 6),
           Text(
             '把模型配置、搜索能力和配置备份集中到一个入口里。',
@@ -630,26 +630,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildSummaryRow(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: '聊天',
             value: '${chatModel.selectedProvider} • ${chatModel.selectedModel}',
           ),
           _buildSummaryRow(
             icon: Icons.image_outlined,
-            label: 'Image',
+            label: '图片',
             value:
                 '${imageModel.selectedImageProvider} • ${imageModel.selectedImageModel}',
             accentColor: MobilePalette.secondary,
           ),
           _buildSummaryRow(
             icon: Icons.smart_display_outlined,
-            label: 'Video',
+            label: '视频',
             value:
                 '${videoModel.selectedVideoProvider} • ${videoModel.videoResolution} • ${videoModel.videoAspectRatio}',
             accentColor: MobilePalette.textPrimary,
           ),
           _buildSummaryRow(
             icon: Icons.travel_explore_rounded,
-            label: 'Search',
+            label: '搜索',
             value: _searchStatusLabel(search),
           ),
         ],
@@ -724,7 +724,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MobileSectionLabel(title: 'Provider Health'),
+          const MobileSectionLabel(title: '服务状态'),
           const SizedBox(height: 6),
           const Text(
             '快速查看当前常用服务是否已经完成连接。',
@@ -735,36 +735,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             connected: hasKey(apiKeys.openaiApiKey),
             usageLabel:
                 chatModel.selectedProvider == 'OpenAI'
-                    ? 'Chat active'
+                    ? '聊天中'
                     : imageModel.selectedImageProvider == 'OpenAI'
-                    ? 'Image active'
-                    : 'Ready',
+                    ? '图片中'
+                    : '就绪',
           ),
           _buildProviderHealthRow(
             title: 'Google',
             connected: hasKey(apiKeys.googleApiKey),
             usageLabel:
                 chatModel.selectedProvider == 'Google'
-                    ? 'Chat active'
+                    ? '聊天中'
                     : imageModel.selectedImageProvider == 'Google'
-                    ? 'Image active'
-                    : 'Video active',
+                    ? '图片中'
+                    : '视频中',
           ),
           _buildProviderHealthRow(
             title: 'Anthropic',
             connected: hasKey(apiKeys.claudeApiKey),
             usageLabel:
-                chatModel.selectedProvider == 'Anthropic'
-                    ? 'Chat active'
-                    : 'Ready',
+                chatModel.selectedProvider == 'Anthropic' ? '聊天中' : '就绪',
           ),
           _buildProviderHealthRow(
             title: 'Black Forest Labs',
             connected: hasKey(apiKeys.fluxKontextApiKey),
             usageLabel:
                 imageModel.selectedImageProvider == 'Black Forest Labs'
-                    ? 'Image active'
-                    : 'Ready',
+                    ? '图片中'
+                    : '就绪',
           ),
         ],
       ),
@@ -791,41 +789,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         _buildOverviewLinkCard(
           icon: Icons.layers_outlined,
-          title: 'Models',
-          subtitle: 'Providers, model selection, API keys, and custom models',
-          detail:
-              'Current mode: ${_modelTypeLabel(unifiedSettings.selectedModelType)}',
+          title: '模型',
+          subtitle: '提供商、模型选择、API Key 与自定义模型',
+          detail: '当前模式：${_modelTypeLabel(unifiedSettings.selectedModelType)}',
           onTap: () => _openSection(SettingsScreenSection.models),
         ),
         _buildOverviewLinkCard(
           icon: Icons.travel_explore_rounded,
-          title: 'Search',
-          subtitle: 'Tavily, Google Custom Search, and result controls',
+          title: '搜索',
+          subtitle: 'Tavily、Google 自定义搜索与结果控制',
           detail: _searchStatusLabel(search),
           accentColor: MobilePalette.secondary,
           onTap: () => _openSection(SettingsScreenSection.search),
         ),
         _buildOverviewLinkCard(
           icon: Icons.import_export_rounded,
-          title: 'Config & Backup',
-          subtitle: 'Import and export your XML configuration files',
-          detail: 'Move or restore your setup without changing functionality',
+          title: '配置与备份',
+          subtitle: '导入和导出 XML 配置文件',
+          detail: '在不改变功能的前提下迁移或恢复设置',
           accentColor: MobilePalette.textPrimary,
           onTap: () => _openSection(SettingsScreenSection.data),
         ),
         _buildOverviewLinkCard(
           icon: Icons.info_outline_rounded,
-          title: 'About',
-          subtitle: 'Version details, features, and support information',
-          detail: 'Review the current build and app capabilities',
+          title: '关于',
+          subtitle: '版本信息、功能特性与支持说明',
+          detail: '查看当前版本与应用能力',
           accentColor: const Color(0xFF31586E),
           onTap: _openAbout,
         ),
         _buildOverviewLinkCard(
           icon: Icons.system_update_alt_rounded,
-          title: 'Check Updates',
-          subtitle: 'Look for the latest installer package for this platform',
-          detail: 'Download a newer build when one is available',
+          title: '检查更新',
+          subtitle: '查找当前平台可用的最新安装包',
+          detail: '有新版本时可直接下载更新',
           accentColor: MobilePalette.secondary,
           onTap: _checkForUpdates,
         ),
@@ -894,7 +891,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'OpenAI':
         return 'OpenAI API Key';
       case 'Anthropic':
-        return 'Claude API Key (Anthropic)';
+        return 'Claude API Key（Anthropic）';
       case 'Google':
         return 'Google API Key';
       default:
@@ -909,13 +906,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     switch (chatModel.selectedProvider) {
       case 'OpenAI':
-        return 'Enter your OpenAI API Key';
+        return '输入 OpenAI API Key';
       case 'Anthropic':
-        return 'Enter your Claude API Key';
+        return '输入 Claude API Key';
       case 'Google':
-        return 'Enter your Google API Key';
+        return '输入 Google API Key';
       default:
-        return 'Enter API key for ${chatModel.selectedProvider}';
+        return '输入 ${chatModel.selectedProvider} 的 API Key';
     }
   }
 
@@ -1439,7 +1436,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MobileSectionLabel(title: 'Workspace Mode'),
+          const MobileSectionLabel(title: '工作模式'),
           const SizedBox(height: 6),
           Text(
             l10n.selectModelType,
@@ -1532,7 +1529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MobileSectionLabel(title: 'Search'),
+        const MobileSectionLabel(title: '搜索'),
         const SizedBox(height: 12),
         _buildSwitchRow(
           title: 'Tavily Web 搜索',
@@ -1556,7 +1553,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
         _buildSwitchRow(
           title: 'Google 搜索',
-          subtitle: '使用 Custom Search 返回网页结果',
+          subtitle: '使用自定义搜索返回网页结果',
           value: search.googleSearchEnabled,
           onChanged: (value) {
             search.setGoogleSearchEnabled(value);
@@ -1568,7 +1565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Google Search API Key',
             field: _buildGlassTextField(
               controller: _googleSearchApiKeyController,
-              hintText: '输入 Google Custom Search API Key',
+              hintText: '输入 Google 自定义搜索 API Key',
               obscureText: true,
             ),
           ),
@@ -1577,7 +1574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Google Search Engine ID',
             field: _buildGlassTextField(
               controller: _googleSearchEngineIdController,
-              hintText: '输入 Custom Search Engine ID',
+              hintText: '输入自定义搜索引擎 ID',
             ),
           ),
           const SizedBox(height: 14),
@@ -1617,11 +1614,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               items: const [
                 DropdownMenuItem(
                   value: 'googleCustomSearch',
-                  child: Text('Google Custom Search API'),
+                  child: Text('Google 自定义搜索 API'),
                 ),
                 DropdownMenuItem(
                   value: 'programmableSearch',
-                  child: Text('Programmable Search Engine'),
+                  child: Text('可编程搜索引擎'),
                 ),
               ],
               onChanged: (value) {
@@ -1681,9 +1678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       return DropdownMenuItem<String>(
                         value: provider,
                         child: Text(
-                          isCustom
-                              ? ' $provider (OpenAI Compatible)'
-                              : provider,
+                          isCustom ? '$provider（OpenAI 兼容）' : provider,
                         ),
                       );
                     }).toList(),
@@ -1715,10 +1710,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               .selectedProvider] ??
                           '',
                     )
-                    : 'OpenAI compatible base URL, for example http://localhost:11434/v1',
+                    : '兼容 OpenAI 的 Base URL，例如 http://localhost:11434/v1',
             field: _buildGlassTextField(
               controller: _providerUrlController,
-              hintText: 'e.g., http://localhost:11434/v1',
+              hintText: '例如：http://localhost:11434/v1',
               keyboardType: TextInputType.url,
             ),
           ),
@@ -1894,7 +1889,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             field: _buildGlassTextField(
               controller: _imageProviderUrlController,
-              hintText: 'e.g., https://api.stability.ai',
+              hintText: '例如：https://api.stability.ai',
               keyboardType: TextInputType.url,
             ),
           ),
@@ -2042,7 +2037,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Google Veo3 API Key',
             field: _buildGlassTextField(
               controller: _apiKeyController,
-              hintText: 'Enter your Google Veo3 API Key',
+              hintText: '输入 Google Veo3 API Key',
               obscureText: true,
               onClear: () async {
                 setState(() {
@@ -2057,10 +2052,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const MobileSectionLabel(title: 'Video Output'),
+              const MobileSectionLabel(title: '视频输出'),
               const SizedBox(height: 12),
               _buildSimpleFieldSection(
-                title: 'Video Resolution',
+                title: '视频分辨率',
                 field: _buildGlassDropdown<String>(
                   value: videoModel.videoResolution,
                   items: const [
@@ -2070,11 +2065,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     DropdownMenuItem(
                       value: '720p',
-                      child: Text('720p HD (1280×720)'),
+                      child: Text('720p 高清 (1280×720)'),
                     ),
                     DropdownMenuItem(
                       value: '1080p',
-                      child: Text('1080p Full HD (1920×1080)'),
+                      child: Text('1080p 全高清 (1920×1080)'),
                     ),
                   ],
                   onChanged: (value) {
@@ -2086,13 +2081,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 14),
               _buildSimpleFieldSection(
-                title: 'Video Duration',
+                title: '视频时长',
                 field: _buildGlassDropdown<String>(
                   value: videoModel.videoDuration,
                   items: const [
-                    DropdownMenuItem(value: '5s', child: Text('5 seconds')),
-                    DropdownMenuItem(value: '10s', child: Text('10 seconds')),
-                    DropdownMenuItem(value: '30s', child: Text('30 seconds')),
+                    DropdownMenuItem(value: '5s', child: Text('5 秒')),
+                    DropdownMenuItem(value: '10s', child: Text('10 秒')),
+                    DropdownMenuItem(value: '30s', child: Text('30 秒')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -2103,18 +2098,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 14),
               _buildSimpleFieldSection(
-                title: 'Video Quality',
+                title: '视频质量',
                 field: _buildGlassDropdown<String>(
                   value: videoModel.videoQuality,
                   items: const [
-                    DropdownMenuItem(
-                      value: 'standard',
-                      child: Text('Standard Quality'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'high',
-                      child: Text('High Quality'),
-                    ),
+                    DropdownMenuItem(value: 'standard', child: Text('标准质量')),
+                    DropdownMenuItem(value: 'high', child: Text('高质量')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -2125,23 +2114,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 14),
               _buildSimpleFieldSection(
-                title: 'Video Aspect Ratio',
+                title: '视频比例',
                 field: _buildGlassDropdown<String>(
                   value: videoModel.videoAspectRatio,
                   items: const [
-                    DropdownMenuItem(
-                      value: '16:9',
-                      child: Text('16:9 (Landscape)'),
-                    ),
-                    DropdownMenuItem(
-                      value: '9:16',
-                      child: Text('9:16 (Portrait)'),
-                    ),
-                    DropdownMenuItem(value: '1:1', child: Text('1:1 (Square)')),
-                    DropdownMenuItem(
-                      value: '4:3',
-                      child: Text('4:3 (Traditional)'),
-                    ),
+                    DropdownMenuItem(value: '16:9', child: Text('16:9（横屏）')),
+                    DropdownMenuItem(value: '9:16', child: Text('9:16（竖屏）')),
+                    DropdownMenuItem(value: '1:1', child: Text('1:1（方形）')),
+                    DropdownMenuItem(value: '4:3', child: Text('4:3（传统）')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -2240,7 +2220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const MobileSectionLabel(title: 'Search Overview'),
+              const MobileSectionLabel(title: '搜索概览'),
               const SizedBox(height: 6),
               Text(
                 _searchStatusLabel(search),
@@ -2321,7 +2301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const MobileSectionLabel(title: 'Config Files'),
+              const MobileSectionLabel(title: '配置文件'),
               const SizedBox(height: 6),
               const Text(
                 '导出当前配置用于备份，或导入 XML 文件恢复现有设置。',
@@ -2332,12 +2312,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _buildSummaryRow(
                 icon: Icons.file_upload_outlined,
-                label: 'Export',
+                label: '导出',
                 value: '备份当前模型、搜索、API key 和自定义配置',
               ),
               _buildSummaryRow(
                 icon: Icons.file_download_outlined,
-                label: 'Import',
+                label: '导入',
                 value: '从已有 XML 配置恢复应用设置',
                 accentColor: MobilePalette.secondary,
               ),

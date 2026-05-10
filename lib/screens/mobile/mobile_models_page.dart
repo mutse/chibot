@@ -34,8 +34,8 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
               icon: Icons.widgets_outlined,
               onTap: () {},
             ),
-            title: 'Models',
-            subtitle: 'Active workspace and providers',
+            title: '模型',
+            subtitle: '当前工作区与服务提供商',
             trailing: MobileIconCircleButton(
               icon: Icons.settings_outlined,
               onTap: () {
@@ -55,7 +55,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Active Workspace',
+                        '当前工作区',
                         style: TextStyle(
                           color: MobilePalette.textSecondary,
                           fontSize: 12,
@@ -83,7 +83,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Creative Studio',
+                                  '创作工作台',
                                   style: TextStyle(
                                     color: MobilePalette.textPrimary,
                                     fontWeight: FontWeight.w800,
@@ -91,7 +91,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  'Pro layout for chat, images, and video',
+                                  '面向聊天、图片与视频的一体化创作布局',
                                   style: TextStyle(
                                     color: MobilePalette.textSecondary,
                                     fontSize: 12,
@@ -110,7 +110,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Text(
-                              'Pro Plan',
+                              '专业版',
                               style: TextStyle(
                                 color: MobilePalette.primary,
                                 fontSize: 11,
@@ -126,7 +126,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                         runSpacing: 10,
                         children: [
                           MobilePill(
-                            label: 'Chat',
+                            label: '聊天',
                             selected:
                                 unifiedSettings.selectedModelType ==
                                 available_model.ModelType.text,
@@ -136,7 +136,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                                 ),
                           ),
                           MobilePill(
-                            label: 'Image',
+                            label: '图片',
                             selected:
                                 unifiedSettings.selectedModelType ==
                                 available_model.ModelType.image,
@@ -146,7 +146,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                                 ),
                           ),
                           MobilePill(
-                            label: 'Video',
+                            label: '视频',
                             selected:
                                 unifiedSettings.selectedModelType ==
                                 available_model.ModelType.video,
@@ -165,7 +165,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Chat Model'),
+                      const MobileSectionLabel(title: '聊天模型'),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 10,
@@ -226,7 +226,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Image Model'),
+                      const MobileSectionLabel(title: '图片模型'),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 10,
@@ -272,7 +272,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                                       imageModel.selectedImageProvider ==
                                           'Black Forest Labs'
                                   ? Text(
-                                    'Aspect ${imageModel.bflAspectRatio ?? '1:1'}',
+                                    '比例 ${imageModel.bflAspectRatio ?? '1:1'}',
                                     style: const TextStyle(
                                       color: MobilePalette.textSecondary,
                                     ),
@@ -299,7 +299,7 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Video Model'),
+                      const MobileSectionLabel(title: '视频模型'),
                       const SizedBox(height: 12),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -348,67 +348,67 @@ class _MobileModelsPageState extends State<MobileModelsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Providers'),
+                      const MobileSectionLabel(title: '服务提供商'),
                       const SizedBox(height: 12),
                       _ProviderStatusTile(
                         title: 'OpenAI',
                         subtitle: _statusText(
                           apiKeys.openaiApiKey,
-                          'Connected',
-                          'Needs API key',
+                          '已连接',
+                          '需要 API Key',
                         ),
                         connected: _isConfigured(apiKeys.openaiApiKey),
                         usageLabel:
                             chatModel.selectedProvider == 'OpenAI'
-                                ? 'Chat active'
+                                ? '聊天中'
                                 : imageModel.selectedImageProvider == 'OpenAI'
-                                ? 'Image active'
-                                : 'Ready',
+                                ? '图片中'
+                                : '就绪',
                       ),
                       const SizedBox(height: 10),
                       _ProviderStatusTile(
                         title: 'Google',
                         subtitle: _statusText(
                           apiKeys.googleApiKey,
-                          'Connected',
-                          'Needs API key',
+                          '已连接',
+                          '需要 API Key',
                         ),
                         connected: _isConfigured(apiKeys.googleApiKey),
                         usageLabel:
                             chatModel.selectedProvider == 'Google'
-                                ? 'Chat active'
+                                ? '聊天中'
                                 : imageModel.selectedImageProvider == 'Google'
-                                ? 'Image active'
-                                : 'Video active',
+                                ? '图片中'
+                                : '视频中',
                       ),
                       const SizedBox(height: 10),
                       _ProviderStatusTile(
                         title: 'Anthropic',
                         subtitle: _statusText(
                           apiKeys.claudeApiKey,
-                          'Connected',
-                          'Needs API key',
+                          '已连接',
+                          '需要 API Key',
                         ),
                         connected: _isConfigured(apiKeys.claudeApiKey),
                         usageLabel:
                             chatModel.selectedProvider == 'Anthropic'
-                                ? 'Chat active'
-                                : 'Ready',
+                                ? '聊天中'
+                                : '就绪',
                       ),
                       const SizedBox(height: 10),
                       _ProviderStatusTile(
                         title: 'Black Forest Labs',
                         subtitle: _statusText(
                           apiKeys.fluxKontextApiKey,
-                          'Connected',
-                          'Needs API key',
+                          '已连接',
+                          '需要 API Key',
                         ),
                         connected: _isConfigured(apiKeys.fluxKontextApiKey),
                         usageLabel:
                             imageModel.selectedImageProvider ==
                                     'Black Forest Labs'
-                                ? 'Image active'
-                                : 'Ready',
+                                ? '图片中'
+                                : '就绪',
                       ),
                     ],
                   ),

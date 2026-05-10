@@ -32,19 +32,9 @@ class MobileVideoStudioPage extends StatefulWidget {
 }
 
 class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
-  static const List<String> _motions = [
-    'Cinematic Pan',
-    'Slow Push',
-    'Orbit Shot',
-    'Static Composition',
-  ];
+  static const List<String> _motions = ['电影级平移', '缓慢推进', '环绕镜头', '静态构图'];
 
-  static const List<String> _cameras = [
-    'Wide Angle',
-    'Eye Level',
-    'Close Up',
-    'Aerial',
-  ];
+  static const List<String> _cameras = ['广角', '平视', '特写', '航拍'];
 
   static const List<String> _aspectRatios = ['16:9', '9:16', '1:1', '4:3'];
 
@@ -133,7 +123,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
     }
 
     final session = await _sessionService.createSession(
-      title: 'Video ${_sessions.length + 1}',
+      title: '视频 ${_sessions.length + 1}',
       settings: VideoSettings(
         resolution: _selectedResolution,
         duration: _selectedDuration,
@@ -150,7 +140,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
 
   String _buildPrompt() {
     final prompt = _promptController.text.trim();
-    return '$prompt. Motion: $_selectedMotion. Camera: $_selectedCamera.';
+    return '$prompt。运镜：$_selectedMotion。镜头：$_selectedCamera。';
   }
 
   Future<String> _saveVideoBytes(String sessionId, String rawData) async {
@@ -366,7 +356,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                     Row(
                       children: [
                         const Text(
-                          'Video Sessions',
+                          '视频会话',
                           style: TextStyle(
                             color: MobilePalette.textPrimary,
                             fontSize: 18,
@@ -389,7 +379,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                           _sessions.isEmpty
                               ? const Center(
                                 child: Text(
-                                  'No video sessions yet.',
+                                  '还没有视频会话。',
                                   style: TextStyle(
                                     color: MobilePalette.textSecondary,
                                   ),
@@ -427,7 +417,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      '${formatMobileDate(session.updatedAt ?? session.createdAt)} • ${session.videoCount} videos',
+                                      '${formatMobileDate(session.updatedAt ?? session.createdAt)} • ${session.videoCount} 个视频',
                                       style: const TextStyle(
                                         color: MobilePalette.textSecondary,
                                       ),
@@ -488,7 +478,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                       : Icons.arrow_back_ios_new_rounded,
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
-            title: 'Create Video',
+            title: '创作视频',
             subtitle: videoModel.selectedVideoProvider,
             trailing: MobileIconCircleButton(
               icon: Icons.history_rounded,
@@ -503,15 +493,14 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Prompt'),
+                      const MobileSectionLabel(title: '提示词'),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _promptController,
                         minLines: 3,
                         maxLines: 6,
                         decoration: const InputDecoration(
-                          hintText:
-                              'Describe the motion, subject, and atmosphere...',
+                          hintText: '描述主体、运镜和整体氛围...',
                           border: InputBorder.none,
                         ),
                       ),
@@ -540,13 +529,13 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       MobileSectionLabel(
-                        title: 'Settings',
-                        actionLabel: 'Models',
+                        title: '设置',
+                        actionLabel: '模型',
                         onAction: widget.onOpenModels,
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'Duration',
+                        '时长',
                         style: TextStyle(
                           color: MobilePalette.textSecondary,
                           fontSize: 12,
@@ -582,7 +571,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                       const SizedBox(height: 18),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedMotion,
-                        decoration: const InputDecoration(labelText: 'Motion'),
+                        decoration: const InputDecoration(labelText: '运镜'),
                         items:
                             _motions
                                 .map(
@@ -602,7 +591,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedCamera,
-                        decoration: const InputDecoration(labelText: 'Camera'),
+                        decoration: const InputDecoration(labelText: '镜头'),
                         items:
                             _cameras
                                 .map(
@@ -621,7 +610,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                       ),
                       const SizedBox(height: 18),
                       const Text(
-                        'Aspect Ratio',
+                        '画面比例',
                         style: TextStyle(
                           color: MobilePalette.textSecondary,
                           fontSize: 12,
@@ -655,7 +644,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Video Preview'),
+                      const MobileSectionLabel(title: '视频预览'),
                       const SizedBox(height: 12),
                       AspectRatio(
                         aspectRatio:
@@ -686,7 +675,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                                         ),
                                         SizedBox(height: 12),
                                         Text(
-                                          'Your latest video will appear here',
+                                          '最新生成的视频会显示在这里',
                                           style: TextStyle(
                                             color: Colors.white70,
                                           ),
@@ -702,7 +691,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                       if (videos.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         const Text(
-                          'Storyboard',
+                          '分镜',
                           style: TextStyle(
                             color: MobilePalette.textSecondary,
                             fontSize: 12,
@@ -797,8 +786,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                 ),
                 const SizedBox(height: 16),
                 MobilePrimaryButton(
-                  label:
-                      _isGenerating ? 'Generating Video...' : 'Generate Video',
+                  label: _isGenerating ? '视频生成中...' : '开始生成视频',
                   icon: Icons.auto_awesome_rounded,
                   color: MobilePalette.secondary,
                   onPressed: _isGenerating ? null : _generateVideo,

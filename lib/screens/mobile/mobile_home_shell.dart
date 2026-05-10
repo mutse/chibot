@@ -117,7 +117,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Quick access',
+                '快捷入口',
                 style: TextStyle(
                   color: MobilePalette.textSecondary,
                   fontSize: 13,
@@ -126,28 +126,28 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
               ),
               const SizedBox(height: 28),
               _DrawerItem(
-                label: 'Chat',
+                label: '聊天',
                 icon: Icons.chat_bubble_outline_rounded,
                 selected: _currentIndex == 0,
                 onTap: () => _selectDrawerDestination(0),
               ),
               const SizedBox(height: 8),
               _DrawerItem(
-                label: 'Images',
+                label: '图片',
                 icon: Icons.image_outlined,
                 selected: _currentIndex == 1,
                 onTap: () => _selectDrawerDestination(1),
               ),
               const SizedBox(height: 8),
               _DrawerItem(
-                label: 'Video',
+                label: '视频',
                 icon: Icons.smart_display_outlined,
                 selected: _currentIndex == 2,
                 onTap: () => _selectDrawerDestination(2),
               ),
               const SizedBox(height: 8),
               _DrawerItem(
-                label: 'History',
+                label: '历史',
                 icon: Icons.history_rounded,
                 selected: _currentIndex == 4,
                 onTap: () => _selectDrawerDestination(4),
@@ -156,7 +156,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
               const Divider(height: 1, color: MobilePalette.border),
               const SizedBox(height: 18),
               _DrawerItem(
-                label: 'Settings',
+                label: '设置',
                 icon: Icons.settings_outlined,
                 selected: _currentIndex == 3,
                 onTap: () => _selectDrawerDestination(3),
@@ -236,31 +236,31 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
                     child: Row(
                       children: [
                         _NavItem(
-                          label: 'Chat',
+                          label: '聊天',
                           icon: Icons.chat_bubble_outline_rounded,
                           selected: _currentIndex == 0,
                           onTap: () => _switchTo(0),
                         ),
                         _NavItem(
-                          label: 'Images',
+                          label: '图片',
                           icon: Icons.image_outlined,
                           selected: _currentIndex == 1,
                           onTap: () => _switchTo(1),
                         ),
                         _NavItem(
-                          label: 'Video',
+                          label: '视频',
                           icon: Icons.smart_display_outlined,
                           selected: _currentIndex == 2,
                           onTap: () => _switchTo(2),
                         ),
                         _NavItem(
-                          label: 'Settings',
+                          label: '设置',
                           icon: Icons.settings_outlined,
                           selected: _currentIndex == 3,
                           onTap: () => _switchTo(3),
                         ),
                         _NavItem(
-                          label: 'History',
+                          label: '历史',
                           icon: Icons.history_rounded,
                           selected: _currentIndex == 4,
                           onTap: () => _switchTo(4),

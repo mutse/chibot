@@ -30,21 +30,21 @@ class MobileImageStudioPage extends StatefulWidget {
 
 class MobileImageStudioPageState extends State<MobileImageStudioPage> {
   static const List<String> _styles = [
-    'Photorealistic',
-    'Digital Art',
-    'Minimal',
-    'Cinematic',
-    'Illustration',
-    'Product',
+    '写实摄影',
+    '数字艺术',
+    '极简风格',
+    '电影氛围',
+    '插画风格',
+    '产品展示',
   ];
 
   static const Map<String, String> _stylePrompts = {
-    'Photorealistic': 'photorealistic, natural lighting, intricate details',
-    'Digital Art': 'digital art, polished concept art, vibrant rendering',
-    'Minimal': 'minimal composition, clean forms, refined palette',
-    'Cinematic': 'cinematic lighting, dramatic composition, rich atmosphere',
-    'Illustration': 'editorial illustration, expressive shapes, clean outlines',
-    'Product': 'premium product photography, crisp detail, studio lighting',
+    '写实摄影': 'photorealistic, natural lighting, intricate details',
+    '数字艺术': 'digital art, polished concept art, vibrant rendering',
+    '极简风格': 'minimal composition, clean forms, refined palette',
+    '电影氛围': 'cinematic lighting, dramatic composition, rich atmosphere',
+    '插画风格': 'editorial illustration, expressive shapes, clean outlines',
+    '产品展示': 'premium product photography, crisp detail, studio lighting',
   };
 
   static const List<String> _aspectRatios = [
@@ -277,7 +277,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                     Row(
                       children: [
                         const Text(
-                          'Image Sessions',
+                          '图片会话',
                           style: TextStyle(
                             color: MobilePalette.textPrimary,
                             fontSize: 18,
@@ -300,7 +300,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                           _sessions.isEmpty
                               ? const Center(
                                 child: Text(
-                                  'No image sessions yet.',
+                                  '还没有图片会话。',
                                   style: TextStyle(
                                     color: MobilePalette.textSecondary,
                                   ),
@@ -335,7 +335,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                                       ),
                                     ),
                                     subtitle: Text(
-                                      '${formatMobileDate(session.updatedAt)} • ${session.generatedImagesCount} images',
+                                      '${formatMobileDate(session.updatedAt)} • ${session.generatedImagesCount} 张图片',
                                       style: const TextStyle(
                                         color: MobilePalette.textSecondary,
                                       ),
@@ -347,7 +347,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                                           icon: const Icon(
                                             Icons.ios_share_rounded,
                                           ),
-                                          tooltip: 'Export history',
+                                          tooltip: '导出记录',
                                           onPressed:
                                               () => _exportSession(session),
                                         ),
@@ -397,7 +397,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Your latest image will appear here',
+                '最新生成的图片会显示在这里',
                 style: TextStyle(color: MobilePalette.textSecondary),
               ),
             ],
@@ -478,8 +478,8 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                       : Icons.arrow_back_ios_new_rounded,
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
-            title: 'Create Image',
-            subtitle: '${imageModel.selectedImageProvider} creative workspace',
+            title: '创作图片',
+            subtitle: '${imageModel.selectedImageProvider} 图片工作台',
             trailing: MobileIconCircleButton(
               icon: Icons.history_toggle_off_rounded,
               onTap: _showSessionSheet,
@@ -493,14 +493,14 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Prompt'),
+                      const MobileSectionLabel(title: '提示词'),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _promptController,
                         minLines: 3,
                         maxLines: 6,
                         decoration: const InputDecoration(
-                          hintText: 'Describe the image you want to create...',
+                          hintText: '描述你想生成的图片...',
                           border: InputBorder.none,
                         ),
                       ),
@@ -529,8 +529,8 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       MobileSectionLabel(
-                        title: 'Style',
-                        actionLabel: 'Models',
+                        title: '风格',
+                        actionLabel: '模型',
                         onAction: widget.onOpenModels,
                       ),
                       const SizedBox(height: 12),
@@ -553,7 +553,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                                 .toList(),
                       ),
                       const SizedBox(height: 18),
-                      const MobileSectionLabel(title: 'Aspect Ratio'),
+                      const MobileSectionLabel(title: '画面比例'),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 10,
@@ -623,7 +623,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const MobileSectionLabel(title: 'Preview'),
+                      const MobileSectionLabel(title: '预览'),
                       const SizedBox(height: 12),
                       AspectRatio(
                         aspectRatio:
@@ -732,7 +732,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                 ),
                 const SizedBox(height: 16),
                 MobilePrimaryButton(
-                  label: _isGenerating ? 'Generating...' : 'Generate',
+                  label: _isGenerating ? '生成中...' : '开始生成',
                   icon: Icons.auto_awesome_rounded,
                   onPressed: _isGenerating ? null : _generateImage,
                 ),

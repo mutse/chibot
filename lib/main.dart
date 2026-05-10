@@ -90,7 +90,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         Provider.value(value: modelRegistry),
       ],
       child: MaterialApp(
-        title: "Chi AI Chatbot",
+        title: "Chibot AI 助手",
         home: usesMobileShell ? const MobileHomeShell() : const ChatScreen(),
         theme: _buildModernTheme(),
         debugShowCheckedModeBanner: false,

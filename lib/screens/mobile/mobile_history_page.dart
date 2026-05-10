@@ -112,7 +112,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
             preview:
                 session.lastMessage?.text.isNotEmpty == true
                     ? session.lastMessage!.text
-                    : session.firstMessage?.text ?? 'Open chat',
+                    : session.firstMessage?.text ?? '打开聊天',
           ),
         );
       }
@@ -229,7 +229,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
             child: Row(
               children: [
                 const Text(
-                  'IMG',
+                  '图片',
                   style: TextStyle(
                     color: MobilePalette.textSecondary,
                     fontSize: 11,
@@ -291,7 +291,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
               child: Row(
                 children: [
                   const Text(
-                    'VID',
+                    '视频',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
@@ -360,7 +360,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: const Text(
-                    'CHAT',
+                    '聊天',
                     style: TextStyle(
                       color: MobilePalette.primary,
                       fontSize: 10,
@@ -381,7 +381,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
             ),
             const SizedBox(height: 14),
             Text(
-              entry.chatSession?.displayTitle ?? 'Conversation',
+              entry.chatSession?.displayTitle ?? '对话',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -393,7 +393,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
             const SizedBox(height: 10),
             Expanded(
               child: Text(
-                entry.chatPreview ?? 'Open chat',
+                entry.chatPreview ?? '打开聊天',
                 maxLines: 5,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -404,7 +404,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
             ),
             const SizedBox(height: 10),
             Text(
-              '${entry.chatSession?.messageCount ?? 0} messages',
+              '${entry.chatSession?.messageCount ?? 0} 条消息',
               style: const TextStyle(
                 color: MobilePalette.textSecondary,
                 fontSize: 11,
@@ -428,7 +428,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
         aspectRatio: 0.92,
         child: Center(
           child: Text(
-            'Projects coming soon',
+            '项目功能即将上线',
             style: TextStyle(color: MobilePalette.textSecondary),
           ),
         ),
@@ -457,8 +457,8 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                       : Icons.folder_open_outlined,
               onTap: widget.onOpenAppMenu,
             ),
-            title: 'History',
-            subtitle: 'Your chats, images, and videos',
+            title: '历史记录',
+            subtitle: '查看你的聊天、图片和视频',
             trailing: MobileIconCircleButton(
               icon: Icons.refresh_rounded,
               onTap: refreshData,
@@ -472,11 +472,11 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  _buildFilterChip(MobileHistoryFilter.all, 'All'),
-                  _buildFilterChip(MobileHistoryFilter.images, 'Images'),
-                  _buildFilterChip(MobileHistoryFilter.videos, 'Videos'),
-                  _buildFilterChip(MobileHistoryFilter.chats, 'Chats'),
-                  _buildFilterChip(MobileHistoryFilter.projects, 'Projects'),
+                  _buildFilterChip(MobileHistoryFilter.all, '全部'),
+                  _buildFilterChip(MobileHistoryFilter.images, '图片'),
+                  _buildFilterChip(MobileHistoryFilter.videos, '视频'),
+                  _buildFilterChip(MobileHistoryFilter.chats, '聊天'),
+                  _buildFilterChip(MobileHistoryFilter.projects, '项目'),
                 ],
               ),
             ),
@@ -487,7 +487,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                 grouped.isEmpty
                     ? const Center(
                       child: Text(
-                        'Nothing here yet.',
+                        '这里还没有内容。',
                         style: TextStyle(color: MobilePalette.textSecondary),
                       ),
                     )

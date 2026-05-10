@@ -46,7 +46,8 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
 
   Future<void> _initializeService() async {
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
-    final veo3ApiKey = apiKeys.googleApiKey; // Video generation uses Google API key
+    final veo3ApiKey =
+        apiKeys.googleApiKey; // Video generation uses Google API key
     if (veo3ApiKey != null && veo3ApiKey.isNotEmpty) {
       _veo3Service = Veo3Service(apiKey: veo3ApiKey);
     }
@@ -85,7 +86,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
     );
 
     final session = await _sessionService.createSession(
-      title: 'Video Session ${_sessions.length + 1}',
+      title: '视频会话 ${_sessions.length + 1}',
       settings: settings,
     );
 
@@ -97,14 +98,15 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
 
   Future<void> _generateVideo() async {
     if (_promptController.text.trim().isEmpty) {
-      SnackBarUtils.showError(context, 'Please enter a video prompt');
+      SnackBarUtils.showError(context, '请输入视频提示词');
       return;
     }
 
     final apiKeys = Provider.of<ApiKeyProvider>(context, listen: false);
-    final veo3ApiKey = apiKeys.googleApiKey; // Video generation uses Google API key
+    final veo3ApiKey =
+        apiKeys.googleApiKey; // Video generation uses Google API key
     if (veo3ApiKey == null || veo3ApiKey.isEmpty) {
-      SnackBarUtils.showError(context, 'Please configure Veo3 API key in settings');
+      SnackBarUtils.showError(context, '请先在设置中配置 Veo3 API Key');
       return;
     }
 
@@ -158,7 +160,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
 
       _promptController.clear();
     } catch (e) {
-      SnackBarUtils.showError(context, 'Failed to generate video: $e');
+      SnackBarUtils.showError(context, '视频生成失败：$e');
     } finally {
       setState(() {
         _isGenerating = false;
@@ -189,7 +191,9 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
 
             if (progress.status == VideoStatus.completed) {
               // Fetch the final video URL
-              final finalResponse = await _veo3Service!.checkGenerationStatus(jobId);
+              final finalResponse = await _veo3Service!.checkGenerationStatus(
+                jobId,
+              );
               if (finalResponse.videoUrl != null) {
                 final completedMessage = updatedMessage.copyWith(
                   videoUrl: finalResponse.videoUrl,
@@ -211,7 +215,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
         }
       },
       onError: (error) {
-        SnackBarUtils.showError(context, 'Video generation failed: $error');
+        SnackBarUtils.showError(context, '视频生成失败：$error');
       },
     );
   }
@@ -228,7 +232,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
       );
 
       if (localPath != null) {
-        SnackBarUtils.showSuccess(context, 'Video downloaded successfully');
+        SnackBarUtils.showSuccess(context, '视频下载成功');
 
         // Update video message with local path
         final videoIndex = _currentSession!.videos.indexOf(video);
@@ -243,7 +247,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
         }
       }
     } catch (e) {
-      SnackBarUtils.showError(context, 'Failed to download video: $e');
+      SnackBarUtils.showError(context, '视频下载失败：$e');
     }
   }
 
@@ -253,9 +257,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         border: Border(
-          right: BorderSide(
-            color: Theme.of(context).dividerColor,
-          ),
+          right: BorderSide(color: Theme.of(context).dividerColor),
         ),
       ),
       child: Column(
@@ -266,7 +268,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
             child: ElevatedButton.icon(
               onPressed: _createNewSession,
               icon: const Icon(Icons.add),
-              label: const Text('New Video Session'),
+              label: const Text('新建视频会话'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 40),
               ),
@@ -295,20 +297,21 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    '${session.videoCount} videos • ${session.totalDuration}s',
+                    '${session.videoCount} 个视频 • ${session.totalDuration} 秒',
                     style: const TextStyle(fontSize: 12),
                   ),
                   trailing: PopupMenuButton(
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'rename',
-                        child: Text('Rename'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Text('Delete'),
-                      ),
-                    ],
+                    itemBuilder:
+                        (context) => [
+                          const PopupMenuItem(
+                            value: 'rename',
+                            child: Text('重命名'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('删除'),
+                          ),
+                        ],
                     onSelected: (value) async {
                       if (value == 'delete') {
                         await _sessionService.deleteSession(session.id);
@@ -345,20 +348,21 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Video Settings',
+                '视频设置',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.settings),
-                    tooltip: 'Open detailed settings',
+                    tooltip: '打开详细设置',
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const VideoGenerationSettingsScreen(),
+                          builder:
+                              (context) =>
+                                  const VideoGenerationSettingsScreen(),
                         ),
                       );
                     },
@@ -378,86 +382,90 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
           const Divider(),
 
           // Resolution
-          const Text('Resolution', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('分辨率', style: TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            children: VideoResolution.values.map((res) {
-              return ChoiceChip(
-                label: Text(res.label),
-                selected: _selectedResolution == res,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() {
-                      _selectedResolution = res;
-                    });
-                  }
-                },
-              );
-            }).toList(),
+            children:
+                VideoResolution.values.map((res) {
+                  return ChoiceChip(
+                    label: Text(res.label),
+                    selected: _selectedResolution == res,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedResolution = res;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 16),
 
           // Duration
-          const Text('Duration', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('时长', style: TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            children: VideoDuration.values.map((dur) {
-              return ChoiceChip(
-                label: Text(dur.label),
-                selected: _selectedDuration == dur,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() {
-                      _selectedDuration = dur;
-                    });
-                  }
-                },
-              );
-            }).toList(),
+            children:
+                VideoDuration.values.map((dur) {
+                  return ChoiceChip(
+                    label: Text(dur.label),
+                    selected: _selectedDuration == dur,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedDuration = dur;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 16),
 
           // Quality
-          const Text('Quality', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('质量', style: TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            children: ['standard', 'high'].map((quality) {
-              return ChoiceChip(
-                label: Text(quality),
-                selected: _selectedQuality == quality,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() {
-                      _selectedQuality = quality;
-                    });
-                  }
-                },
-              );
-            }).toList(),
+            children:
+                ['standard', 'high'].map((quality) {
+                  return ChoiceChip(
+                    label: Text(quality == 'standard' ? '标准' : '高质量'),
+                    selected: _selectedQuality == quality,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedQuality = quality;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 16),
 
           // Aspect Ratio
-          const Text('Aspect Ratio', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('画面比例', style: TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            children: ['16:9', '9:16', '1:1', '4:3'].map((ratio) {
-              return ChoiceChip(
-                label: Text(ratio),
-                selected: _selectedAspectRatio == ratio,
-                onSelected: (selected) {
-                  if (selected) {
-                    setState(() {
-                      _selectedAspectRatio = ratio;
-                    });
-                  }
-                },
-              );
-            }).toList(),
+            children:
+                ['16:9', '9:16', '1:1', '4:3'].map((ratio) {
+                  return ChoiceChip(
+                    label: Text(ratio),
+                    selected: _selectedAspectRatio == ratio,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedAspectRatio = ratio;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -477,7 +485,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No videos generated yet',
+              '还没有生成视频',
               style: TextStyle(
                 fontSize: 16,
                 color: Theme.of(context).disabledColor,
@@ -485,7 +493,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Enter a prompt below to generate your first video',
+              '在下方输入提示词，开始生成第一个视频',
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).disabledColor,
@@ -524,9 +532,10 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                   // Video Player or Status
                   VideoPlayerWidget(
                     videoMessage: video,
-                    onDownload: video.status == VideoStatus.completed
-                        ? () => _downloadVideo(video)
-                        : null,
+                    onDownload:
+                        video.status == VideoStatus.completed
+                            ? () => _downloadVideo(video)
+                            : null,
                     onShare: null, // Implement share functionality if needed
                     onDelete: null, // Implement delete functionality if needed
                   ),
@@ -535,7 +544,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'Generated at ${_formatTimestamp(video.timestamp)}',
+                      '生成时间：${_formatTimestamp(video.timestamp)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).disabledColor,
@@ -559,7 +568,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Video Generation'),
+        title: const Text('视频生成'),
         actions: [
           IconButton(
             icon: Icon(_showSidebar ? Icons.menu_open : Icons.menu),
@@ -596,9 +605,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                   ),
 
                 // Video List
-                Expanded(
-                  child: _buildVideoList(),
-                ),
+                Expanded(child: _buildVideoList()),
 
                 // Input Area
                 Container(
@@ -606,9 +613,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     border: Border(
-                      top: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                      ),
+                      top: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                   ),
                   child: Row(
@@ -618,7 +623,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                           controller: _promptController,
                           maxLines: null,
                           decoration: InputDecoration(
-                            hintText: 'Describe the video you want to generate...',
+                            hintText: '描述你想生成的视频...',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -631,18 +636,19 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
                         onPressed: _isGenerating ? null : _generateVideo,
-                        icon: _isGenerating
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: SpinKitRing(
-                                  color: Theme.of(context).disabledColor,
-                                  lineWidth: 2,
-                                  size: 20,
-                                ),
-                              )
-                            : const Icon(Icons.video_call),
-                        label: Text(_isGenerating ? 'Generating...' : 'Generate'),
+                        icon:
+                            _isGenerating
+                                ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: SpinKitRing(
+                                    color: Theme.of(context).disabledColor,
+                                    lineWidth: 2,
+                                    size: 20,
+                                  ),
+                                )
+                                : const Icon(Icons.video_call),
+                        label: Text(_isGenerating ? '生成中...' : '开始生成'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,

@@ -100,7 +100,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
-  String get chatGPTTitle => 'Chibot 标题';
+  String get chatGPTTitle => 'Chibot';
 
   @override
   String get aiIsThinking => 'AI 正在思考中';
@@ -118,7 +118,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelsHint => '模型提示';
 
   @override
-  String get appTitle => 'Chi AI Chatbot';
+  String get appTitle => 'Chibot AI 助手';
 
   @override
   String get noResponseFromAI => 'AI 未返回响应。';
@@ -127,53 +127,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseEnterPromptAfterImagine => '请在 /imagine 后输入提示。';
 
   @override
-  String get failedToGenerateImageNoUrl =>
-      'Failed to generate image: No image URL returned.';
+  String get failedToGenerateImageNoUrl => '生成图片失败：未返回图片地址。';
 
   @override
-  String get errorLoadingImage => 'Error loading image.';
+  String get errorLoadingImage => '加载图片失败。';
 
   @override
-  String get noImageGenerated => 'No image generated.';
+  String get noImageGenerated => '未生成图片。';
 
   @override
   String errorGeneratingImage(Object error) {
-    return 'Error generating image: $error';
+    return '生成图片失败：$error';
   }
 
   @override
   String get saveImage => '保存图片';
 
   @override
-  String get imageGenerationSettings => 'Image Generation Settings';
+  String get imageGenerationSettings => '图片生成设置';
 
   @override
-  String get selectImageProvider => 'Select Image Provider:';
+  String get selectImageProvider => '选择图片提供商：';
 
   @override
-  String get imageProviderURLOptional => 'Image Provider URL (Optional):';
+  String get imageProviderURLOptional => '图片提供商 URL（可选）：';
 
   @override
-  String get enterImageProviderURL => 'Enter image provider URL';
+  String get enterImageProviderURL => '输入图片提供商 URL';
 
   @override
-  String get selectImageModel => 'Select Image Model:';
+  String get selectImageModel => '选择图片模型：';
 
   @override
-  String get customImageModels => 'Custom Image Models:';
+  String get customImageModels => '自定义图片模型：';
 
   @override
-  String get enterCustomImageModelName => 'Enter custom image model name';
+  String get enterCustomImageModelName => '输入自定义图片模型名称';
 
   @override
-  String get providerAndModelAdded => 'Provider and model added!';
+  String get providerAndModelAdded => '提供商和模型已添加！';
 
   @override
-  String get providerAndModelNameCannotBeEmpty =>
-      'Provider name and model name cannot be empty.';
+  String get providerAndModelNameCannotBeEmpty => '提供商名称和模型名称不能为空。';
 
   @override
-  String get newChat => 'New Chat';
+  String get newChat => '新对话';
 
   @override
   String get imageGeneratedSuccessfully => '图片生成成功！';

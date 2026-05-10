@@ -296,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages[lastMessageIndex].sender == MessageSender.ai) {
         _messages[lastMessageIndex] = ChatMessage(
           id: _messages[lastMessageIndex].id,
-          text: 'Error: ${error.toString()}',
+          text: '错误：${error.toString()}',
           sender: MessageSender.ai,
           timestamp: _messages[lastMessageIndex].timestamp,
           isLoading: false,
@@ -305,7 +305,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add(
           ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            text: 'Error: ${error.toString()}',
+            text: '错误：${error.toString()}',
             sender: MessageSender.ai,
             timestamp: DateTime.now(),
           ),
@@ -551,14 +551,14 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder:
           (BuildContext context) => AlertDialog(
-            title: const Text('API Key Not Configured'),
+            title: const Text('API Key 未配置'),
             content: SingleChildScrollView(
               child: Text(exception.userFriendlyMessage),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Dismiss'),
+                child: const Text('关闭'),
               ),
               TextButton(
                 onPressed: () {
@@ -571,7 +571,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   );
                 },
-                child: const Text('Go to Settings'),
+                child: const Text('前往设置'),
               ),
             ],
           ),
@@ -599,12 +599,12 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('Delete'),
+            title: const Text('删除'),
             content: Text(message),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                child: Text(AppLocalizations.of(context)?.cancel ?? '取消'),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
@@ -612,7 +612,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   backgroundColor: errorColor,
                   foregroundColor: onErrorColor,
                 ),
-                child: const Text('Delete'),
+                child: const Text('删除'),
               ),
             ],
           ),
@@ -623,7 +623,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _deleteChatSession(ChatSession session, ThemeData theme) async {
     final confirmed = await _confirmDelete(
-      message: 'Delete this chat history?',
+      message: '要删除这段聊天记录吗？',
       errorColor: theme.colorScheme.error,
       onErrorColor: theme.colorScheme.onError,
     );
@@ -646,7 +646,7 @@ class _ChatScreenState extends State<ChatScreen> {
     ThemeData theme,
   ) async {
     final confirmed = await _confirmDelete(
-      message: 'Delete this image session?',
+      message: '要删除这个图片会话吗？',
       errorColor: theme.colorScheme.error,
       onErrorColor: theme.colorScheme.onError,
     );
@@ -687,7 +687,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSidebarSectionHeader(context, 'Recent Chats'),
+          _buildSidebarSectionHeader(context, '最近聊天'),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -729,7 +729,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSidebarSectionHeader(context, 'Image Sessions'),
+          _buildSidebarSectionHeader(context, '图片会话'),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -794,7 +794,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 // Search bar
                 Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(
                       Platform.isMacOS ? 8 : 12,
                     ),
@@ -830,7 +832,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _buildSidebarItem(
                   context,
                   Icons.chat_bubble_outline,
-                  'Chi Chat',
+                  '聊天',
                   isSelected: true,
                 ),
                 const SizedBox(height: 8),
@@ -851,7 +853,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 _buildSidebarItem(
                   context,
                   Icons.videocam_outlined,
-                  'Video Generation',
+                  '视频生成',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -1037,7 +1039,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           size: 18,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        tooltip: 'More options',
+                        tooltip: '更多操作',
                         onPressed: () async {
                           // Show context menu for delete option
                           final renderObject = itemContext.findRenderObject();
@@ -1046,7 +1048,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             final Offset position = renderBox.localToGlobal(
                               Offset.zero,
                             );
-                            final deleteAction = onDelete;
                             final exportAction = onExport;
 
                             await showMenu(
@@ -1089,7 +1090,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
-                                        'Delete',
+                                        '删除',
                                         style: TextStyle(
                                           color: theme.colorScheme.error,
                                         ),
@@ -1100,9 +1101,10 @@ class _ChatScreenState extends State<ChatScreen> {
                               ],
                             ).then((value) {
                               if (value == 'delete') {
-                                deleteAction?.call();
-                              } else if (value == 'export') {
-                                exportAction?.call();
+                                onDelete();
+                              } else if (value == 'export' &&
+                                  exportAction != null) {
+                                exportAction();
                               }
                             });
                           } else {
@@ -1374,9 +1376,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       await ImageSaveService.saveImage(imageSource, context);
                     }
                   } else if (value == 'save_prompt') {
-                    await Clipboard.setData(
-                      ClipboardData(text: message.text),
-                    );
+                    await Clipboard.setData(ClipboardData(text: message.text));
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(localizations.promptCopied)),
@@ -1442,7 +1442,9 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(
                     Platform.isMacOS ? 8 : 24,
                   ),
@@ -1514,7 +1516,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                         : theme.colorScheme.onSurfaceVariant
                                             .withValues(alpha: 0.4),
                               ),
-                              tooltip: 'Web Search',
+                              tooltip: '网页搜索',
                             ),
                           );
                         },

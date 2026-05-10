@@ -144,16 +144,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (widget.videoMessage.status == VideoStatus.processing)
-            CircularProgressIndicator(
-              value: widget.videoMessage.progress,
-            )
+            CircularProgressIndicator(value: widget.videoMessage.progress)
           else
             const CircularProgressIndicator(),
           const SizedBox(height: 16),
-          Text(
-            _getStatusMessage(),
-            style: const TextStyle(fontSize: 14),
-          ),
+          Text(_getStatusMessage(), style: const TextStyle(fontSize: 14)),
           if (widget.videoMessage.progress != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -170,15 +165,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   String _getStatusMessage() {
     switch (widget.videoMessage.status) {
       case VideoStatus.pending:
-        return 'Preparing video generation...';
+        return '正在准备视频生成...';
       case VideoStatus.processing:
-        return 'Generating video...';
+        return '正在生成视频...';
       case VideoStatus.downloading:
-        return 'Downloading video...';
+        return '正在下载视频...';
       case VideoStatus.failed:
-        return 'Video generation failed';
+        return '视频生成失败';
       case VideoStatus.completed:
-        return 'Loading video...';
+        return '正在加载视频...';
     }
   }
 
@@ -197,7 +192,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             const Text(
-              'Failed to generate video',
+              '视频生成失败',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -214,9 +209,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Widget _buildVideoPlayer() {
     if (_controller == null) {
-      return const Center(
-        child: Text('No video source available'),
-      );
+      return const Center(child: Text('暂无可用视频源'));
     }
 
     return GestureDetector(
@@ -270,17 +263,26 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                             children: [
                               if (widget.onDownload != null)
                                 IconButton(
-                                  icon: const Icon(Icons.download, color: Colors.white),
+                                  icon: const Icon(
+                                    Icons.download,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: widget.onDownload,
                                 ),
                               if (widget.onShare != null)
                                 IconButton(
-                                  icon: const Icon(Icons.share, color: Colors.white),
+                                  icon: const Icon(
+                                    Icons.share,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: widget.onShare,
                                 ),
                               if (widget.onDelete != null)
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.white),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: widget.onDelete,
                                 ),
                             ],
@@ -301,7 +303,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
                     // Bottom Controls
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Column(
                         children: [
                           // Progress Bar
@@ -309,7 +314,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                             children: [
                               Text(
                                 _formatDuration(_position),
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
                               ),
                               Expanded(
                                 child: Slider(
@@ -317,15 +325,22 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                                   min: 0,
                                   max: _duration.inMilliseconds.toDouble(),
                                   onChanged: (value) {
-                                    _seekTo(Duration(milliseconds: value.toInt()));
+                                    _seekTo(
+                                      Duration(milliseconds: value.toInt()),
+                                    );
                                   },
                                   activeColor: Theme.of(context).primaryColor,
-                                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                  inactiveColor: Colors.white.withValues(
+                                    alpha: 0.3,
+                                  ),
                                 ),
                               ),
                               Text(
                                 _formatDuration(_duration),
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -336,16 +351,23 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                             children: [
                               IconButton(
                                 icon: Icon(
-                                  _volume > 0 ? Icons.volume_up : Icons.volume_off,
+                                  _volume > 0
+                                      ? Icons.volume_up
+                                      : Icons.volume_off,
                                   color: Colors.white,
                                 ),
                                 onPressed: _toggleMute,
                               ),
                               const SizedBox(width: 16),
                               IconButton(
-                                icon: const Icon(Icons.replay_10, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.replay_10,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
-                                  _seekTo(_position - const Duration(seconds: 10));
+                                  _seekTo(
+                                    _position - const Duration(seconds: 10),
+                                  );
                                 },
                               ),
                               IconButton(
@@ -357,14 +379,22 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                                 onPressed: _togglePlayPause,
                               ),
                               IconButton(
-                                icon: const Icon(Icons.forward_10, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.forward_10,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
-                                  _seekTo(_position + const Duration(seconds: 10));
+                                  _seekTo(
+                                    _position + const Duration(seconds: 10),
+                                  );
                                 },
                               ),
                               const SizedBox(width: 16),
                               IconButton(
-                                icon: const Icon(Icons.fullscreen, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.fullscreen,
+                                  color: Colors.white,
+                                ),
                                 onPressed: () {
                                   // TODO: Implement fullscreen
                                 },
@@ -389,8 +419,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       return _buildErrorState();
     }
 
-    if (widget.videoMessage.status != VideoStatus.completed ||
-        !_initialized) {
+    if (widget.videoMessage.status != VideoStatus.completed || !_initialized) {
       return _buildLoadingState();
     }
 

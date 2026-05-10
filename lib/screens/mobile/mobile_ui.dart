@@ -289,17 +289,16 @@ String formatMobileDate(DateTime dateTime) {
   final difference = today.difference(target).inDays;
 
   if (difference == 0) {
-    return 'Today';
+    return '今天';
   }
   if (difference == 1) {
-    return 'Yesterday';
+    return '昨天';
   }
-  return '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+  return '${dateTime.year}/${dateTime.month}/${dateTime.day}';
 }
 
 String formatMobileClock(DateTime dateTime) {
-  final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+  final hour = dateTime.hour.toString().padLeft(2, '0');
   final minute = dateTime.minute.toString().padLeft(2, '0');
-  final meridiem = dateTime.hour >= 12 ? 'PM' : 'AM';
-  return '$hour:$minute $meridiem';
+  return '$hour:$minute';
 }
