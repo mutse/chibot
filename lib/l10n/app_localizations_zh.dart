@@ -127,51 +127,53 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseEnterPromptAfterImagine => '请在 /imagine 后输入提示。';
 
   @override
-  String get failedToGenerateImageNoUrl => '生成图片失败：未返回图片地址。';
+  String get failedToGenerateImageNoUrl =>
+      'Failed to generate image: No image URL returned.';
 
   @override
-  String get errorLoadingImage => '加载图片失败。';
+  String get errorLoadingImage => 'Error loading image.';
 
   @override
-  String get noImageGenerated => '未生成图片。';
+  String get noImageGenerated => 'No image generated.';
 
   @override
   String errorGeneratingImage(Object error) {
-    return '生成图片失败：$error';
+    return 'Error generating image: $error';
   }
 
   @override
   String get saveImage => '保存图片';
 
   @override
-  String get imageGenerationSettings => '图片生成设置';
+  String get imageGenerationSettings => 'Image Generation Settings';
 
   @override
-  String get selectImageProvider => '选择图片提供商：';
+  String get selectImageProvider => 'Select Image Provider:';
 
   @override
-  String get imageProviderURLOptional => '图片提供商 URL（可选）：';
+  String get imageProviderURLOptional => 'Image Provider URL (Optional):';
 
   @override
-  String get enterImageProviderURL => '输入图片提供商 URL';
+  String get enterImageProviderURL => 'Enter image provider URL';
 
   @override
-  String get selectImageModel => '选择图片模型：';
+  String get selectImageModel => 'Select Image Model:';
 
   @override
-  String get customImageModels => '自定义图片模型：';
+  String get customImageModels => 'Custom Image Models:';
 
   @override
-  String get enterCustomImageModelName => '输入自定义图片模型名称';
+  String get enterCustomImageModelName => 'Enter custom image model name';
 
   @override
-  String get providerAndModelAdded => '提供商和模型已添加！';
+  String get providerAndModelAdded => 'Provider and model added!';
 
   @override
-  String get providerAndModelNameCannotBeEmpty => '提供商名称和模型名称不能为空。';
+  String get providerAndModelNameCannotBeEmpty =>
+      'Provider name and model name cannot be empty.';
 
   @override
-  String get newChat => '新对话';
+  String get newChat => 'New Chat';
 
   @override
   String get imageGeneratedSuccessfully => '图片生成成功！';

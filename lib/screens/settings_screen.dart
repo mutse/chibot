@@ -313,7 +313,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Platform.isAndroid ||
       Platform.isIOS ||
       Platform.isWindows ||
-      Platform.isMacOS;
+      Platform.isMacOS ||
+      Platform.isLinux;
 
   bool get _showsOverviewHub =>
       _isMobileSettingsHub && widget.section == SettingsScreenSection.overview;

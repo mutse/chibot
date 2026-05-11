@@ -1,2 +1,6 @@
 #include "../../Flutter/Flutter-Debug.xcconfig"
 #include "Warnings.xcconfig"
+
+// Avoid pinning debug macOS builds to whichever architecture the current
+// Xcode toolchain process is using.
+ONLY_ACTIVE_ARCH=NO

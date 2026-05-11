@@ -48,7 +48,8 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         Platform.isAndroid ||
         Platform.isIOS ||
         Platform.isWindows ||
-        Platform.isMacOS;
+        Platform.isMacOS ||
+        Platform.isLinux;
 
     return MultiProvider(
       providers: [
