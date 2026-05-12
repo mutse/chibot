@@ -138,3 +138,11 @@ flutter_launcher_icons:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+msix_config:
+  display_name: Chibot
+  publisher_display_name: Chi Team
+  identity_name: Chi.Chibot
+  logo_path: assets/images/logo.png
+  capabilities: internetClient
+  architecture: x64

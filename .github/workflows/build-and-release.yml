@@ -144,7 +144,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: msix-${{ matrix.arch }}
-          path: build/windows/x64/runner/Release/*.msix
+          path: build/windows/x64/runner/Release/chibot-windows-x64.msix
 
       - name: Create DMG package (macOS only)
         if: ${{ matrix.platform == 'macos' }}
@@ -188,7 +188,7 @@ jobs:
             build/macos/*.dmg
             build/linux/x64/release/*.deb
             build/windows/x64/runner/Release/chibot-windows.zip
-            build/windows/x64/runner/Release/*.msix
+            build/windows/x64/runner/Release/chibot-windows-x64.msix
             build/app/outputs/flutter-apk/app-release.apk
             build/ios/ipa/*.ipa
 
