@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 
 class GoogleImageService {
   final String apiKey;
+  final http.Client _client;
 
-  GoogleImageService({required this.apiKey});
+  GoogleImageService({required this.apiKey, http.Client? client})
+    : _client = client ?? http.Client();
 
   static const String baseUrl = 'https://generativelanguage.googleapis.com';
   static const String nanoBanana2Model = 'gemini-3.1-flash-image-preview';
@@ -46,37 +48,45 @@ class GoogleImageService {
         'x-goog-api-key': apiKey,
       };
 
-      // Build request body for Google's API
-      final Map<String, dynamic> body = {
-        'contents': [
-          {
-            'parts': [
-              {'text': prompt},
-            ],
-          }
-        ],
-        'generationConfig': {
-          'responseModalities': ['IMAGE'],
-          'temperature': 0.7,
-          'candidateCount': 1,
-        },
-      };
-
-      // Add aspect ratio if provided
-      if (aspectRatio != null && aspectRatio.isNotEmpty) {
-        body['generationConfig']['imageConfig'] = {'aspectRatio': aspectRatio};
-      }
+      Map<String, dynamic> body = _buildRequestBody(
+        prompt: prompt,
+        aspectRatio: aspectRatio,
+        useResponseFormat: true,
+      );
 
       if (kDebugMode) {
         print('[GoogleImageService] Making request to: $endpointUri');
         print('[GoogleImageService] Request body: ${jsonEncode(body)}');
       }
 
-      final response = await http.post(
+      http.Response response = await _client.post(
         endpointUri,
         headers: headers,
         body: jsonEncode(body),
       );
+
+      if (_shouldRetryWithLegacyFormat(response)) {
+        body = _buildRequestBody(
+          prompt: prompt,
+          aspectRatio: aspectRatio,
+          useResponseFormat: false,
+        );
+
+        if (kDebugMode) {
+          print(
+            '[GoogleImageService] responseFormat rejected, retrying with legacy imageConfig payload',
+          );
+          print(
+            '[GoogleImageService] Legacy request body: ${jsonEncode(body)}',
+          );
+        }
+
+        response = await _client.post(
+          endpointUri,
+          headers: headers,
+          body: jsonEncode(body),
+        );
+      }
 
       if (kDebugMode) {
         print('[GoogleImageService] Response status: ${response.statusCode}');
@@ -85,43 +95,18 @@ class GoogleImageService {
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
-        
-        // Parse Google's response format
-        if (responseBody['candidates'] != null && 
-            responseBody['candidates'].isNotEmpty) {
-          final candidate = responseBody['candidates'][0];
-          
-          // Check for inline image data
-          if (candidate['content'] != null &&
-              candidate['content']['parts'] != null &&
-              candidate['content']['parts'].isNotEmpty) {
-            final parts = candidate['content']['parts'];
-            
-            // Look for image data in parts
-            for (final part in parts) {
-              if (part['inlineData'] != null) {
-                final inlineData = part['inlineData'];
-                final mimeType = inlineData['mimeType'] ?? 'image/png';
-                final data = inlineData['data'];
-                
-                if (data != null) {
-                  return 'data:$mimeType;base64,$data';
-                }
-              }
-            }
-          }
-          
-          // Fallback: check for direct image URL
-          if (candidate['imageUrl'] != null) {
-            return candidate['imageUrl'];
-          }
+
+        final imageData = _extractImageData(responseBody);
+        if (imageData != null) {
+          return imageData;
         }
-        
+
         throw Exception('No image data found in Google response.');
       } else {
-        String errorMessage = 'Failed to generate image. Status code: ${response.statusCode}';
+        String errorMessage =
+            'Failed to generate image. Status code: ${response.statusCode}';
         String responseBodyString = response.body;
-        
+
         try {
           final errorBody = jsonDecode(responseBodyString);
           if (errorBody['error'] != null) {
@@ -136,7 +121,7 @@ class GoogleImageService {
         } catch (e) {
           errorMessage += '\nResponse body: $responseBodyString';
         }
-        
+
         throw Exception(errorMessage);
       }
     } catch (e) {
@@ -157,7 +142,7 @@ class GoogleImageService {
   }) async {
     // Convert OpenAI size to aspect ratio
     String? aspectRatio = _openAISizeToAspectRatio(openAISize);
-    
+
     return await generateImage(
       prompt: prompt,
       model: model,
@@ -187,11 +172,7 @@ class GoogleImageService {
 
   /// Get supported models for Google image generation
   static List<String> getSupportedModels() {
-    return [
-      nanoBanana2Model,
-      nanoBananaProModel,
-      nanoBananaModel,
-    ];
+    return [nanoBanana2Model, nanoBananaProModel, nanoBananaModel];
   }
 
   static String getDisplayName(String model) {
@@ -243,14 +224,109 @@ class GoogleImageService {
 
   /// Get supported aspect ratios
   static List<String> getSupportedAspectRatios() {
-    return [
-      '1:1',
-      '16:9',
-      '9:16',
-      '4:3',
-      '3:4',
-      '7:4',
-      '4:7',
-    ];
+    return ['1:1', '16:9', '9:16', '4:3', '3:4', '7:4', '4:7'];
+  }
+
+  Map<String, dynamic> _buildRequestBody({
+    required String prompt,
+    required String? aspectRatio,
+    required bool useResponseFormat,
+  }) {
+    final Map<String, dynamic> body = {
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt},
+          ],
+        },
+      ],
+    };
+
+    final normalizedAspectRatio =
+        aspectRatio != null && aspectRatio.isNotEmpty ? aspectRatio : null;
+
+    if (useResponseFormat) {
+      if (normalizedAspectRatio != null) {
+        body['generationConfig'] = {
+          'responseFormat': {
+            'image': {'aspectRatio': normalizedAspectRatio},
+          },
+        };
+      }
+      return body;
+    }
+
+    body['generationConfig'] = {
+      'responseModalities': ['IMAGE'],
+      if (normalizedAspectRatio != null)
+        'imageConfig': {'aspectRatio': normalizedAspectRatio},
+    };
+    return body;
+  }
+
+  bool _shouldRetryWithLegacyFormat(http.Response response) {
+    if (response.statusCode != 400) {
+      return false;
+    }
+
+    final loweredBody = response.body.toLowerCase();
+    return loweredBody.contains('responseformat') ||
+        loweredBody.contains('unknown name') ||
+        loweredBody.contains('unknown field') ||
+        loweredBody.contains('invalid json payload') ||
+        loweredBody.contains('cannot find field');
+  }
+
+  String? _extractImageData(dynamic responseBody) {
+    if (responseBody is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final candidates = responseBody['candidates'];
+    if (candidates is List) {
+      for (final candidate in candidates) {
+        if (candidate is! Map<String, dynamic>) {
+          continue;
+        }
+
+        final parts = candidate['content']?['parts'];
+        final inlineImage = _extractImageDataFromParts(parts);
+        if (inlineImage != null) {
+          return inlineImage;
+        }
+
+        final imageUrl = candidate['imageUrl'];
+        if (imageUrl is String && imageUrl.isNotEmpty) {
+          return imageUrl;
+        }
+      }
+    }
+
+    return _extractImageDataFromParts(responseBody['parts']);
+  }
+
+  String? _extractImageDataFromParts(dynamic parts) {
+    if (parts is! List) {
+      return null;
+    }
+
+    for (final part in parts) {
+      if (part is! Map<String, dynamic>) {
+        continue;
+      }
+
+      final inlineData = part['inlineData'];
+      if (inlineData is! Map<String, dynamic>) {
+        continue;
+      }
+
+      final mimeType = inlineData['mimeType'] ?? 'image/png';
+      final data = inlineData['data'];
+      if (data is String && data.isNotEmpty) {
+        return 'data:$mimeType;base64,$data';
+      }
+    }
+
+    return null;
   }
 }
