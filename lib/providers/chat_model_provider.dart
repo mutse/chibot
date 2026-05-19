@@ -1,15 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../models/model_registry.dart';
+import '_provider_storage_helpers.dart';
 
 /// 负责聊天相关的模型配置和提供商管理
 /// 职责：选择聊天模型、管理提供商、配置提供商 URL
-class ChatModelProvider with ChangeNotifier {
+class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
   final ModelRegistry? modelRegistry;
 
   // 当前选定的聊天模型提供商
@@ -121,24 +120,24 @@ class ChatModelProvider with ChangeNotifier {
     _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
     _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-5.5';
 
-    _customProviders = _decodeStringListMap(
+    _customProviders = decodeStringListMap(
       prefs.getString(_customProvidersKey),
       'Error loading custom providers',
     );
-    _customModelsByProvider = _decodeStringListMap(
+    _customModelsByProvider = decodeStringListMap(
       prefs.getString(_customModelsByProviderKey),
       'Error loading provider custom models',
     );
-    _providerUrls = _decodeStringMap(
+    _providerUrls = decodeStringMap(
       prefs.getString(_providerUrlsKey),
       'Error loading provider URL map',
     );
-    _providerSelectedModels = _decodeStringMap(
+    _providerSelectedModels = decodeStringMap(
       prefs.getString(_providerSelectedModelsKey),
       'Error loading provider selected model map',
     );
 
-    final legacyProviderUrl = _normalizeNullableInput(
+    final legacyProviderUrl = normalizeNullableInput(
       prefs.getString(_providerUrlKey),
     );
     if (legacyProviderUrl != null &&
@@ -224,8 +223,8 @@ class ChatModelProvider with ChangeNotifier {
       return;
     }
 
-    final normalizedUrl = _normalizeNullableInput(url);
-    final storedKey = _findStoredProviderKey(_providerUrls, targetProvider);
+    final normalizedUrl = normalizeNullableInput(url);
+    final storedKey = findStoredStringMapKey(_providerUrls, targetProvider);
 
     if (normalizedUrl == null) {
       _providerUrls.remove(storedKey ?? targetProvider);
@@ -317,7 +316,7 @@ class ChatModelProvider with ChangeNotifier {
 
   /// 移除自定义提供商
   Future<void> removeCustomProvider(String provider) async {
-    final storedProviderKey = _findStoredProviderKey(
+    final storedProviderKey = findStoredStringMapKey(
       _customProviders,
       provider.trim(),
     );
@@ -456,14 +455,14 @@ class ChatModelProvider with ChangeNotifier {
         : importedModel;
 
     if (data.containsKey(_customProvidersKey)) {
-      _customProviders = _decodeDynamicStringListMap(
+      _customProviders = decodeDynamicStringListMap(
         data[_customProvidersKey],
         'Error parsing custom providers JSON',
       );
     }
 
     if (data.containsKey(_customModelsByProviderKey)) {
-      _customModelsByProvider = _decodeDynamicStringListMap(
+      _customModelsByProvider = decodeDynamicStringListMap(
         data[_customModelsByProviderKey],
         'Error parsing provider custom models JSON',
       );
@@ -480,9 +479,9 @@ class ChatModelProvider with ChangeNotifier {
     }
 
     if (data.containsKey(_providerUrlsKey)) {
-      _providerUrls = _decodeDynamicStringMap(data[_providerUrlsKey]);
+      _providerUrls = decodeDynamicStringMap(data[_providerUrlsKey]);
     }
-    final legacyProviderUrl = _normalizeNullableInput(
+    final legacyProviderUrl = normalizeNullableInput(
       data[_providerUrlKey] as String?,
     );
     if (legacyProviderUrl != null) {
@@ -490,7 +489,7 @@ class ChatModelProvider with ChangeNotifier {
     }
 
     if (data.containsKey(_providerSelectedModelsKey)) {
-      _providerSelectedModels = _decodeDynamicStringMap(
+      _providerSelectedModels = decodeDynamicStringMap(
         data[_providerSelectedModelsKey],
       );
     }
@@ -590,176 +589,36 @@ class ChatModelProvider with ChangeNotifier {
     await _persistProviderSelectedModels(prefs);
   }
 
-  Future<void> _persistCustomProviders(SharedPreferences prefs) async {
-    if (_customProviders.isEmpty) {
-      await prefs.remove(_customProvidersKey);
-      return;
-    }
-    await prefs.setString(_customProvidersKey, json.encode(_customProviders));
-  }
+  Future<void> _persistCustomProviders(SharedPreferences prefs) =>
+      persistStringMap(prefs, _customProvidersKey, _customProviders);
 
   Future<void> _persistCustomModelsByProvider(SharedPreferences prefs) async {
-    final currentModels = _customModelsByProvider[_selectedProvider] ?? const [];
+    final currentModels =
+        _customModelsByProvider[_selectedProvider] ?? const <String>[];
     await prefs.setStringList(_legacyCustomModelsKey, currentModels);
-
-    if (_customModelsByProvider.isEmpty) {
-      await prefs.remove(_customModelsByProviderKey);
-      return;
-    }
-    await prefs.setString(
+    await persistStringMap(
+      prefs,
       _customModelsByProviderKey,
-      json.encode(_customModelsByProvider),
+      _customModelsByProvider,
     );
   }
 
   Future<void> _persistProviderUrls(SharedPreferences prefs) async {
-    if (_providerUrls.isEmpty) {
-      await prefs.remove(_providerUrlsKey);
-    } else {
-      await prefs.setString(_providerUrlsKey, json.encode(_providerUrls));
-    }
+    await persistStringMap(prefs, _providerUrlsKey, _providerUrls);
     await _persistLegacySelectedProviderState(prefs);
   }
 
-  Future<void> _persistProviderSelectedModels(SharedPreferences prefs) async {
-    if (_providerSelectedModels.isEmpty) {
-      await prefs.remove(_providerSelectedModelsKey);
-      return;
-    }
-    await prefs.setString(
-      _providerSelectedModelsKey,
-      json.encode(_providerSelectedModels),
-    );
-  }
+  Future<void> _persistProviderSelectedModels(SharedPreferences prefs) =>
+      persistStringMap(
+        prefs,
+        _providerSelectedModelsKey,
+        _providerSelectedModels,
+      );
 
   Future<void> _persistLegacySelectedProviderState(
     SharedPreferences prefs,
   ) async {
-    final currentRawUrl = rawProviderUrl;
-    if (currentRawUrl == null) {
-      await prefs.remove(_providerUrlKey);
-    } else {
-      await prefs.setString(_providerUrlKey, currentRawUrl);
-    }
+    await persistNullableString(prefs, _providerUrlKey, rawProviderUrl);
   }
 
-  Map<String, String> _decodeStringMap(String? encoded, String debugLabel) {
-    if (encoded == null || encoded.isEmpty) {
-      return {};
-    }
-
-    try {
-      final decoded = json.decode(encoded) as Map<String, dynamic>;
-      return decoded.map(
-        (key, value) => MapEntry(key, value?.toString().trim() ?? ''),
-      )..removeWhere((key, value) => value.isEmpty);
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('$debugLabel: $error');
-      }
-      return {};
-    }
-  }
-
-  Map<String, String> _decodeDynamicStringMap(dynamic rawValue) {
-    if (rawValue == null) {
-      return {};
-    }
-
-    if (rawValue is String) {
-      return _decodeStringMap(rawValue, 'Error parsing provider string map');
-    }
-
-    if (rawValue is Map) {
-      return rawValue.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          value?.toString().trim() ?? '',
-        ),
-      )..removeWhere((key, value) => value.isEmpty);
-    }
-
-    return {};
-  }
-
-  Map<String, List<String>> _decodeStringListMap(
-    String? encoded,
-    String debugLabel,
-  ) {
-    if (encoded == null || encoded.isEmpty) {
-      return {};
-    }
-
-    try {
-      final decoded = json.decode(encoded) as Map<String, dynamic>;
-      return decoded.map(
-        (key, value) => MapEntry(
-          key,
-          (value as List)
-              .map((item) => item.toString().trim())
-              .where((item) => item.isNotEmpty)
-              .toSet()
-              .toList(),
-        ),
-      )..removeWhere((key, value) => value.isEmpty);
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('$debugLabel: $error');
-      }
-      return {};
-    }
-  }
-
-  Map<String, List<String>> _decodeDynamicStringListMap(
-    dynamic rawValue,
-    String debugLabel,
-  ) {
-    if (rawValue == null) {
-      return {};
-    }
-
-    if (rawValue is String) {
-      return _decodeStringListMap(rawValue, debugLabel);
-    }
-
-    if (rawValue is Map) {
-      return rawValue.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          (value as List)
-              .map((item) => item.toString().trim())
-              .where((item) => item.isNotEmpty)
-              .toSet()
-              .toList(),
-        ),
-      )..removeWhere((key, value) => value.isEmpty);
-    }
-
-    return {};
-  }
-
-  String? _normalizeNullableInput(String? value) {
-    if (value == null) {
-      return null;
-    }
-    final trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
-
-  String? _findStoredProviderKey(
-    Map<String, dynamic> values,
-    String targetProvider,
-  ) {
-    if (values.containsKey(targetProvider)) {
-      return targetProvider;
-    }
-
-    for (final provider in values.keys) {
-      if (provider.toLowerCase() == targetProvider.toLowerCase()) {
-        return provider;
-      }
-    }
-
-    return null;
-  }
 }

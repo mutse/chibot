@@ -1,47 +1,24 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chibot/models/chat_session.dart';
+import 'package:chibot/services/preferences_session_store.dart';
 
 class ChatSessionService {
-  static const String _sessionsKey = 'chat_sessions';
+  ChatSessionService()
+      : _store = PreferencesSessionStore<ChatSession>(
+          storageKey: 'chat_sessions',
+          toJson: (session) => session.toJson(),
+          fromJson: ChatSession.fromJson,
+          idOf: (session) => session.id,
+          debugLabel: 'chat session',
+        );
 
-  Future<List<ChatSession>> loadSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final sessionsJson = prefs.getStringList(_sessionsKey) ?? [];
-    return sessionsJson
-        .map((jsonString) {
-          try {
-            return ChatSession.fromJson(json.decode(jsonString));
-          } catch (e) {
-            print('Error decoding session: $e');
-            return null;
-          }
-        })
-        .where((session) => session != null)
-        .cast<ChatSession>()
-        .toList();
-  }
+  final PreferencesSessionStore<ChatSession> _store;
 
-  Future<void> saveSession(ChatSession session) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<ChatSession> sessions = await loadSessions();
-    // Remove existing session if it has the same ID
-    sessions.removeWhere((s) => s.id == session.id);
-    sessions.add(session);
-    final sessionsJson = sessions.map((s) => json.encode(s.toJson())).toList();
-    await prefs.setStringList(_sessionsKey, sessionsJson);
-  }
+  Future<List<ChatSession>> loadSessions() => _store.loadSessions();
 
-  Future<void> deleteSession(String sessionId) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<ChatSession> sessions = await loadSessions();
-    sessions.removeWhere((s) => s.id == sessionId);
-    final sessionsJson = sessions.map((s) => json.encode(s.toJson())).toList();
-    await prefs.setStringList(_sessionsKey, sessionsJson);
-  }
+  Future<void> saveSession(ChatSession session) => _store.saveSession(session);
 
-  Future<void> clearAllSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_sessionsKey);
-  }
+  Future<void> deleteSession(String sessionId) =>
+      _store.deleteSession(sessionId);
+
+  Future<void> clearAllSessions() => _store.clearAllSessions();
 }

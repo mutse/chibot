@@ -53,25 +53,13 @@ class GeminiService extends BaseApiService implements ChatService {
         );
       }
     } catch (e) {
-      if (e is ConfigurationException) rethrow;
-      throw ConfigurationException(
-        'Failed to validate Gemini configuration: ${e.toString()}',
-        code: 'CONFIG_VALIDATION_FAILED',
-        originalError: e,
-      );
+      throw wrapValidationError(e);
     }
   }
 
   @override
-  Future<bool> isConfigured() async {
-    try {
-      await validateConfiguration();
-      return true;
-    } catch (e) {
-      logWarning('Gemini configuration is invalid', error: e);
-      return false;
-    }
-  }
+  Future<bool> isConfigured() =>
+      isConfiguredViaValidation(validateConfiguration, failureLabel: 'Gemini');
 
   @override
   Stream<String> generateResponse({

@@ -47,19 +47,19 @@ class ClaudeService extends BaseApiService implements ChatService {
   @override
   Future<void> validateConfiguration() async {
     validateApiKey();
-    
+
     try {
       // Test with a simple message to validate the API key
       final testMessage = [
         {'role': 'user', 'content': 'Hello'}
       ];
-      
+
       final requestBody = _buildMessagesRequest(
         'claude-3-5-haiku-latest',
-        testMessage, 
+        testMessage,
         {'max_tokens': 10}
       );
-      
+
       final response = await post('/messages', body: requestBody);
       if (response.statusCode != 200) {
         throw ConfigurationException(
@@ -68,25 +68,13 @@ class ClaudeService extends BaseApiService implements ChatService {
         );
       }
     } catch (e) {
-      if (e is ConfigurationException) rethrow;
-      throw ConfigurationException(
-        'Failed to validate Claude configuration: ${e.toString()}',
-        code: 'CONFIG_VALIDATION_FAILED',
-        originalError: e,
-      );
+      throw wrapValidationError(e);
     }
   }
 
   @override
-  Future<bool> isConfigured() async {
-    try {
-      await validateConfiguration();
-      return true;
-    } catch (e) {
-      logWarning('Claude configuration is invalid', error: e);
-      return false;
-    }
-  }
+  Future<bool> isConfigured() =>
+      isConfiguredViaValidation(validateConfiguration, failureLabel: 'Claude');
 
   @override
   Stream<String> generateResponse({

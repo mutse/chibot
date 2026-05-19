@@ -1,11 +1,11 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '_provider_storage_helpers.dart';
+
 /// 负责管理所有 API 密钥的提供者
 /// 职责：存储、加载、更新各个 AI 服务的 API 密钥
-class ApiKeyProvider with ChangeNotifier {
+class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
   // OpenAI API Key
   String? _openaiApiKey;
   static const String _openaiApiKeyKey = 'openai_api_key';
@@ -158,11 +158,11 @@ class ApiKeyProvider with ChangeNotifier {
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey);
     _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
     _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
-    _customProviderApiKeys = _decodeStringMap(
+    _customProviderApiKeys = decodeStringMap(
       prefs.getString(_customProviderApiKeysKey),
       'Error loading custom provider API keys',
     );
-    _customImageProviderApiKeys = _decodeStringMap(
+    _customImageProviderApiKeys = decodeStringMap(
       prefs.getString(_customImageProviderApiKeysKey),
       'Error loading custom image provider API keys',
     );
@@ -172,30 +172,30 @@ class ApiKeyProvider with ChangeNotifier {
   // ==================== Setters ====================
 
   Future<void> setOpenaiApiKey(String? key) async {
-    _openaiApiKey = _normalizeNullableInput(key);
+    _openaiApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(prefs, _openaiApiKeyKey, _openaiApiKey);
+    await persistNullableString(prefs, _openaiApiKeyKey, _openaiApiKey);
     notifyListeners();
   }
 
   Future<void> setClaudeApiKey(String? key) async {
-    _claudeApiKey = _normalizeNullableInput(key);
+    _claudeApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(prefs, _claudeApiKeyKey, _claudeApiKey);
+    await persistNullableString(prefs, _claudeApiKeyKey, _claudeApiKey);
     notifyListeners();
   }
 
   Future<void> setGoogleApiKey(String? key) async {
-    _googleApiKey = _normalizeNullableInput(key);
+    _googleApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(prefs, _googleApiKeyKey, _googleApiKey);
+    await persistNullableString(prefs, _googleApiKeyKey, _googleApiKey);
     notifyListeners();
   }
 
   Future<void> setFluxKontextApiKey(String? key) async {
-    _fluxKontextApiKey = _normalizeNullableInput(key);
+    _fluxKontextApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(
+    await persistNullableString(
       prefs,
       _fluxKontextApiKeyKey,
       _fluxKontextApiKey,
@@ -204,16 +204,16 @@ class ApiKeyProvider with ChangeNotifier {
   }
 
   Future<void> setTavilyApiKey(String? key) async {
-    _tavilyApiKey = _normalizeNullableInput(key);
+    _tavilyApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(prefs, _tavilyApiKeyKey, _tavilyApiKey);
+    await persistNullableString(prefs, _tavilyApiKeyKey, _tavilyApiKey);
     notifyListeners();
   }
 
   Future<void> setGoogleSearchApiKey(String? key) async {
-    _googleSearchApiKey = _normalizeNullableInput(key);
+    _googleSearchApiKey = normalizeNullableInput(key);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(
+    await persistNullableString(
       prefs,
       _googleSearchApiKeyKey,
       _googleSearchApiKey,
@@ -222,9 +222,9 @@ class ApiKeyProvider with ChangeNotifier {
   }
 
   Future<void> setGoogleSearchEngineId(String? id) async {
-    _googleSearchEngineId = _normalizeNullableInput(id);
+    _googleSearchEngineId = normalizeNullableInput(id);
     final prefs = await SharedPreferences.getInstance();
-    await _persistNullableString(
+    await persistNullableString(
       prefs,
       _googleSearchEngineIdKey,
       _googleSearchEngineId,
@@ -242,11 +242,11 @@ class ApiKeyProvider with ChangeNotifier {
 
   /// 检查所有必需的 API Key 是否已配置
   bool get hasAllRequiredKeys {
-    return _hasConfiguredValue(_openaiApiKey) ||
-        _hasConfiguredValue(_googleApiKey) ||
-        _hasConfiguredValue(_claudeApiKey) ||
-        _customProviderApiKeys.values.any(_hasConfiguredValue) ||
-        _customImageProviderApiKeys.values.any(_hasConfiguredValue);
+    return hasConfiguredValue(_openaiApiKey) ||
+        hasConfiguredValue(_googleApiKey) ||
+        hasConfiguredValue(_claudeApiKey) ||
+        _customProviderApiKeys.values.any(hasConfiguredValue) ||
+        _customImageProviderApiKeys.values.any(hasConfiguredValue);
   }
 
   // ==================== 导入/导出 ====================
@@ -307,7 +307,7 @@ class ApiKeyProvider with ChangeNotifier {
       return null;
     }
 
-    return _getStoredStringMapValue(_customProviderApiKeys, normalizedProvider);
+    return getStoredStringMapValue(_customProviderApiKeys, normalizedProvider);
   }
 
   String? _getCustomImageProviderApiKey(String provider) {
@@ -316,7 +316,7 @@ class ApiKeyProvider with ChangeNotifier {
       return null;
     }
 
-    return _getStoredStringMapValue(
+    return getStoredStringMapValue(
       _customImageProviderApiKeys,
       normalizedProvider,
     );
@@ -328,8 +328,8 @@ class ApiKeyProvider with ChangeNotifier {
       return;
     }
 
-    final normalizedKey = _normalizeNullableInput(key);
-    final storedKey = _findStoredStringMapKey(
+    final normalizedKey = normalizeNullableInput(key);
+    final storedKey = findStoredStringMapKey(
       _customProviderApiKeys,
       normalizedProvider,
     );
@@ -340,7 +340,7 @@ class ApiKeyProvider with ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await _persistStringMap(
+    await persistStringMap(
       prefs,
       _customProviderApiKeysKey,
       _customProviderApiKeys,
@@ -349,11 +349,13 @@ class ApiKeyProvider with ChangeNotifier {
   }
 
   Future<void> _importCustomProviderApiKeys(dynamic rawValue) async {
-    final parsed = _decodeDynamicStringMap(rawValue);
-    _customProviderApiKeys = parsed;
+    _customProviderApiKeys = decodeDynamicStringMap(
+      rawValue,
+      debugLabel: 'Error parsing custom provider API map',
+    );
 
     final prefs = await SharedPreferences.getInstance();
-    await _persistStringMap(
+    await persistStringMap(
       prefs,
       _customProviderApiKeysKey,
       _customProviderApiKeys,
@@ -370,8 +372,8 @@ class ApiKeyProvider with ChangeNotifier {
       return;
     }
 
-    final normalizedKey = _normalizeNullableInput(key);
-    final storedKey = _findStoredStringMapKey(
+    final normalizedKey = normalizeNullableInput(key);
+    final storedKey = findStoredStringMapKey(
       _customImageProviderApiKeys,
       normalizedProvider,
     );
@@ -383,7 +385,7 @@ class ApiKeyProvider with ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await _persistStringMap(
+    await persistStringMap(
       prefs,
       _customImageProviderApiKeysKey,
       _customImageProviderApiKeys,
@@ -392,118 +394,17 @@ class ApiKeyProvider with ChangeNotifier {
   }
 
   Future<void> _importCustomImageProviderApiKeys(dynamic rawValue) async {
-    final parsed = _decodeDynamicStringMap(rawValue);
-    _customImageProviderApiKeys = parsed;
+    _customImageProviderApiKeys = decodeDynamicStringMap(
+      rawValue,
+      debugLabel: 'Error parsing custom image provider API map',
+    );
 
     final prefs = await SharedPreferences.getInstance();
-    await _persistStringMap(
+    await persistStringMap(
       prefs,
       _customImageProviderApiKeysKey,
       _customImageProviderApiKeys,
     );
     notifyListeners();
-  }
-
-  String? _findStoredStringMapKey(Map<String, String> values, String key) {
-    if (values.containsKey(key)) {
-      return key;
-    }
-
-    for (final storedKey in values.keys) {
-      if (storedKey.toLowerCase() == key.toLowerCase()) {
-        return storedKey;
-      }
-    }
-
-    return null;
-  }
-
-  String? _getStoredStringMapValue(Map<String, String> values, String key) {
-    final directMatch = values[key];
-    if (directMatch != null) {
-      return directMatch;
-    }
-
-    final storedKey = _findStoredStringMapKey(values, key);
-    if (storedKey == null) {
-      return null;
-    }
-
-    return values[storedKey];
-  }
-
-  Map<String, String> _decodeStringMap(String? encoded, String debugLabel) {
-    if (encoded == null || encoded.isEmpty) {
-      return {};
-    }
-
-    try {
-      final decoded = json.decode(encoded) as Map<String, dynamic>;
-      return decoded.map((key, value) => MapEntry(key, value?.toString() ?? ''))
-        ..removeWhere((key, value) => value.trim().isEmpty);
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('$debugLabel: $error');
-      }
-      return {};
-    }
-  }
-
-  Map<String, String> _decodeDynamicStringMap(dynamic rawValue) {
-    if (rawValue == null) {
-      return {};
-    }
-
-    if (rawValue is String) {
-      return _decodeStringMap(
-        rawValue,
-        'Error parsing custom provider API map',
-      );
-    }
-
-    if (rawValue is Map) {
-      return rawValue.map(
-        (key, value) =>
-            MapEntry(key.toString(), value?.toString().trim() ?? ''),
-      )..removeWhere((key, value) => value.isEmpty);
-    }
-
-    return {};
-  }
-
-  String? _normalizeNullableInput(String? value) {
-    if (value == null) {
-      return null;
-    }
-    final trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
-  }
-
-  Future<void> _persistNullableString(
-    SharedPreferences prefs,
-    String key,
-    String? value,
-  ) async {
-    if (value == null) {
-      await prefs.remove(key);
-      return;
-    }
-    await prefs.setString(key, value);
-  }
-
-  Future<void> _persistStringMap(
-    SharedPreferences prefs,
-    String key,
-    Map<String, String> values,
-  ) async {
-    if (values.isEmpty) {
-      await prefs.remove(key);
-      return;
-    }
-    await prefs.setString(key, json.encode(values));
-  }
-
-  bool _hasConfiguredValue(String? value) {
-    return value != null && value.trim().isNotEmpty;
   }
 }

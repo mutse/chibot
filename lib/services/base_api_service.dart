@@ -229,6 +229,40 @@ abstract class BaseApiService {
     }
   }
 
+  /// Run [validate] and return true if it completes successfully,
+  /// false if it throws. Used by chat services to implement `isConfigured`.
+  Future<bool> isConfiguredViaValidation(
+    Future<void> Function() validate, {
+    String? failureLabel,
+  }) async {
+    try {
+      await validate();
+      return true;
+    } catch (e) {
+      logWarning(
+        '${failureLabel ?? providerName} configuration is invalid',
+        error: e,
+      );
+      return false;
+    }
+  }
+
+  /// Wraps [e] as a [ConfigurationException] unless it already is one,
+  /// preserving the original error chain for diagnostics.
+  ConfigurationException wrapValidationError(
+    Object e, {
+    String code = 'CONFIG_VALIDATION_FAILED',
+  }) {
+    if (e is ConfigurationException) {
+      return e;
+    }
+    return ConfigurationException(
+      'Failed to validate $providerName configuration: $e',
+      code: code,
+      originalError: e,
+    );
+  }
+
   // Clean up resources
   void dispose() {
     _client?.close();

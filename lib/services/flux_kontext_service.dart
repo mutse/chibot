@@ -1,203 +1,49 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:http/http.dart' as http;
-import 'base_api_service.dart';
 
-class FluxKontextRequest {
-  final String prompt;
-  final String? aspectRatio;
-  final int? seed;
-  final bool? promptUpsampling;
-  final int? safetyTolerance;
-  final String? outputFormat;
-  final String? image;
-  final double? strength;
-  final double? guidanceScale;
+import '../core/logger.dart';
+import 'flux/flux_base_service.dart';
+import 'flux/flux_dtos.dart';
 
-  FluxKontextRequest({
-    required this.prompt,
-    this.aspectRatio,
-    this.seed,
-    this.promptUpsampling,
-    this.safetyTolerance,
-    this.outputFormat,
-    this.image,
-    this.strength,
-    this.guidanceScale,
-  });
+// 旧的类型名以 typedef 形式重新导出，保留所有外部引用。
+typedef FluxKontextRequest = FluxGenerationRequest;
+typedef FluxKontextResponse = FluxSubmitResponse;
+typedef FluxKontextResult = FluxPollResult;
 
-  Map<String, dynamic> toJson() {
-    final json = {
-      'prompt': prompt,
-      if (aspectRatio != null) 'aspect_ratio': aspectRatio,
-      if (seed != null) 'seed': seed,
-      if (promptUpsampling != null) 'prompt_upsampling': promptUpsampling,
-      if (safetyTolerance != null) 'safety_tolerance': safetyTolerance,
-      if (outputFormat != null) 'output_format': outputFormat,
-      if (image != null) 'image': image,
-      if (strength != null) 'strength': strength,
-      if (guidanceScale != null) 'guidance_scale': guidanceScale,
-    };
-    return json;
-  }
-}
+class FluxKontextService extends FluxBaseService {
+  FluxKontextService({required super.apiKey})
+      : super(baseUrl: 'https://api.bfl.ai/v1');
 
-class FluxKontextResponse {
-  final String id;
-  final String status;
-  final String pollingUrl;
+  @override
+  String get submitPath => 'flux-kontext-pro';
 
-  FluxKontextResponse({
-    required this.id,
-    required this.status,
-    required this.pollingUrl,
-  });
+  @override
+  String get apiKeyHeader => 'x-key';
 
-  factory FluxKontextResponse.fromJson(Map<String, dynamic> json) {
-    return FluxKontextResponse(
-      id: json['id'] ?? '',
-      status: json['status'] ?? 'pending',
-      pollingUrl: json['polling_url'] ?? '',
+  @override
+  String get fluxLabel => 'FLUX.1 Kontext';
+
+  /// 轮询单次结果，参数为 [submit] 返回的完整 `polling_url`。
+  @override
+  Future<FluxPollResult> poll(String idOrUrl) async {
+    final response = await http.get(
+      Uri.parse(idOrUrl),
+      headers: getHeaders(),
     );
-  }
-}
 
-class FluxKontextResult {
-  final String? sampleUrl;
-  final String? prompt;
-  final Map<String, dynamic>? metadata;
-  final String status;
-
-  FluxKontextResult({
-    this.sampleUrl,
-    this.prompt,
-    this.metadata,
-    required this.status,
-  });
-
-  factory FluxKontextResult.fromJson(Map<String, dynamic> json) {
-    return FluxKontextResult(
-      sampleUrl: json['result']?['sample'],
-      prompt: json['result']?['prompt'],
-      metadata: json['result']?['metadata'],
-      status: json['status'] ?? 'pending',
-    );
-  }
-}
-
-class FluxKontextService extends BaseApiService {
-  FluxKontextService({required String apiKey})
-    : super(baseUrl: 'https://api.bfl.ai/v1', apiKey: apiKey);
-
-  @override
-  String get providerName => 'BFL';
-
-  @override
-  Map<String, String> getHeaders() {
-    return {'Content-Type': 'application/json', 'x-key': apiKey};
-  }
-
-  @override
-  void validateResponse(http.Response response) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      String errorMessage =
-          'Request failed with status 27${response.statusCode}27';
-      try {
-        final errorBody = jsonDecode(response.body);
-        errorMessage =
-            errorBody['error']?['message'] ??
-            errorBody['message'] ??
-            errorMessage;
-      } catch (_) {}
-      throw Exception('FLUX.1 Kontext API error: $errorMessage');
-    }
-  }
-
-  Future<FluxKontextResponse> _submitRequest(FluxKontextRequest request) async {
-    try {
-      final url = Uri.parse('$baseUrl/flux-kontext-pro');
-      final headers = <String, String>{
-        'accept': 'application/json',
-        'Content-Type': 'application/json',
-        'x-key': apiKey,
-      };
-
-      if (apiKey.isEmpty) {
-        throw Exception('FLUX.1 API key is empty. Please configure your API key in settings.');
-      }
-
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode(request.toJson()),
+    if (response.statusCode == 200) {
+      return FluxPollResult.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
       );
-
-      print('[FluxKontextService] Request body: ${jsonEncode(request.toJson())}');
-      print('[FluxKontextService] Response status: ${response.statusCode}');
-      print('[FluxKontextService] Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        return FluxKontextResponse.fromJson(jsonResponse);
-      } else {
-        String errorMessage = 'HTTP ${response.statusCode}';
-        try {
-          final errorBody = jsonDecode(response.body);
-          errorMessage =
-              errorBody['error']?['message'] ??
-              errorBody['message'] ??
-              errorBody['errors'] ??
-              'Unknown error from API';
-
-          // Handle different error formats
-          if (errorBody['error'] is String) {
-            errorMessage = errorBody['error'];
-          }
-        } catch (e) {
-          // If body is not JSON, use the raw body
-          errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
-        }
-
-        // Add status code context
-        if (response.statusCode == 401) {
-          errorMessage = 'Authentication failed (401). Please verify your API key is valid and active.';
-        } else if (response.statusCode == 403) {
-          errorMessage = 'Access forbidden (403). Your API key may not have permission for FLUX.1 models.';
-        } else if (response.statusCode == 429) {
-          errorMessage = 'Rate limit exceeded (429). Please wait before making more requests.';
-        } else if (response.statusCode == 400) {
-          errorMessage = 'Bad request (400). Invalid prompt or parameters: $errorMessage';
-        }
-
-        throw Exception('FLUX.1 Kontext API error: $errorMessage');
-      }
-    } catch (e) {
-      print('[FluxKontextService] Error submitting request: $e');
-      rethrow;
     }
+
+    throw Exception('Failed to poll result: ${response.statusCode}');
   }
 
-  Future<FluxKontextResult> pollResult(String pollingUrl) async {
-    try {
-      final url = Uri.parse(pollingUrl);
-      final headers = <String, String>{
-        'accept': 'application/json',
-        'x-key': apiKey,
-      };
-
-      final response = await http.get(url, headers: headers);
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        return FluxKontextResult.fromJson(jsonResponse);
-      } else {
-        throw Exception('Failed to poll result: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error polling FLUX.1 result: $e');
-      rethrow;
-    }
-  }
+  /// 兼容旧调用方暴露的公共方法名。
+  Future<FluxPollResult> pollResult(String pollingUrl) => poll(pollingUrl);
 
   Future<String> generateImage({
     required String prompt,
@@ -208,19 +54,17 @@ class FluxKontextService extends BaseApiService {
     Duration maxWaitTime = const Duration(seconds: 60),
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
-    final request = FluxKontextRequest(
+    final request = FluxGenerationRequest(
       prompt: prompt,
       aspectRatio: aspectRatio,
       seed: seed,
       outputFormat: outputFormat,
       safetyTolerance: safetyTolerance,
     );
-
-    final response = await _submitRequest(request);
-    return await _waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
+    final response = await submit(request);
+    return waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
   }
 
-  /// Generate image with OpenAI-style size parameter
   Future<String> generateImageWithOpenAISize({
     required String prompt,
     required String openAISize,
@@ -228,20 +72,11 @@ class FluxKontextService extends BaseApiService {
     int? safetyTolerance,
     Duration maxWaitTime = const Duration(seconds: 120),
     Duration pollInterval = const Duration(seconds: 2),
-  }) async {
-    // Parse OpenAI-style size to aspect ratio for FLUX.1
-    String? aspectRatio;
-    if (openAISize == '1024x1024') {
-      aspectRatio = '1:1';
-    } else if (openAISize == '1792x1024') {
-      aspectRatio = '16:9';
-    } else if (openAISize == '1024x1792') {
-      aspectRatio = '9:16';
-    }
-
+  }) {
     return generateImage(
       prompt: prompt,
-      aspectRatio: aspectRatio ?? '1:1',
+      aspectRatio:
+          FluxBaseService.aspectRatioFromOpenAISize(openAISize) ?? '1:1',
       outputFormat: outputFormat,
       safetyTolerance: safetyTolerance,
       maxWaitTime: maxWaitTime,
@@ -258,88 +93,30 @@ class FluxKontextService extends BaseApiService {
     Duration maxWaitTime = const Duration(seconds: 60),
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
-    final request = FluxKontextRequest(
+    final request = FluxGenerationRequest(
       prompt: prompt,
       image: imageUrl,
       strength: strength,
       guidanceScale: guidanceScale,
       aspectRatio: aspectRatio,
     );
-
-    final response = await _submitRequest(request);
-    return await _waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
-  }
-
-  Future<String> _waitForResult(
-    String pollingUrl,
-    Duration maxWaitTime,
-    Duration pollInterval,
-  ) async {
-    final stopwatch = Stopwatch()..start();
-
-    while (stopwatch.elapsed < maxWaitTime) {
-      try {
-        final result = await pollResult(pollingUrl);
-        
-        // Check status according to API documentation
-        if (result.status.toLowerCase() == 'ready') {
-          if (result.sampleUrl != null && result.sampleUrl!.isNotEmpty) {
-            return result.sampleUrl!;
-          } else {
-            throw Exception('FLUX.1 returned no image URL');
-          }
-        } else if (result.status.toLowerCase() == 'error' || 
-                   result.status.toLowerCase() == 'failed') {
-          throw Exception(
-            'FLUX.1 generation failed with status: ${result.status}',
-          );
-        } else if (result.status.toLowerCase() == 'pending' ||
-                   result.status.toLowerCase() == 'processing') {
-          // Continue polling
-          await Future.delayed(pollInterval);
-          continue;
-        } else {
-          // Unknown status, continue polling
-          await Future.delayed(pollInterval);
-          continue;
-        }
-      } catch (e) {
-        // If it's a failure error, rethrow it
-        if (e.toString().contains('failed') || 
-            e.toString().contains('error') ||
-            e.toString().contains('FLUX.1 returned')) {
-          rethrow;
-        }
-        // Continue polling on transient errors
-        print('Polling error, retrying: $e');
-        await Future.delayed(pollInterval);
-      }
-    }
-
-    throw Exception(
-      'Image generation timed out after ${maxWaitTime.inSeconds} seconds',
-    );
+    final response = await submit(request);
+    return waitForResult(response.pollingUrl, maxWaitTime, pollInterval);
   }
 
   Future<bool> testConnection() async {
     try {
-      final testPrompt = 'a simple test image';
-      final url = Uri.parse('$baseUrl/flux-kontext-pro');
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'x-key': apiKey,
-      };
-      final body = {'prompt': testPrompt, 'aspect_ratio': '1:1'};
-
       final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode(body),
+        Uri.parse('$baseUrl/$submitPath'),
+        headers: getHeaders(),
+        body: jsonEncode(const {
+          'prompt': 'a simple test image',
+          'aspect_ratio': '1:1',
+        }),
       );
-
       return response.statusCode == 200;
     } catch (e) {
-      print('Connection test failed: $e');
+      AppLogger.warning('[FLUX.1 Kontext] connection test failed: $e');
       return false;
     }
   }

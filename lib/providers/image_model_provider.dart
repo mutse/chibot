@@ -1,15 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 import '../models/model_registry.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../services/google_image_service.dart';
+import '_provider_storage_helpers.dart';
 
 /// 负责图像生成相关的模型配置
 /// 职责：选择图像生成模型、配置提供商、管理 Aspect Ratio
-class ImageModelProvider with ChangeNotifier {
+class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
   final ModelRegistry? modelRegistry;
   // 当前选定的图像生成提供商
   String _selectedImageProvider = 'OpenAI';
@@ -125,22 +125,10 @@ class ImageModelProvider with ChangeNotifier {
     _bflAspectRatio = prefs.getString(_bflAspectRatioKey);
 
     // 加载自定义图像生成提供商
-    final String? customImageProvidersString =
-        prefs.getString(_customImageProvidersKey);
-    if (customImageProvidersString != null) {
-      try {
-        _customImageProviders = Map<String, List<String>>.from(
-          json
-              .decode(customImageProvidersString)
-              .map((key, value) => MapEntry(key, List<String>.from(value))),
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('Error loading custom image providers: $e');
-        }
-        _customImageProviders = {};
-      }
-    }
+    _customImageProviders = decodeStringListMap(
+      prefs.getString(_customImageProvidersKey),
+      'Error loading custom image providers',
+    );
 
     // 加载模型类型
     final int? savedModelType = prefs.getInt(_selectedModelTypeKey);
@@ -187,11 +175,7 @@ class ImageModelProvider with ChangeNotifier {
   Future<void> setImageProviderUrl(String? url) async {
     _imageProviderUrl = url;
     final prefs = await SharedPreferences.getInstance();
-    if (url != null) {
-      await prefs.setString(_imageProviderUrlKey, url);
-    } else {
-      await prefs.remove(_imageProviderUrlKey);
-    }
+    await persistNullableString(prefs, _imageProviderUrlKey, url);
     notifyListeners();
   }
 
@@ -199,11 +183,7 @@ class ImageModelProvider with ChangeNotifier {
   Future<void> setBflAspectRatio(String? value) async {
     _bflAspectRatio = value;
     final prefs = await SharedPreferences.getInstance();
-    if (value != null) {
-      await prefs.setString(_bflAspectRatioKey, value);
-    } else {
-      await prefs.remove(_bflAspectRatioKey);
-    }
+    await persistNullableString(prefs, _bflAspectRatioKey, value);
     notifyListeners();
   }
 
@@ -245,9 +225,10 @@ class ImageModelProvider with ChangeNotifier {
   ) async {
     _customImageProviders[provider] = models;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
+    await persistStringMap(
+      prefs,
       _customImageProvidersKey,
-      json.encode(_customImageProviders),
+      _customImageProviders,
     );
     // 同步到 ModelRegistry
     await syncModelsToRegistry();
@@ -258,9 +239,10 @@ class ImageModelProvider with ChangeNotifier {
   Future<void> removeCustomImageProvider(String provider) async {
     _customImageProviders.remove(provider);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
+    await persistStringMap(
+      prefs,
       _customImageProvidersKey,
-      json.encode(_customImageProviders),
+      _customImageProviders,
     );
     notifyListeners();
   }
@@ -379,36 +361,10 @@ class ImageModelProvider with ChangeNotifier {
       _customImageModels = List<String>.from(data[_customImageModelsKey] ?? []);
     }
     if (data.containsKey(_customImageProvidersKey)) {
-      final customImageProvidersData = data[_customImageProvidersKey];
-      if (customImageProvidersData != null) {
-        Map<String, List<String>> parsedProviders = {};
-
-        if (customImageProvidersData is String && customImageProvidersData.isNotEmpty) {
-          // Parse JSON string from XML export
-          try {
-            final decoded = json.decode(customImageProvidersData) as Map<String, dynamic>;
-            parsedProviders = Map<String, List<String>>.from(
-              decoded.map(
-                (key, value) => MapEntry(key, List<String>.from(value as List)),
-              ),
-            );
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('Error parsing custom image providers JSON: $e');
-            }
-            parsedProviders = {};
-          }
-        } else if (customImageProvidersData is Map) {
-          // Already a Map from direct import
-          parsedProviders = Map<String, List<String>>.from(
-            customImageProvidersData.map(
-              (key, value) => MapEntry(key, List<String>.from(value)),
-            ),
-          );
-        }
-
-        _customImageProviders = parsedProviders;
-      }
+      _customImageProviders = decodeDynamicStringListMap(
+        data[_customImageProvidersKey],
+        'Error parsing custom image providers JSON',
+      );
     }
     if (data.containsKey(_bflAspectRatioKey)) {
       _bflAspectRatio = data[_bflAspectRatioKey];
@@ -428,17 +384,18 @@ class ImageModelProvider with ChangeNotifier {
       _selectedImageProvider,
     );
     await prefs.setString(_selectedImageModelKey, _selectedImageModel);
-    if (_imageProviderUrl != null) {
-      await prefs.setString(_imageProviderUrlKey, _imageProviderUrl!);
-    }
-    await prefs.setStringList(_customImageModelsKey, _customImageModels);
-    await prefs.setString(
-      _customImageProvidersKey,
-      json.encode(_customImageProviders),
+    await persistNullableString(
+      prefs,
+      _imageProviderUrlKey,
+      _imageProviderUrl,
     );
-    if (_bflAspectRatio != null) {
-      await prefs.setString(_bflAspectRatioKey, _bflAspectRatio!);
-    }
+    await prefs.setStringList(_customImageModelsKey, _customImageModels);
+    await persistStringMap(
+      prefs,
+      _customImageProvidersKey,
+      _customImageProviders,
+    );
+    await persistNullableString(prefs, _bflAspectRatioKey, _bflAspectRatio);
     await prefs.setInt(_selectedModelTypeKey, _selectedModelType.index);
 
     _validateSelectedImageModelForProvider();
