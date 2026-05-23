@@ -17,30 +17,21 @@ class ServiceModelRegistry {
     'gpt-5.4',
     'gpt-5.4-mini',
     'gpt-5.4-nano',
-    'gpt-5.1',
-    'gpt-5-mini',
-    'gpt-5-nano',
-    'gpt-4.1',
-    'gpt-4.1-mini',
-    'gpt-4.1-nano',
-    'gpt-4o',
-    'gpt-4o-mini',
-    'o3',
-    'o4-mini',
   ];
 
   static const List<String> geminiModels = [
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-3.1-pro-preview',
     'gemini-2.5-pro',
     'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
   ];
 
   static const List<String> claudeModels = [
-    'claude-opus-4-1',
-    'claude-sonnet-4-0',
-    'claude-3-7-sonnet-latest',
-    'claude-3-5-haiku-latest',
+    'claude-opus-4-7',
+    'claude-sonnet-4-6',
+    'claude-haiku-4-5',
   ];
 
   // Image generation models
@@ -58,10 +49,7 @@ class ServiceModelRegistry {
     'flux-krea-dev',
   ];
 
-  static const List<String> openAIImageModels = [
-    'dall-e-3',
-    'dall-e-2',
-  ];
+  static const List<String> openAIImageModels = ['dall-e-3', 'dall-e-2'];
 
   static const List<String> stabilityImageModels = [
     'stable-diffusion-xl-1024-v1-0',
@@ -69,9 +57,7 @@ class ServiceModelRegistry {
   ];
 
   // Video generation models
-  static const List<String> videoModels = [
-    'veo-3',
-  ];
+  static const List<String> videoModels = ['veo-3'];
 
   // Search providers
   static const List<String> searchProviders = [
@@ -114,11 +100,7 @@ class ServiceModelRegistry {
   }
 
   /// 获取所有支持的聊天提供商
-  static List<String> get chatProviders => [
-    'OpenAI',
-    'Google',
-    'Anthropic',
-  ];
+  static List<String> get chatProviders => ['OpenAI', 'Google', 'Anthropic'];
 
   /// 获取所有支持的图像生成提供商
   static List<String> get imageProviders => [
@@ -129,9 +111,7 @@ class ServiceModelRegistry {
   ];
 
   /// 获取所有支持的视频生成提供商
-  static List<String> get videoProviders => [
-    'Google Veo3',
-  ];
+  static List<String> get videoProviders => ['Google Veo3'];
 
   /// 检查提供商是否支持指定模型
   static bool isSupportedModel(String provider, String model, String type) {

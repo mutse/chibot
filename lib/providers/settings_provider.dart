@@ -6,8 +6,10 @@ import 'package:chibot/services/flux_kontext_service.dart';
 import 'package:chibot/services/flux_krea_service.dart';
 import 'package:chibot/services/google_image_service.dart';
 import 'dart:convert';
+import '../constants/app_constants.dart';
 import '../models/model_registry.dart';
 import '../models/available_model.dart' as available_model;
+import '../services/service_model_registry.dart';
 
 class SettingsProvider with ChangeNotifier {
   final ModelRegistry? modelRegistry;
@@ -15,7 +17,7 @@ class SettingsProvider with ChangeNotifier {
   String? _apiKey;
   String? _imageApiKey; // Added for image API key
   String? _claudeApiKey; // Added for Claude API key
-  String _selectedModel = 'gpt-4o'; // 默认模型
+  String _selectedModel = AppConstants.defaultTextModel; // 默认模型
   String? _providerUrl; // 新增：模型 Provider URL
   List<String> _customModels = []; // 新增：自定义模型列表
   Map<String, List<String>> _customProviders = {}; // 新增：自定义提供商及其模型列表
@@ -117,23 +119,16 @@ class SettingsProvider with ChangeNotifier {
 
   // 可选模型列表
   final List<String> _presetModels = [
-    'gpt-4',
-    'gpt-4o',
-    'gpt-4.1',
-    'gemini-2.0-flash',
-    'gemini-2.5-pro-preview-06-05',
-    'gemini-2.5-flash-preview-05-20',
+    ...ServiceModelRegistry.openAIModels,
+    ...ServiceModelRegistry.geminiModels,
+    ...ServiceModelRegistry.claudeModels,
   ];
 
   // 分类预设模型
   final Map<String, List<String>> _categorizedPresetModels = {
-    'OpenAI': ['gpt-4', 'gpt-4o', 'gpt-4.1'],
-    'Google': [
-      'gemini-2.0-flash',
-      'gemini-2.5-pro-preview-06-05',
-      'gemini-2.5-flash-preview-05-20',
-    ],
-    'Anthropic': ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+    'OpenAI': List<String>.of(ServiceModelRegistry.openAIModels),
+    'Google': List<String>.of(ServiceModelRegistry.geminiModels),
+    'Anthropic': List<String>.of(ServiceModelRegistry.claudeModels),
   };
 
   // Preset models for image generation
@@ -144,7 +139,11 @@ class SettingsProvider with ChangeNotifier {
       'stable-diffusion-v1-6', // Example model ID
       // Add other Stability AI models as needed
     ],
-    'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev', 'flux-krea-dev'],
+    'Black Forest Labs': [
+      'flux-kontext-pro',
+      'flux-kontext-dev',
+      'flux-krea-dev',
+    ],
     'Google': GoogleImageService.getSupportedModels(),
   };
 
@@ -276,7 +275,10 @@ class SettingsProvider with ChangeNotifier {
     return models.map((m) => m.trim()).where((m) => m.isNotEmpty).toList();
   }
 
-  Future<void> _persistStringListSetting(String key, List<String> values) async {
+  Future<void> _persistStringListSetting(
+    String key,
+    List<String> values,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(key, values);
   }
@@ -409,18 +411,24 @@ class SettingsProvider with ChangeNotifier {
     settingsMap[_claudeApiKeyKey] = prefs.getString(_claudeApiKeyKey);
     settingsMap[_tavilyApiKeyKey] = prefs.getString(_tavilyApiKeyKey);
     settingsMap[_fluxKontextApiKeyKey] = prefs.getString(_fluxKontextApiKeyKey);
-    settingsMap[_googleSearchApiKeyKey] = prefs.getString(_googleSearchApiKeyKey);
+    settingsMap[_googleSearchApiKeyKey] = prefs.getString(
+      _googleSearchApiKeyKey,
+    );
     settingsMap[_googleSearchEngineIdKey] = prefs.getString(
       _googleSearchEngineIdKey,
     );
-    settingsMap[_googleSearchEnabledKey] = prefs.getBool(_googleSearchEnabledKey);
+    settingsMap[_googleSearchEnabledKey] = prefs.getBool(
+      _googleSearchEnabledKey,
+    );
     settingsMap[_googleSearchResultCountKey] = prefs.getInt(
       _googleSearchResultCountKey,
     );
     settingsMap[_googleSearchProviderKey] = prefs.getString(
       _googleSearchProviderKey,
     );
-    settingsMap[_tavilySearchEnabledKey] = prefs.getBool(_tavilySearchEnabledKey);
+    settingsMap[_tavilySearchEnabledKey] = prefs.getBool(
+      _tavilySearchEnabledKey,
+    );
     settingsMap[_selectedModelKey] = prefs.getString(_selectedModelKey);
     settingsMap[_providerUrlKey] = prefs.getString(_providerUrlKey);
     settingsMap[_customModelsKey] = prefs.getStringList(_customModelsKey);
@@ -430,9 +438,13 @@ class SettingsProvider with ChangeNotifier {
     settingsMap[_selectedImageProviderKey] = prefs.getString(
       _selectedImageProviderKey,
     );
-    settingsMap[_selectedImageModelKey] = prefs.getString(_selectedImageModelKey);
+    settingsMap[_selectedImageModelKey] = prefs.getString(
+      _selectedImageModelKey,
+    );
     settingsMap[_imageProviderUrlKey] = prefs.getString(_imageProviderUrlKey);
-    settingsMap[_customImageModelsKey] = prefs.getStringList(_customImageModelsKey);
+    settingsMap[_customImageModelsKey] = prefs.getStringList(
+      _customImageModelsKey,
+    );
     settingsMap[_customImageProvidersKey] = prefs.getString(
       _customImageProvidersKey,
     );
@@ -468,7 +480,8 @@ class SettingsProvider with ChangeNotifier {
   }
 
   void _loadTextModelSettings(SharedPreferences prefs) {
-    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-4o';
+    _selectedModel =
+        prefs.getString(_selectedModelKey) ?? AppConstants.defaultTextModel;
     _providerUrl = prefs.getString(_providerUrlKey);
     _customModels = prefs.getStringList(_customModelsKey) ?? [];
     _customProviders = {};
@@ -480,14 +493,14 @@ class SettingsProvider with ChangeNotifier {
       );
     }
     _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
-    _selectedModelType = available_model.ModelType.values[
-      prefs.getInt(_selectedModelTypeKey) ??
-          available_model.ModelType.text.index
-    ];
+    _selectedModelType =
+        available_model.ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
+            available_model.ModelType.text.index];
   }
 
   void _loadImageSettings(SharedPreferences prefs) {
-    _selectedImageProvider = prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
+    _selectedImageProvider =
+        prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
     _selectedImageModel = _normalizeImageModelForProvider(
       _selectedImageProvider,
       prefs.getString(_selectedImageModelKey) ?? 'dall-e-3',
@@ -495,7 +508,9 @@ class SettingsProvider with ChangeNotifier {
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
     _customImageProviders = {};
-    final customImageProvidersString = prefs.getString(_customImageProvidersKey);
+    final customImageProvidersString = prefs.getString(
+      _customImageProvidersKey,
+    );
     if (customImageProvidersString != null) {
       _customImageProviders = _decodeProvidersMap(
         customImageProvidersString,
@@ -728,10 +743,10 @@ class SettingsProvider with ChangeNotifier {
     if (modelRegistry == null) return;
     for (final provider in providerModels.keys) {
       for (final model in providerModels[provider]!) {
-        final modelName = type == available_model.ModelType.image &&
-                provider == 'Google'
-            ? GoogleImageService.getDisplayName(model)
-            : model;
+        final modelName =
+            type == available_model.ModelType.image && provider == 'Google'
+                ? GoogleImageService.getDisplayName(model)
+                : model;
         modelRegistry!.registerModel(
           available_model.AvailableModel(
             id: model,
@@ -818,7 +833,9 @@ class SettingsProvider with ChangeNotifier {
       return customProviderModels.first;
     }
 
-    return currentAvailableModels.isNotEmpty ? currentAvailableModels.first : '';
+    return currentAvailableModels.isNotEmpty
+        ? currentAvailableModels.first
+        : '';
   }
 
   void _persistSelectedModelAsync(String storageKey, String selectedModel) {
@@ -909,11 +926,8 @@ class SettingsProvider with ChangeNotifier {
   List<String> get customImageModels => List.unmodifiable(_customImageModels);
 
   // 获取 Provider URL，优先使用用户设置的URL，否则返回当前选定提供商的默认URL
-  String get providerUrl => _resolveBaseUrl(
-    _providerUrl,
-    _selectedProvider,
-    defaultBaseUrls,
-  );
+  String get providerUrl =>
+      _resolveBaseUrl(_providerUrl, _selectedProvider, defaultBaseUrls);
 
   // 返回给UI显示的原始Provider URL，可能是空的
   String? get rawProviderUrl => _providerUrl;
@@ -943,7 +957,10 @@ class SettingsProvider with ChangeNotifier {
   Future<void> setSelectedProvider(String newProvider) async {
     if (_selectedProvider != newProvider) {
       _selectedProvider = newProvider;
-      _providerUrl = _resolveProviderUrlForSelection(newProvider, defaultBaseUrls);
+      _providerUrl = _resolveProviderUrlForSelection(
+        newProvider,
+        defaultBaseUrls,
+      );
 
       final prefs = await SharedPreferences.getInstance();
       await _persistSelectedProviderAndUrl(
@@ -970,7 +987,9 @@ class SettingsProvider with ChangeNotifier {
         currentAvailableModels: currentAvailableModels,
       );
       if (kDebugMode) {
-        debugPrint('Model validation changed selectedModel to: $_selectedModel');
+        debugPrint(
+          'Model validation changed selectedModel to: $_selectedModel',
+        );
       }
       _persistSelectedModelAsync(_selectedModelKey, _selectedModel);
     }
@@ -1347,9 +1366,11 @@ class SettingsProvider with ChangeNotifier {
     if (kDebugMode) {
       debugPrint('[SettingsProvider] Testing FLUX.1 connection');
       debugPrint('[SettingsProvider] Selected model: $_selectedImageModel');
-      debugPrint('[SettingsProvider] API key available: ${_imageApiKey != null && _imageApiKey!.isNotEmpty}');
+      debugPrint(
+        '[SettingsProvider] API key available: ${_imageApiKey != null && _imageApiKey!.isNotEmpty}',
+      );
     }
-    
+
     if (_imageApiKey == null || _imageApiKey!.isEmpty) {
       if (kDebugMode) {
         debugPrint('[SettingsProvider] No API key provided for FLUX.1 test');
@@ -1369,7 +1390,7 @@ class SettingsProvider with ChangeNotifier {
           debugPrint('[SettingsProvider] FLUX.1-Kontext test result: $result');
         }
         return result;
-      } 
+      }
       // Test FLUX.1 Krea connection
       else if (_selectedImageModel.contains('krea')) {
         if (kDebugMode) {
@@ -1382,7 +1403,7 @@ class SettingsProvider with ChangeNotifier {
         }
         return result;
       }
-      
+
       if (kDebugMode) {
         debugPrint('[SettingsProvider] No FLUX.1 model selected');
       }

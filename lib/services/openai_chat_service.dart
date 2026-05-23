@@ -7,6 +7,7 @@ import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
+import 'service_model_registry.dart';
 
 class OpenAIService extends BaseApiService implements ChatService {
   OpenAIService({
@@ -23,22 +24,7 @@ class OpenAIService extends BaseApiService implements ChatService {
   String get providerName => _isOpenRouter ? 'OpenRouter' : 'OpenAI';
 
   @override
-  List<String> get supportedModels => [
-    'gpt-5.5',
-    'gpt-5.4',
-    'gpt-5.4-mini',
-    'gpt-5.4-nano',
-    'gpt-5.1',
-    'gpt-5-mini',
-    'gpt-5-nano',
-    'gpt-4.1',
-    'gpt-4.1-mini',
-    'gpt-4.1-nano',
-    'gpt-4o',
-    'gpt-4o-mini',
-    'o3',
-    'o4-mini',
-  ];
+  List<String> get supportedModels => ServiceModelRegistry.openAIModels;
 
   @override
   Map<String, String> getHeaders() {
@@ -93,7 +79,8 @@ class OpenAIService extends BaseApiService implements ChatService {
 
     // Only validate supported models for official OpenAI API
     // Allow any model for custom base URLs (OpenAI-compatible providers)
-    if (baseUrl == AppConstants.openAIBaseUrl && !supportedModels.contains(model)) {
+    if (baseUrl == AppConstants.openAIBaseUrl &&
+        !supportedModels.contains(model)) {
       throw ValidationException(
         'Model $model is not supported by OpenAI',
         'model',
@@ -189,11 +176,17 @@ class OpenAIService extends BaseApiService implements ChatService {
           'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
 
       final requestBody = _buildChatRequest(
-        'gpt-4.1-mini',
+        'gpt-5.4-nano',
         [
           {'role': 'user', 'content': prompt},
         ],
-        {'max_tokens': 20, 'temperature': 0.7},
+        {
+          'max_completion_tokens': 20,
+          'reasoning_effort': 'none',
+          'temperature': 0.7,
+          'verbosity': 'low',
+        },
+        stream: false,
       );
 
       final response = await post('/chat/completions', body: requestBody);
@@ -246,18 +239,45 @@ class OpenAIService extends BaseApiService implements ChatService {
   String _buildChatRequest(
     String model,
     List<Map<String, String>> messages,
-    Map<String, dynamic>? parameters,
-  ) {
-    final request = {
+    Map<String, dynamic>? parameters, {
+    bool stream = true,
+  }) {
+    final normalizedParameters = _normalizeRequestParameters(parameters);
+    final request = <String, dynamic>{
       'model': model,
       'messages': messages,
-      'stream': true,
+      'stream': stream,
       'temperature': 0.7,
-      'max_tokens': 4096,
-      ...?parameters,
+      ..._defaultTokenLimitForCurrentApi(),
+      ...normalizedParameters,
     };
 
     return jsonEncode(request);
+  }
+
+  Map<String, dynamic> _normalizeRequestParameters(
+    Map<String, dynamic>? parameters,
+  ) {
+    if (parameters == null || parameters.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final normalized = Map<String, dynamic>.from(parameters);
+    if (baseUrl == AppConstants.openAIBaseUrl &&
+        normalized.containsKey('max_tokens') &&
+        !normalized.containsKey('max_completion_tokens')) {
+      normalized['max_completion_tokens'] = normalized.remove('max_tokens');
+    }
+
+    return normalized;
+  }
+
+  Map<String, dynamic> _defaultTokenLimitForCurrentApi() {
+    if (baseUrl == AppConstants.openAIBaseUrl) {
+      return const {'max_completion_tokens': 4096};
+    }
+
+    return const {'max_tokens': 4096};
   }
 
   @override
@@ -310,13 +330,16 @@ class OpenAIService extends BaseApiService implements ChatService {
     }
 
     final detail = <String>[
-      if (providerName != null && providerName.isNotEmpty) 'provider: $providerName',
+      if (providerName != null && providerName.isNotEmpty)
+        'provider: $providerName',
       if (providerDetail != null && providerDetail.isNotEmpty) providerDetail,
     ].join(' - ');
 
     if (statusCode == 429) {
       final prefix = 'OpenRouter rate limit exceeded';
-      return detail.isEmpty ? '$prefix. Please retry shortly or switch to another model/provider.' : '$prefix ($detail).';
+      return detail.isEmpty
+          ? '$prefix. Please retry shortly or switch to another model/provider.'
+          : '$prefix ($detail).';
     }
 
     if (fallbackMessage == 'Provider returned error' && detail.isNotEmpty) {

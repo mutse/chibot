@@ -7,6 +7,7 @@ import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
+import 'service_model_registry.dart';
 
 class ClaudeService extends BaseApiService implements ChatService {
   ClaudeService({
@@ -21,12 +22,7 @@ class ClaudeService extends BaseApiService implements ChatService {
   String get providerName => 'Anthropic Claude';
 
   @override
-  List<String> get supportedModels => [
-    'claude-opus-4-1',
-    'claude-sonnet-4-0',
-    'claude-3-7-sonnet-latest',
-    'claude-3-5-haiku-latest',
-  ];
+  List<String> get supportedModels => ServiceModelRegistry.claudeModels;
 
   @override
   Map<String, String> getHeaders() {
@@ -51,13 +47,14 @@ class ClaudeService extends BaseApiService implements ChatService {
     try {
       // Test with a simple message to validate the API key
       final testMessage = [
-        {'role': 'user', 'content': 'Hello'}
+        {'role': 'user', 'content': 'Hello'},
       ];
 
       final requestBody = _buildMessagesRequest(
-        'claude-3-5-haiku-latest',
+        'claude-haiku-4-5',
         testMessage,
-        {'max_tokens': 10}
+        {'max_tokens': 10},
+        stream: false,
       );
 
       final response = await post('/messages', body: requestBody);
@@ -84,7 +81,7 @@ class ClaudeService extends BaseApiService implements ChatService {
     Map<String, dynamic>? parameters,
   }) async* {
     validateApiKey();
-    
+
     if (!supportedModels.contains(model)) {
       throw ValidationException(
         'Model $model is not supported by Claude',
@@ -96,29 +93,29 @@ class ClaudeService extends BaseApiService implements ChatService {
     try {
       final messages = _buildMessages(context, prompt);
       final requestBody = _buildMessagesRequest(model, messages, parameters);
-      
+
       logInfo('Generating response with Claude model: $model');
-      
+
       final response = await postStream('/messages', body: requestBody);
-      
+
       await for (final chunk in response.stream.transform(utf8.decoder)) {
         final lines = chunk.split('\n');
-        
+
         for (final line in lines) {
           if (line.startsWith('data: ')) {
             final data = line.substring(6);
             if (data.trim() == '[DONE]') {
               return;
             }
-            
+
             try {
               final json = jsonDecode(data);
               final type = json['type'] as String?;
-              
+
               if (type == 'content_block_delta') {
                 final delta = json['delta'] as Map<String, dynamic>?;
                 final text = delta?['text'] as String?;
-                
+
                 if (text != null) {
                   yield text;
                 }
@@ -132,7 +129,6 @@ class ClaudeService extends BaseApiService implements ChatService {
           }
         }
       }
-      
     } catch (e) {
       logError('Failed to generate response with Claude', error: e);
       if (e is AppException) {
@@ -150,28 +146,30 @@ class ClaudeService extends BaseApiService implements ChatService {
   @override
   Future<String> generateTitle(List<ChatMessage> messages) async {
     validateApiKey();
-    
+
     if (messages.isEmpty) {
       return 'New Chat';
     }
 
     try {
       final firstMessage = messages.first;
-      final prompt = 'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
-      
+      final prompt =
+          'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
+
       final requestMessages = [
-        {'role': 'user', 'content': prompt}
+        {'role': 'user', 'content': prompt},
       ];
-      
+
       final requestBody = _buildMessagesRequest(
-        'claude-3-5-haiku-latest',
+        'claude-haiku-4-5',
         requestMessages,
         {'max_tokens': 20},
+        stream: false,
       );
-      
+
       final response = await post('/messages', body: requestBody);
       final json = jsonDecode(response.body);
-      
+
       final content = json['content'] as List?;
       if (content != null && content.isNotEmpty) {
         final text = content[0]['text'] as String?;
@@ -179,9 +177,8 @@ class ClaudeService extends BaseApiService implements ChatService {
           return text.trim().replaceAll(RegExp(r'^"|"$'), '');
         }
       }
-      
+
       return 'New Chat';
-      
     } catch (e) {
       logWarning('Failed to generate title with Claude', error: e);
       return 'New Chat';
@@ -189,44 +186,49 @@ class ClaudeService extends BaseApiService implements ChatService {
   }
 
   // Helper methods
-  List<Map<String, String>> _buildMessages(List<ChatMessage> context, String prompt) {
+  List<Map<String, String>> _buildMessages(
+    List<ChatMessage> context,
+    String prompt,
+  ) {
     final messages = <Map<String, String>>[];
-    
+
     // Add context messages
     for (final message in context) {
       final apiMessage = message.toApiJson();
       if (apiMessage != null) {
         // Convert OpenAI format to Claude format
         final role = apiMessage['role'] == 'assistant' ? 'assistant' : 'user';
-        messages.add({
-          'role': role,
-          'content': apiMessage['content']!,
-        });
+        messages.add({'role': role, 'content': apiMessage['content']!});
       }
     }
-    
+
     // Add current prompt
     messages.add({'role': 'user', 'content': prompt});
-    
+
     // Limit context length
     if (messages.length > AppConstants.maxMessagesInContext) {
       final startIndex = messages.length - AppConstants.maxMessagesInContext;
       return messages.sublist(startIndex);
     }
-    
+
     return messages;
   }
 
-  String _buildMessagesRequest(String model, List<Map<String, String>> messages, Map<String, dynamic>? parameters) {
+  String _buildMessagesRequest(
+    String model,
+    List<Map<String, String>> messages,
+    Map<String, dynamic>? parameters, {
+    bool stream = true,
+  }) {
     final request = {
       'model': model,
       'messages': messages,
       'max_tokens': 4096,
-      'stream': true,
+      'stream': stream,
       'temperature': 0.7,
       ...?parameters,
     };
-    
+
     return jsonEncode(request);
   }
 
@@ -235,20 +237,19 @@ class ClaudeService extends BaseApiService implements ChatService {
     String errorMessage = 'Claude API request failed with status $statusCode';
     String? errorCode;
     Map<String, dynamic>? responseData;
-    
+
     try {
       responseData = jsonDecode(responseBody) as Map<String, dynamic>;
-      
+
       if (responseData['error'] != null) {
         final error = responseData['error'] as Map<String, dynamic>;
         errorMessage = error['message'] ?? errorMessage;
         errorCode = error['type']?.toString();
       }
-      
     } catch (e) {
       logWarning('Failed to parse Claude error response', error: e);
     }
-    
+
     throw ApiException(
       errorMessage,
       statusCode,

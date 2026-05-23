@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/app_constants.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../models/model_registry.dart';
+import '../services/service_model_registry.dart';
 import '_provider_storage_helpers.dart';
 
 /// 负责聊天相关的模型配置和提供商管理
@@ -16,7 +18,7 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
   static const String _selectedProviderKey = 'selected_model_provider';
 
   // 当前选定的聊天模型
-  String _selectedModel = 'gpt-5.5';
+  String _selectedModel = AppConstants.defaultTextModel;
   static const String _selectedModelKey = 'openai_selected_model';
 
   // 兼容旧版本的单一 URL 存储键
@@ -52,32 +54,9 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
 
   // 分类的预设模型（按提供商组织）
   final Map<String, List<String>> _categorizedPresetModels = {
-    'OpenAI': [
-      'gpt-5.5',
-      'gpt-5.4',
-      'gpt-5.4-mini',
-      'gpt-5.4-nano',
-      'gpt-5.1',
-      'gpt-5-mini',
-      'gpt-5-nano',
-      'gpt-4.1',
-      'gpt-4.1-mini',
-      'gpt-4.1-nano',
-      'gpt-4o',
-      'gpt-4o-mini',
-    ],
-    'Google': [
-      'gemini-2.5-pro',
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-2.0-flash',
-    ],
-    'Anthropic': [
-      'claude-opus-4-1',
-      'claude-sonnet-4-0',
-      'claude-3-7-sonnet-latest',
-      'claude-3-5-haiku-latest',
-    ],
+    'OpenAI': List<String>.of(ServiceModelRegistry.openAIModels),
+    'Google': List<String>.of(ServiceModelRegistry.geminiModels),
+    'Anthropic': List<String>.of(ServiceModelRegistry.claudeModels),
   };
 
   // ==================== Getters ====================
@@ -118,7 +97,8 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
     final prefs = await SharedPreferences.getInstance();
 
     _selectedProvider = prefs.getString(_selectedProviderKey) ?? 'OpenAI';
-    _selectedModel = prefs.getString(_selectedModelKey) ?? 'gpt-5.5';
+    _selectedModel =
+        prefs.getString(_selectedModelKey) ?? AppConstants.defaultTextModel;
 
     _customProviders = decodeStringListMap(
       prefs.getString(_customProvidersKey),
@@ -251,9 +231,9 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
       _selectedProvider,
       () => <String>[],
     );
-    if (_buildAvailableModelsForProvider(_selectedProvider).contains(
-      normalizedModel,
-    )) {
+    if (_buildAvailableModelsForProvider(
+      _selectedProvider,
+    ).contains(normalizedModel)) {
       return;
     }
 
@@ -303,10 +283,8 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
     }
 
     final existingModels = _customProviders[normalizedProvider] ?? [];
-    _customProviders[normalizedProvider] = {
-      ...existingModels,
-      ...normalizedModels,
-    }.toList();
+    _customProviders[normalizedProvider] =
+        {...existingModels, ...normalizedModels}.toList();
 
     final prefs = await SharedPreferences.getInstance();
     await _persistCustomProviders(prefs);
@@ -450,9 +428,10 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
         (data[_selectedModelKey] as String?)?.trim() ?? _selectedModel;
 
     _selectedProvider = importedProvider.isEmpty ? 'OpenAI' : importedProvider;
-    _selectedModel = importedModel.isEmpty
-        ? _categorizedPresetModels['OpenAI']!.first
-        : importedModel;
+    _selectedModel =
+        importedModel.isEmpty
+            ? _categorizedPresetModels['OpenAI']!.first
+            : importedModel;
 
     if (data.containsKey(_customProvidersKey)) {
       _customProviders = decodeDynamicStringListMap(
@@ -562,8 +541,9 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
     try {
       final uri = Uri.parse(baseUrl);
       final path = uri.path;
-      final hasVersionPath =
-          RegExp(r'/(v\d+|v\d+beta|v\d+alpha)$').hasMatch(path);
+      final hasVersionPath = RegExp(
+        r'/(v\d+|v\d+beta|v\d+alpha)$',
+      ).hasMatch(path);
 
       if (!hasVersionPath && (path.isEmpty || path == '/')) {
         final buffer = StringBuffer('${uri.scheme}://${uri.host}');
@@ -620,5 +600,4 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
   ) async {
     await persistNullableString(prefs, _providerUrlKey, rawProviderUrl);
   }
-
 }

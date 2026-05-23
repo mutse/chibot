@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../core/exceptions.dart';
 import '../core/logger.dart';
@@ -7,6 +8,7 @@ import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
+import 'service_model_registry.dart';
 
 class GeminiService extends BaseApiService implements ChatService {
   GeminiService({
@@ -21,16 +23,11 @@ class GeminiService extends BaseApiService implements ChatService {
   String get providerName => 'Google Gemini';
 
   @override
-  List<String> get supportedModels => [
-    'gemini-2.5-pro',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
-  ];
+  List<String> get supportedModels => ServiceModelRegistry.geminiModels;
 
   @override
   Map<String, String> getHeaders() {
-    return {'Content-Type': 'application/json'};
+    return {'Content-Type': 'application/json', 'x-goog-api-key': apiKey};
   }
 
   @override
@@ -45,7 +42,7 @@ class GeminiService extends BaseApiService implements ChatService {
     validateApiKey();
 
     try {
-      final response = await get('/models', queryParams: {'key': apiKey});
+      final response = await get('/models');
       if (response.statusCode != 200) {
         throw ConfigurationException(
           'Invalid API key or configuration for Gemini',
@@ -87,7 +84,6 @@ class GeminiService extends BaseApiService implements ChatService {
       final cleanModel = model.startsWith('gemini-') ? model : 'gemini-$model';
       final response = await post(
         '/models/$cleanModel:generateContent',
-        queryParams: {'key': apiKey},
         body: requestBody,
       );
 
@@ -107,6 +103,13 @@ class GeminiService extends BaseApiService implements ChatService {
           }
         }
       }
+    } on HandshakeException catch (e) {
+      logError('Gemini TLS handshake failed', error: e);
+      throw NetworkException(
+        'Failed to establish a secure connection to the Gemini API.',
+        code: 'GEMINI_TLS_HANDSHAKE_FAILED',
+        originalError: e,
+      );
     } catch (e) {
       logError('Failed to generate response with Gemini', error: e);
       if (e is AppException) {
@@ -148,8 +151,7 @@ class GeminiService extends BaseApiService implements ChatService {
       });
 
       final response = await post(
-        '/models/gemini-2.5-flash-lite:generateContent',
-        queryParams: {'key': apiKey},
+        '/models/gemini-3.1-flash-lite:generateContent',
         body: requestBody,
       );
 
