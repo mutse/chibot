@@ -81,7 +81,7 @@ void main() {
     test('availableModels 包含 OpenAI 模型', () {
       expect(
         chatModel.availableModels,
-        containsAll(['gpt-5.5', 'gpt-4.1', 'gpt-4o']),
+        containsAll(['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano']),
       );
     });
 

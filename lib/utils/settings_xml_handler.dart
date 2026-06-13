@@ -1,5 +1,6 @@
 import 'encryption_utils.dart';
 import 'settings_exceptions.dart';
+import '../core/logger.dart';
 import 'dart:convert' as json_lib;
 
 class SettingsXmlHandler {
@@ -685,7 +686,7 @@ class SettingsXmlHandler {
       } catch (e) {
         // Log decryption error but don't fail import entirely
         // This allows for partial recovery if some keys are corrupted
-        print('Warning: Failed to decrypt $tag: $e');
+        AppLogger.warning('Failed to decrypt $tag', error: e);
         return null;
       }
     }

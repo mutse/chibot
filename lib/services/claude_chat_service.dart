@@ -98,35 +98,56 @@ class ClaudeService extends BaseApiService implements ChatService {
 
       final response = await postStream('/messages', body: requestBody);
 
-      await for (final chunk in response.stream.transform(utf8.decoder)) {
-        final lines = chunk.split('\n');
+      // Decode the byte stream and split into complete lines. LineSplitter
+      // buffers partial lines across network chunk boundaries, so a `data:`
+      // line that spans two chunks is reassembled before we try to parse it.
+      await for (final line in response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        if (!line.startsWith('data: ')) continue;
 
-        for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final data = line.substring(6);
-            if (data.trim() == '[DONE]') {
-              return;
+        final data = line.substring(6);
+        if (data.trim() == '[DONE]') {
+          return;
+        }
+
+        try {
+          final json = jsonDecode(data) as Map<String, dynamic>;
+          final type = json['type'] as String?;
+
+          if (type == 'content_block_delta') {
+            final delta = json['delta'] as Map<String, dynamic>?;
+            final text = delta?['text'] as String?;
+
+            if (text != null) {
+              yield text;
             }
-
-            try {
-              final json = jsonDecode(data);
-              final type = json['type'] as String?;
-
-              if (type == 'content_block_delta') {
-                final delta = json['delta'] as Map<String, dynamic>?;
-                final text = delta?['text'] as String?;
-
-                if (text != null) {
-                  yield text;
-                }
-              } else if (type == 'message_stop') {
-                return;
-              }
-            } catch (e) {
-              logWarning('Failed to parse Claude streaming chunk', error: e);
-              // Continue processing other chunks
-            }
+          } else if (type == 'error') {
+            // Claude streams error events as `data: {"type":"error",...}`.
+            // Surface them instead of silently ending the stream.
+            final error = json['error'];
+            final message = error is Map<String, dynamic>
+                ? (error['message']?.toString() ?? 'Streaming provider error')
+                : 'Streaming provider error';
+            throw ApiException(
+              message,
+              0,
+              code: (error is Map<String, dynamic>
+                      ? error['type']?.toString()
+                      : null) ??
+                  'STREAM_PROVIDER_ERROR',
+              responseData: json,
+            );
+          } else if (type == 'message_stop') {
+            return;
           }
+        } on AppException {
+          // Deliberately surfaced provider errors must propagate, not be
+          // swallowed as if they were unparseable chunks.
+          rethrow;
+        } catch (e) {
+          logWarning('Failed to parse Claude streaming chunk', error: e);
+          // Continue processing other chunks
         }
       }
     } catch (e) {

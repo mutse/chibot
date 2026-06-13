@@ -96,56 +96,61 @@ class OpenAIService extends BaseApiService implements ChatService {
 
       final response = await postStream('/chat/completions', body: requestBody);
 
-      await for (final chunk in response.stream.transform(utf8.decoder)) {
-        final lines = chunk.split('\n');
+      // Decode the byte stream and split into complete lines. LineSplitter
+      // buffers partial lines across network chunk boundaries, so a `data:`
+      // line that spans two chunks is reassembled before we try to parse it.
+      await for (final line in response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())) {
+        if (!line.startsWith('data: ')) continue;
 
-        for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final data = line.substring(6);
-            if (data.trim() == '[DONE]') {
-              return;
-            }
+        final data = line.substring(6);
+        if (data.trim() == '[DONE]') {
+          return;
+        }
 
-            try {
-              final json = jsonDecode(data) as Map<String, dynamic>;
+        try {
+          final json = jsonDecode(data) as Map<String, dynamic>;
 
-              if (json['error'] != null) {
-                final error = json['error'] as Map<String, dynamic>;
-                final message =
-                    _isOpenRouter
-                        ? _buildOpenRouterErrorMessage(
-                          statusCode: 0,
-                          fallbackMessage:
-                              error['message']?.toString() ??
-                              'Streaming provider error',
-                          errorData: error,
-                        )
-                        : (error['message']?.toString() ??
-                            'Streaming provider error');
+          if (json['error'] != null) {
+            final error = json['error'] as Map<String, dynamic>;
+            final message =
+                _isOpenRouter
+                    ? _buildOpenRouterErrorMessage(
+                      statusCode: 0,
+                      fallbackMessage:
+                          error['message']?.toString() ??
+                          'Streaming provider error',
+                      errorData: error,
+                    )
+                    : (error['message']?.toString() ??
+                        'Streaming provider error');
 
-                throw ApiException(
-                  message,
-                  0,
-                  code: error['code']?.toString() ?? 'STREAM_PROVIDER_ERROR',
-                  responseData: json,
-                );
-              }
+            throw ApiException(
+              message,
+              0,
+              code: error['code']?.toString() ?? 'STREAM_PROVIDER_ERROR',
+              responseData: json,
+            );
+          }
 
-              final choices = json['choices'] as List?;
+          final choices = json['choices'] as List?;
 
-              if (choices != null && choices.isNotEmpty) {
-                final delta = choices[0]['delta'] as Map<String, dynamic>?;
-                final content = delta?['content'] as String?;
+          if (choices != null && choices.isNotEmpty) {
+            final delta = choices[0]['delta'] as Map<String, dynamic>?;
+            final content = delta?['content'] as String?;
 
-                if (content != null) {
-                  yield content;
-                }
-              }
-            } catch (e) {
-              logWarning('Failed to parse streaming chunk', error: e);
-              // Continue processing other chunks
+            if (content != null) {
+              yield content;
             }
           }
+        } on AppException {
+          // Deliberately surfaced provider errors must propagate, not be
+          // swallowed as if they were unparseable chunks.
+          rethrow;
+        } catch (e) {
+          logWarning('Failed to parse streaming chunk', error: e);
+          // Continue processing other chunks
         }
       }
     } catch (e) {

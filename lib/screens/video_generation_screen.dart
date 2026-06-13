@@ -160,11 +160,13 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
 
       _promptController.clear();
     } catch (e) {
-      SnackBarUtils.showError(context, '视频生成失败：$e');
+      if (mounted) SnackBarUtils.showError(context, '视频生成失败：$e');
     } finally {
-      setState(() {
-        _isGenerating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
     }
   }
 
@@ -210,12 +212,12 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
               }
             }
 
-            setState(() {});
+            if (mounted) setState(() {});
           }
         }
       },
       onError: (error) {
-        SnackBarUtils.showError(context, '视频生成失败：$error');
+        if (mounted) SnackBarUtils.showError(context, '视频生成失败：$error');
       },
     );
   }
@@ -232,7 +234,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
       );
 
       if (localPath != null) {
-        SnackBarUtils.showSuccess(context, '视频下载成功');
+        if (mounted) SnackBarUtils.showSuccess(context, '视频下载成功');
 
         // Update video message with local path
         final videoIndex = _currentSession!.videos.indexOf(video);
@@ -243,11 +245,11 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
             videoIndex,
             updatedMessage,
           );
-          setState(() {});
+          if (mounted) setState(() {});
         }
       }
     } catch (e) {
-      SnackBarUtils.showError(context, '视频下载失败：$e');
+      if (mounted) SnackBarUtils.showError(context, '视频下载失败：$e');
     }
   }
 

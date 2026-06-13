@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/video_session.dart';
 import '../models/video_message.dart';
+import '../core/logger.dart';
 
 class VideoSessionService {
   static const String _sessionsKey = 'video_sessions';
@@ -26,7 +27,7 @@ class VideoSessionService {
         ..sort((a, b) => b.updatedAt?.compareTo(a.updatedAt ?? a.createdAt) ??
                          b.createdAt.compareTo(a.createdAt));
     } catch (e) {
-      print('Error loading video sessions: $e');
+      AppLogger.error('Error loading video sessions', error: e);
       return [];
     }
   }
@@ -167,7 +168,7 @@ class VideoSessionService {
         await videoDir.delete(recursive: true);
       }
     } catch (e) {
-      print('Error deleting session videos: $e');
+      AppLogger.error('Error deleting session videos', error: e);
     }
   }
 

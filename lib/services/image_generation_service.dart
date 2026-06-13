@@ -179,7 +179,9 @@ class ImageGenerationService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      print('Error in generateImage: $e');
+      if (kDebugMode) {
+        print('Error in generateImage: $e');
+      }
       rethrow;
     }
   }
