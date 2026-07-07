@@ -66,6 +66,17 @@ add_subdirectory("runner")
 include(flutter/generated_plugins.cmake)
 
 if(MSVC AND TARGET permission_handler_windows_plugin)
+  get_target_property(
+    permission_handler_windows_compile_options
+    permission_handler_windows_plugin
+    COMPILE_OPTIONS
+  )
+  if(permission_handler_windows_compile_options)
+    list(REMOVE_ITEM permission_handler_windows_compile_options "/await")
+    set_target_properties(permission_handler_windows_plugin PROPERTIES
+      COMPILE_OPTIONS "${permission_handler_windows_compile_options}")
+  endif()
+
   target_compile_definitions(permission_handler_windows_plugin PRIVATE
     _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 endif()
