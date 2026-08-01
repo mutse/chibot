@@ -77,7 +77,7 @@ class GeminiService extends BaseApiService implements ChatService {
 
     try {
       final contents = _buildContents(context, prompt);
-      final requestBody = _buildGenerateRequest(contents, parameters);
+      final requestBody = _buildGenerateRequest(model, contents, parameters);
 
       logInfo('Generating response with Gemini model: $model');
 
@@ -146,12 +146,14 @@ class GeminiService extends BaseApiService implements ChatService {
         },
       ];
 
-      final requestBody = _buildGenerateRequest(contents, {
-        'maxOutputTokens': 20,
-      });
+      final requestBody = _buildGenerateRequest(
+        ServiceModelRegistry.geminiTitleModel,
+        contents,
+        {'maxOutputTokens': 20},
+      );
 
       final response = await post(
-        '/models/gemini-3.1-flash-lite:generateContent',
+        '/models/${ServiceModelRegistry.geminiTitleModel}:generateContent',
         body: requestBody,
       );
 
@@ -213,19 +215,33 @@ class GeminiService extends BaseApiService implements ChatService {
   }
 
   String _buildGenerateRequest(
+    String model,
     List<Map<String, dynamic>> contents,
     Map<String, dynamic>? parameters,
   ) {
+    final normalizedParameters = Map<String, dynamic>.from(
+      parameters ?? const {},
+    );
+    if (_usesLatestSamplingContract(model)) {
+      normalizedParameters.remove('temperature');
+      normalizedParameters.remove('topP');
+      normalizedParameters.remove('topK');
+    }
+
     final request = {
       'contents': contents,
       'generationConfig': {
-        'temperature': 0.7,
+        if (!_usesLatestSamplingContract(model)) 'temperature': 0.7,
         'maxOutputTokens': 4096,
-        ...?parameters,
+        ...normalizedParameters,
       },
     };
 
     return jsonEncode(request);
+  }
+
+  bool _usesLatestSamplingContract(String model) {
+    return model == 'gemini-3.6-flash' || model == 'gemini-3.5-flash-lite';
   }
 
   @override

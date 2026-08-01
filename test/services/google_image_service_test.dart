@@ -24,6 +24,14 @@ void main() {
         GoogleImageService.normalizeModel('nano-banana-pro'),
         equals(GoogleImageService.nanoBananaProModel),
       );
+      expect(
+        GoogleImageService.normalizeModel('gemini-3.1-flash-image-preview'),
+        equals(GoogleImageService.nanoBanana2Model),
+      );
+      expect(
+        GoogleImageService.normalizeModel('gemini-3-pro-image-preview'),
+        equals(GoogleImageService.nanoBananaProModel),
+      );
     });
 
     test('supported models expose official Google image model ids', () {
@@ -31,6 +39,7 @@ void main() {
         GoogleImageService.getSupportedModels(),
         containsAll([
           GoogleImageService.nanoBanana2Model,
+          GoogleImageService.nanoBanana2LiteModel,
           GoogleImageService.nanoBananaProModel,
           GoogleImageService.nanoBananaModel,
         ]),

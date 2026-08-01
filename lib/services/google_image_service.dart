@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'service_model_registry.dart';
+
 class GoogleImageService {
   final String apiKey;
   final http.Client _client;
@@ -10,9 +12,14 @@ class GoogleImageService {
     : _client = client ?? http.Client();
 
   static const String baseUrl = 'https://generativelanguage.googleapis.com';
-  static const String nanoBanana2Model = 'gemini-3.1-flash-image-preview';
-  static const String nanoBananaProModel = 'gemini-3-pro-image-preview';
-  static const String nanoBananaModel = 'gemini-2.5-flash-image';
+  static const String nanoBanana2Model =
+      ServiceModelRegistry.defaultGoogleImageModel;
+  static const String nanoBanana2LiteModel =
+      ServiceModelRegistry.googleImageLiteModel;
+  static const String nanoBananaProModel =
+      ServiceModelRegistry.googleImageProModel;
+  static const String nanoBananaModel =
+      ServiceModelRegistry.legacyGoogleImageModel;
 
   Future<String?> generateImage({
     required String prompt,
@@ -172,13 +179,15 @@ class GoogleImageService {
 
   /// Get supported models for Google image generation
   static List<String> getSupportedModels() {
-    return [nanoBanana2Model, nanoBananaProModel, nanoBananaModel];
+    return ServiceModelRegistry.googleImageModels;
   }
 
   static String getDisplayName(String model) {
     switch (normalizeModel(model)) {
       case nanoBanana2Model:
         return 'Nano Banana 2';
+      case nanoBanana2LiteModel:
+        return 'Nano Banana 2 Lite';
       case nanoBananaProModel:
         return 'Nano Banana Pro';
       case nanoBananaModel:
@@ -208,11 +217,17 @@ class GoogleImageService {
       case 'nano-banana-v2':
       case 'nano-banana-two':
       case 'nano-banana-ii':
+      case 'gemini-3.1-flash-image-preview':
         return nanoBanana2Model;
+      case 'nano-banana-2-lite':
+      case 'nano-banana2-lite':
+      case 'gemini-3.1-flash-lite-image':
+        return nanoBanana2LiteModel;
       case 'nano-banana-pro':
       case 'nano-banana-pro-3':
       case 'nano-banana-3-pro':
       case 'nano-banana-pro-preview':
+      case 'gemini-3-pro-image-preview':
         return nanoBananaProModel;
       case 'nano-banana':
       case 'nanobanana':

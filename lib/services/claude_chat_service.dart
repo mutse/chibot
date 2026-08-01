@@ -51,7 +51,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
 
       final requestBody = _buildMessagesRequest(
-        'claude-haiku-4-5',
+        ServiceModelRegistry.claudeTitleModel,
         testMessage,
         {'max_tokens': 10},
         stream: false,
@@ -101,9 +101,10 @@ class ClaudeService extends BaseApiService implements ChatService {
       // Decode the byte stream and split into complete lines. LineSplitter
       // buffers partial lines across network chunk boundaries, so a `data:`
       // line that spans two chunks is reassembled before we try to parse it.
-      await for (final line in response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())) {
+      await for (final line
+          in response.stream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
         if (!line.startsWith('data: ')) continue;
 
         final data = line.substring(6);
@@ -132,7 +133,8 @@ class ClaudeService extends BaseApiService implements ChatService {
             throw ApiException(
               message,
               0,
-              code: (error is Map<String, dynamic>
+              code:
+                  (error is Map<String, dynamic>
                       ? error['type']?.toString()
                       : null) ??
                   'STREAM_PROVIDER_ERROR',
@@ -182,7 +184,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
 
       final requestBody = _buildMessagesRequest(
-        'claude-haiku-4-5',
+        ServiceModelRegistry.claudeTitleModel,
         requestMessages,
         {'max_tokens': 20},
         stream: false,

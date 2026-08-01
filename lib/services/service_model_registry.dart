@@ -11,8 +11,24 @@
 /// final allProviders = ServiceModelRegistry.supportedProviders;
 /// ```
 class ServiceModelRegistry {
+  static const String defaultOpenAIModel = 'gpt-5.6-sol';
+  static const String openAITitleModel = 'gpt-5.6-luna';
+  static const String defaultGeminiModel = 'gemini-3.6-flash';
+  static const String geminiTitleModel = 'gemini-3.5-flash-lite';
+  static const String defaultClaudeModel = 'claude-opus-5';
+  static const String claudeTitleModel = 'claude-haiku-4-5';
+  static const String defaultOpenAIImageModel = 'gpt-image-2';
+  static const String defaultGoogleImageModel = 'gemini-3.1-flash-image';
+  static const String googleImageLiteModel = 'gemini-3.1-flash-lite-image';
+  static const String googleImageProModel = 'gemini-3-pro-image';
+  static const String legacyGoogleImageModel = 'gemini-2.5-flash-image';
+  static const String defaultVideoModel = 'veo-3.1-generate-preview';
+
   // Chat service models
   static const List<String> openAIModels = [
+    'gpt-5.6-sol',
+    'gpt-5.6-terra',
+    'gpt-5.6-luna',
     'gpt-5.5',
     'gpt-5.4',
     'gpt-5.4-mini',
@@ -20,7 +36,9 @@ class ServiceModelRegistry {
   ];
 
   static const List<String> geminiModels = [
+    'gemini-3.6-flash',
     'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
     'gemini-3.1-pro-preview',
     'gemini-2.5-pro',
@@ -29,6 +47,9 @@ class ServiceModelRegistry {
   ];
 
   static const List<String> claudeModels = [
+    'claude-fable-5',
+    'claude-opus-5',
+    'claude-sonnet-5',
     'claude-opus-4-7',
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
@@ -36,10 +57,10 @@ class ServiceModelRegistry {
 
   // Image generation models
   static const List<String> googleImageModels = [
-    'gemini-3.1-flash-image-preview',
-    'gemini-3-pro-image-preview',
-    'gemini-2.5-flash-image',
-    'imagen-3',
+    defaultGoogleImageModel,
+    googleImageLiteModel,
+    googleImageProModel,
+    legacyGoogleImageModel,
   ];
 
   static const List<String> fluxModels = [
@@ -49,7 +70,11 @@ class ServiceModelRegistry {
     'flux-krea-dev',
   ];
 
-  static const List<String> openAIImageModels = ['dall-e-3', 'dall-e-2'];
+  static const List<String> openAIImageModels = [
+    'gpt-image-2',
+    'gpt-image-1.5',
+    'dall-e-3',
+  ];
 
   static const List<String> stabilityImageModels = [
     'stable-diffusion-xl-1024-v1-0',
@@ -57,7 +82,10 @@ class ServiceModelRegistry {
   ];
 
   // Video generation models
-  static const List<String> videoModels = ['veo-3'];
+  static const List<String> videoModels = [
+    'veo-3.1-generate-preview',
+    'veo-3.1-fast-generate-preview',
+  ];
 
   // Search providers
   static const List<String> searchProviders = [

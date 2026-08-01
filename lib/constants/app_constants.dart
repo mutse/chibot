@@ -1,3 +1,5 @@
+import '../services/service_model_registry.dart';
+
 class AppConstants {
   // UI Constants
   static const double sidebarWidth = 260.0;
@@ -30,8 +32,10 @@ class AppConstants {
   static const String tavilyBaseUrl = 'https://api.tavily.com';
 
   // Default Models
-  static const String defaultTextModel = 'gpt-5.5';
-  static const String defaultImageModel = 'dall-e-3';
+  static const String defaultTextModel =
+      ServiceModelRegistry.defaultOpenAIModel;
+  static const String defaultImageModel =
+      ServiceModelRegistry.defaultOpenAIImageModel;
   static const String defaultProvider = 'OpenAI';
 
   // App Info

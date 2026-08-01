@@ -51,7 +51,8 @@ class ImageGenerationService {
       // Stability AI text-to-image endpoint
       // Reference: https://platform.stability.ai/docs/api-reference#tag/SDXL-1.0/operation/textToImage
       // Endpoint format: POST /v1/generation/{engine_id}/text-to-image
-      String engineId = model; // Model should be the engine ID like 'stable-diffusion-xl-1024-v1-0'
+      String engineId =
+          model; // Model should be the engine ID like 'stable-diffusion-xl-1024-v1-0'
 
       endpointUri = Uri.parse(
         '$providerBaseUrl/v1/generation/$engineId/text-to-image',
@@ -86,7 +87,7 @@ class ImageGenerationService {
         // 'seed': 0,
       };
     } else if (providerBaseUrl.contains('generativelanguage.googleapis.com') ||
-               providerBaseUrl.contains('google')) {
+        providerBaseUrl.contains('google')) {
       // Handle Google Generative AI models (including nano-banana)
       return await _handleGoogleImageGeneration(
         apiKey: apiKey,
@@ -125,9 +126,17 @@ class ImageGenerationService {
         final responseBody = jsonDecode(response.body);
         if (providerBaseUrl.contains('api.openai.com')) {
           if (responseBody['data'] != null && responseBody['data'].isNotEmpty) {
-            return responseBody['data'][0]['url'];
+            final image = responseBody['data'][0];
+            final url = image['url'] as String?;
+            if (url != null && url.isNotEmpty) return url;
+
+            final base64 = image['b64_json'] as String?;
+            if (base64 != null && base64.isNotEmpty) {
+              return 'data:image/png;base64,$base64';
+            }
+            throw Exception('Image data not found in OpenAI response.');
           } else {
-            throw Exception('Image URL not found in OpenAI response.');
+            throw Exception('Image data not found in OpenAI response.');
           }
         } else if (providerBaseUrl.contains('stability.ai')) {
           if (responseBody['artifacts'] != null &&
@@ -201,17 +210,21 @@ class ImageGenerationService {
       print('[ImageGenerationService] Model: $model');
     }
 
-    final googleService = ImageGenerationServiceFactory.createImageService(
-      provider: ImageGenerationServiceFactory.google,
-      apiKey: apiKey,
-      model: model,
-    ) as GoogleImageService;
+    final googleService =
+        ImageGenerationServiceFactory.createImageService(
+              provider: ImageGenerationServiceFactory.google,
+              apiKey: apiKey,
+              model: model,
+            )
+            as GoogleImageService;
 
     try {
       if (aspectRatio != null && aspectRatio.isNotEmpty) {
         // Use direct aspect ratio if provided
         if (kDebugMode) {
-          print('[ImageGenerationService] Using direct aspect ratio: $aspectRatio');
+          print(
+            '[ImageGenerationService] Using direct aspect ratio: $aspectRatio',
+          );
         }
         return await googleService.generateImage(
           prompt: prompt,
@@ -223,7 +236,9 @@ class ImageGenerationService {
       } else {
         // Fallback to OpenAI size mapping
         if (kDebugMode) {
-          print('[ImageGenerationService] Using OpenAI size mapping: $openAISize');
+          print(
+            '[ImageGenerationService] Using OpenAI size mapping: $openAISize',
+          );
         }
         return await googleService.generateImageWithOpenAISize(
           prompt: prompt,
@@ -262,7 +277,9 @@ class ImageGenerationService {
         : ImageGenerationServiceFactory.fluxKontext;
 
     if (kDebugMode) {
-      print('[ImageGenerationService] Using ${isKrea ? 'FLUX.1-Krea' : 'FLUX.1-Kontext'} service');
+      print(
+        '[ImageGenerationService] Using ${isKrea ? 'FLUX.1-Krea' : 'FLUX.1-Kontext'} service',
+      );
     }
 
     final fluxService = ImageGenerationServiceFactory.createImageService(
@@ -275,7 +292,9 @@ class ImageGenerationService {
       if (aspectRatio != null && aspectRatio.isNotEmpty) {
         // Use direct aspect ratio if provided
         if (kDebugMode) {
-          print('[ImageGenerationService] Using direct aspect ratio: $aspectRatio');
+          print(
+            '[ImageGenerationService] Using direct aspect ratio: $aspectRatio',
+          );
         }
         if (isKrea) {
           return await (fluxService as FluxKreaService).generateImage(
@@ -295,22 +314,26 @@ class ImageGenerationService {
       } else {
         // Fallback to OpenAI size mapping
         if (kDebugMode) {
-          print('[ImageGenerationService] Using OpenAI size mapping: $openAISize');
+          print(
+            '[ImageGenerationService] Using OpenAI size mapping: $openAISize',
+          );
         }
         if (isKrea) {
-          return await (fluxService as FluxKreaService).generateImageWithOpenAISize(
-            prompt: prompt,
-            openAISize: openAISize,
-            maxWaitTime: Duration(seconds: maxWaitSeconds),
-            pollInterval: Duration(milliseconds: pollIntervalMs),
-          );
+          return await (fluxService as FluxKreaService)
+              .generateImageWithOpenAISize(
+                prompt: prompt,
+                openAISize: openAISize,
+                maxWaitTime: Duration(seconds: maxWaitSeconds),
+                pollInterval: Duration(milliseconds: pollIntervalMs),
+              );
         } else {
-          return await (fluxService as FluxKontextService).generateImageWithOpenAISize(
-            prompt: prompt,
-            openAISize: openAISize,
-            maxWaitTime: Duration(seconds: maxWaitSeconds),
-            pollInterval: Duration(milliseconds: pollIntervalMs),
-          );
+          return await (fluxService as FluxKontextService)
+              .generateImageWithOpenAISize(
+                prompt: prompt,
+                openAISize: openAISize,
+                maxWaitTime: Duration(seconds: maxWaitSeconds),
+                pollInterval: Duration(milliseconds: pollIntervalMs),
+              );
         }
       }
     } catch (e) {

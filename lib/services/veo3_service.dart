@@ -8,50 +8,52 @@ import 'package:path_provider/path_provider.dart';
 import '../models/video_message.dart';
 import 'base_api_service.dart';
 import 'video_generation_service.dart';
+import 'service_model_registry.dart';
 
 class Veo3Service extends BaseApiService implements VideoGenerationService {
-  static const String _veo3BaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  static const String _veo3BaseUrl =
+      'https://generativelanguage.googleapis.com/v1beta';
   static const Duration _pollInterval = Duration(seconds: 10);
   static const Duration _requestTimeout = Duration(minutes: 5);
 
-  final Map<String, StreamController<VideoGenerationProgress>> _progressControllers = {};
+  final Map<String, StreamController<VideoGenerationProgress>>
+  _progressControllers = {};
 
-  Veo3Service({required String apiKey}) : super(
-    apiKey: apiKey,
-    baseUrl: _veo3BaseUrl,
-  );
+  Veo3Service({required String apiKey})
+    : super(apiKey: apiKey, baseUrl: _veo3BaseUrl);
 
   @override
   String get providerName => 'Google Veo3';
 
   @override
   Map<String, String> getHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
-    };
+    return {'Content-Type': 'application/json', 'x-goog-api-key': apiKey};
   }
 
   @override
   void validateResponse(http.Response response) {
     if (response.statusCode >= 400) {
       final error = jsonDecode(response.body);
-      throw Exception('Veo3 API Error: ${error['message'] ?? response.statusCode}');
+      throw Exception(
+        'Veo3 API Error: ${error['message'] ?? response.statusCode}',
+      );
     }
   }
 
   @override
-  Future<VideoGenerationResponse> generateVideo(VideoGenerationRequest request) async {
+  Future<VideoGenerationResponse> generateVideo(
+    VideoGenerationRequest request,
+  ) async {
     // Use the correct predictLongRunning endpoint for Veo API
-    final url = Uri.parse('$_veo3BaseUrl/models/veo-3.1-generate-preview:predictLongRunning');
+    final url = Uri.parse(
+      '$_veo3BaseUrl/models/${ServiceModelRegistry.defaultVideoModel}:predictLongRunning',
+    );
 
     try {
       // Build request body in correct format
       final requestBody = {
         'instances': [
-          {
-            'prompt': request.prompt,
-          },
+          {'prompt': request.prompt},
         ],
         'parameters': {
           'aspectRatio': request.aspectRatio,
@@ -60,11 +62,9 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
         },
       };
 
-      final response = await http.post(
-        url,
-        headers: getHeaders(),
-        body: jsonEncode(requestBody),
-      ).timeout(_requestTimeout);
+      final response = await http
+          .post(url, headers: getHeaders(), body: jsonEncode(requestBody))
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -84,7 +84,9 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
         );
       } else {
         final error = jsonDecode(response.body);
-        throw Exception('Failed to generate video: ${error['error']?['message'] ?? error['message'] ?? response.statusCode}');
+        throw Exception(
+          'Failed to generate video: ${error['error']?['message'] ?? error['message'] ?? response.statusCode}',
+        );
       }
     } catch (e) {
       if (e is TimeoutException) {
@@ -99,10 +101,7 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
     final url = Uri.parse('$_veo3BaseUrl/operations/$jobId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: getHeaders(),
-      );
+      final response = await http.get(url, headers: getHeaders());
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -225,13 +224,12 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
     final url = Uri.parse('$_veo3BaseUrl/operations/$jobId:cancel');
 
     try {
-      final response = await http.post(
-        url,
-        headers: getHeaders(),
-      );
+      final response = await http.post(url, headers: getHeaders());
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to cancel video generation: ${response.statusCode}');
+        throw Exception(
+          'Failed to cancel video generation: ${response.statusCode}',
+        );
       }
 
       // Clean up progress tracking
@@ -292,9 +290,10 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
         final models = data['models'] as List<dynamic>?;
 
         return models
-            ?.where((m) => m['name'].toString().contains('veo'))
-            .map((m) => m['name'].toString())
-            .toList() ?? [];
+                ?.where((m) => m['name'].toString().contains('veo'))
+                .map((m) => m['name'].toString())
+                .toList() ??
+            [];
       }
       return [];
     } catch (e) {

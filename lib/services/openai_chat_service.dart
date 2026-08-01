@@ -181,14 +181,13 @@ class OpenAIService extends BaseApiService implements ChatService {
           'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
 
       final requestBody = _buildChatRequest(
-        'gpt-5.4-nano',
+        ServiceModelRegistry.openAITitleModel,
         [
           {'role': 'user', 'content': prompt},
         ],
         {
           'max_completion_tokens': 20,
           'reasoning_effort': 'none',
-          'temperature': 0.7,
           'verbosity': 'low',
         },
         stream: false,
@@ -247,12 +246,12 @@ class OpenAIService extends BaseApiService implements ChatService {
     Map<String, dynamic>? parameters, {
     bool stream = true,
   }) {
-    final normalizedParameters = _normalizeRequestParameters(parameters);
+    final normalizedParameters = _normalizeRequestParameters(model, parameters);
     final request = <String, dynamic>{
       'model': model,
       'messages': messages,
       'stream': stream,
-      'temperature': 0.7,
+      if (!_usesModernOpenAIReasoningModel(model)) 'temperature': 0.7,
       ..._defaultTokenLimitForCurrentApi(),
       ...normalizedParameters,
     };
@@ -260,7 +259,12 @@ class OpenAIService extends BaseApiService implements ChatService {
     return jsonEncode(request);
   }
 
+  bool _usesModernOpenAIReasoningModel(String model) {
+    return baseUrl == AppConstants.openAIBaseUrl && model.startsWith('gpt-5');
+  }
+
   Map<String, dynamic> _normalizeRequestParameters(
+    String model,
     Map<String, dynamic>? parameters,
   ) {
     if (parameters == null || parameters.isEmpty) {
@@ -272,6 +276,12 @@ class OpenAIService extends BaseApiService implements ChatService {
         normalized.containsKey('max_tokens') &&
         !normalized.containsKey('max_completion_tokens')) {
       normalized['max_completion_tokens'] = normalized.remove('max_tokens');
+    }
+
+    if (_usesModernOpenAIReasoningModel(model) &&
+        normalized['reasoning_effort'] != 'none') {
+      normalized.remove('temperature');
+      normalized.remove('top_p');
     }
 
     return normalized;

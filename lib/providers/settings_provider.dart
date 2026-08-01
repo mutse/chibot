@@ -24,7 +24,7 @@ class SettingsProvider with ChangeNotifier {
 
   // Image Generation Settings
   String _selectedImageProvider = 'OpenAI'; // Default image provider
-  String _selectedImageModel = 'dall-e-3'; // Default image model
+  String _selectedImageModel = AppConstants.defaultImageModel;
   String? _imageProviderUrl; // URL for the image generation provider
   List<String> _customImageModels = [];
   Map<String, List<String>> _customImageProviders =
@@ -133,7 +133,7 @@ class SettingsProvider with ChangeNotifier {
 
   // Preset models for image generation
   final Map<String, List<String>> _categorizedPresetImageModels = {
-    'OpenAI': ['dall-e-3'],
+    'OpenAI': List<String>.of(ServiceModelRegistry.openAIImageModels),
     'Stability AI': [
       'stable-diffusion-xl-1024-v1-0', // Example model ID
       'stable-diffusion-v1-6', // Example model ID
@@ -503,7 +503,7 @@ class SettingsProvider with ChangeNotifier {
         prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
     _selectedImageModel = _normalizeImageModelForProvider(
       _selectedImageProvider,
-      prefs.getString(_selectedImageModelKey) ?? 'dall-e-3',
+      prefs.getString(_selectedImageModelKey) ?? AppConstants.defaultImageModel,
     );
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
@@ -745,8 +745,8 @@ class SettingsProvider with ChangeNotifier {
       for (final model in providerModels[provider]!) {
         final modelName =
             type == available_model.ModelType.image && provider == 'Google'
-                ? GoogleImageService.getDisplayName(model)
-                : model;
+            ? GoogleImageService.getDisplayName(model)
+            : model;
         modelRegistry!.registerModel(
           available_model.AvailableModel(
             id: model,
@@ -943,6 +943,8 @@ class SettingsProvider with ChangeNotifier {
     // Ensure the selected model is valid for the loaded provider
     _validateSelectedModelForProvider();
     _validateSelectedImageModelForProvider();
+    await prefs.setString(_selectedModelKey, _selectedModel);
+    await prefs.setString(_selectedImageModelKey, _selectedImageModel);
     // 新增：同步到 ModelRegistry
     syncModelsToRegistry();
   }

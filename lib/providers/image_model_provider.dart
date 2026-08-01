@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../constants/app_constants.dart';
 import '../models/model_registry.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../services/google_image_service.dart';
+import '../services/service_model_registry.dart';
 import '_provider_storage_helpers.dart';
 
 /// 负责图像生成相关的模型配置
@@ -16,7 +18,7 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
   static const String _selectedImageProviderKey = 'selected_image_provider';
 
   // 当前选定的图像生成模型
-  String _selectedImageModel = 'dall-e-3';
+  String _selectedImageModel = AppConstants.defaultImageModel;
   static const String _selectedImageModelKey = 'selected_image_model';
 
   // 自定义图像生成提供商 URL
@@ -49,12 +51,13 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
 
   // 分类的预设图像生成模型
   final Map<String, List<String>> _categorizedPresetImageModels = {
-    'OpenAI': ['dall-e-3'],
-    'Stability AI': [
-      'stable-diffusion-xl-1024-v1-0',
-      'stable-diffusion-v1-6',
+    'OpenAI': List<String>.of(ServiceModelRegistry.openAIImageModels),
+    'Stability AI': ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6'],
+    'Black Forest Labs': [
+      'flux-kontext-pro',
+      'flux-kontext-dev',
+      'flux-krea-dev',
     ],
-    'Black Forest Labs': ['flux-kontext-pro', 'flux-kontext-dev', 'flux-krea-dev'],
     'Google': GoogleImageService.getSupportedModels(),
   };
 
@@ -90,7 +93,8 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
 
   /// 获取图像生成提供商 URL
   String get imageProviderUrl {
-    String baseUrl = _imageProviderUrl?.trim() ??
+    String baseUrl =
+        _imageProviderUrl?.trim() ??
         defaultImageBaseUrls[_selectedImageProvider] ??
         defaultImageBaseUrls['OpenAI']!;
     if (baseUrl.endsWith('/')) {
@@ -118,7 +122,7 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
         prefs.getString(_selectedImageProviderKey) ?? 'OpenAI';
     _selectedImageModel = _normalizeImageModelForProvider(
       _selectedImageProvider,
-      prefs.getString(_selectedImageModelKey) ?? 'dall-e-3',
+      prefs.getString(_selectedImageModelKey) ?? AppConstants.defaultImageModel,
     );
     _imageProviderUrl = prefs.getString(_imageProviderUrlKey);
     _customImageModels = prefs.getStringList(_customImageModelsKey) ?? [];
@@ -134,11 +138,11 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
     final int? savedModelType = prefs.getInt(_selectedModelTypeKey);
     if (savedModelType != null &&
         savedModelType < available_model.ModelType.values.length) {
-      _selectedModelType =
-          available_model.ModelType.values[savedModelType];
+      _selectedModelType = available_model.ModelType.values[savedModelType];
     }
 
     _validateSelectedImageModelForProvider();
+    await prefs.setString(_selectedImageModelKey, _selectedImageModel);
     // 初始化时同步模型到注册表
     await syncModelsToRegistry();
     notifyListeners();
@@ -257,7 +261,7 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
         _selectedImageModel = available.first;
       } else {
         _selectedImageProvider = 'OpenAI';
-        _selectedImageModel = 'dall-e-3';
+        _selectedImageModel = AppConstants.defaultImageModel;
       }
     }
   }
@@ -292,7 +296,8 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
         for (var model in _customImageProviders[provider]!) {
           // 对于自定义提供商，如果当前选定的提供商是它，使用 _imageProviderUrl
           // 否则使用默认 URL 或 null（因为每个自定义提供商可能有自己的 URL，但目前只存储一个全局的）
-          final baseUrl = (provider == _selectedImageProvider && _imageProviderUrl != null)
+          final baseUrl =
+              (provider == _selectedImageProvider && _imageProviderUrl != null)
               ? _imageProviderUrl
               : defaultImageBaseUrls[provider];
           modelRegistry!.registerModel(
@@ -310,7 +315,8 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
       }
       // 3. 注册自定义图像模型（属于当前选定的提供商）
       for (var model in _customImageModels) {
-        final baseUrl = _imageProviderUrl ??
+        final baseUrl =
+            _imageProviderUrl ??
             defaultImageBaseUrls[_selectedImageProvider] ??
             defaultImageBaseUrls['OpenAI']!;
         modelRegistry!.registerModel(
@@ -373,22 +379,14 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
       final int typeIndex = data[_selectedModelTypeKey];
       if (typeIndex >= 0 &&
           typeIndex < available_model.ModelType.values.length) {
-        _selectedModelType =
-            available_model.ModelType.values[typeIndex];
+        _selectedModelType = available_model.ModelType.values[typeIndex];
       }
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _selectedImageProviderKey,
-      _selectedImageProvider,
-    );
+    await prefs.setString(_selectedImageProviderKey, _selectedImageProvider);
     await prefs.setString(_selectedImageModelKey, _selectedImageModel);
-    await persistNullableString(
-      prefs,
-      _imageProviderUrlKey,
-      _imageProviderUrl,
-    );
+    await persistNullableString(prefs, _imageProviderUrlKey, _imageProviderUrl);
     await prefs.setStringList(_customImageModelsKey, _customImageModels);
     await persistStringMap(
       prefs,

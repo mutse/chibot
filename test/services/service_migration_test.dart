@@ -202,7 +202,7 @@ void main() {
     test('getAvailableModels 返回可用模型列表', () async {
       final models = ServiceManager.getAvailableModels(chatModel: chatModel);
       expect(models.isNotEmpty, isTrue);
-      expect(models, contains('gpt-5.5'));
+      expect(models, contains('gpt-5.6-sol'));
     });
   });
 
@@ -243,7 +243,7 @@ void main() {
         imageModel: imageModel,
       );
       expect(models.isNotEmpty, isTrue);
-      expect(models, contains('dall-e-3'));
+      expect(models, contains('gpt-image-2'));
     });
 
     test('isImageProviderConfigured 检查特定提供商', () async {

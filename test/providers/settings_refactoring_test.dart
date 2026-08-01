@@ -74,14 +74,19 @@ void main() {
     });
 
     test('初始化时使用默认模型', () {
-      expect(chatModel.selectedModel, equals('gpt-5.5'));
+      expect(chatModel.selectedModel, equals('gpt-5.6-sol'));
       expect(chatModel.selectedProvider, equals('OpenAI'));
     });
 
     test('availableModels 包含 OpenAI 模型', () {
       expect(
         chatModel.availableModels,
-        containsAll(['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano']),
+        containsAll([
+          'gpt-5.6-sol',
+          'gpt-5.6-terra',
+          'gpt-5.6-luna',
+          'gpt-5.5',
+        ]),
       );
     });
 
@@ -127,13 +132,13 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     });
 
-    test('初始化时使用 OpenAI DALL-E-3', () {
+    test('初始化时使用 OpenAI 最新图像模型', () {
       expect(imageModel.selectedImageProvider, equals('OpenAI'));
-      expect(imageModel.selectedImageModel, equals('dall-e-3'));
+      expect(imageModel.selectedImageModel, equals('gpt-image-2'));
     });
 
     test('availableImageModels 包含 OpenAI 模型', () {
-      expect(imageModel.availableImageModels, contains('dall-e-3'));
+      expect(imageModel.availableImageModels, contains('gpt-image-2'));
     });
 
     test('可以设置 BFL Aspect Ratio', () async {
@@ -146,8 +151,9 @@ void main() {
       expect(
         imageModel.availableImageModels,
         containsAll([
-          'gemini-3.1-flash-image-preview',
-          'gemini-3-pro-image-preview',
+          'gemini-3.1-flash-image',
+          'gemini-3.1-flash-lite-image',
+          'gemini-3-pro-image',
           'gemini-2.5-flash-image',
         ]),
       );
@@ -156,9 +162,26 @@ void main() {
     test('Google 图像模型会规范化为官方模型 ID', () async {
       await imageModel.setSelectedImageProvider('Google');
       await imageModel.setSelectedImageModel('nano banada 2');
+      expect(imageModel.selectedImageModel, equals('gemini-3.1-flash-image'));
+    });
+
+    test('已保存的 Google preview 模型会迁移到稳定模型', () async {
+      SharedPreferences.setMockInitialValues({
+        'selected_image_provider': 'Google',
+        'selected_image_model': 'gemini-3.1-flash-image-preview',
+      });
+
+      final migratedProvider = ImageModelProvider();
+      await Future<void>.delayed(Duration.zero);
+      final prefs = await SharedPreferences.getInstance();
+
       expect(
-        imageModel.selectedImageModel,
-        equals('gemini-3.1-flash-image-preview'),
+        migratedProvider.selectedImageModel,
+        equals('gemini-3.1-flash-image'),
+      );
+      expect(
+        prefs.getString('selected_image_model'),
+        equals('gemini-3.1-flash-image'),
       );
     });
 
