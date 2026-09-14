@@ -439,101 +439,106 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final grouped = _groupedEntries;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 420 ? 3 : 2;
-    final gap = 12.0;
-    final cardWidth =
-        (screenWidth - 32 - (crossAxisCount - 1) * gap) / crossAxisCount;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final crossAxisCount = screenWidth >= 1000
+            ? 4
+            : screenWidth >= 650
+            ? 3
+            : screenWidth >= 360
+            ? 2
+            : 1;
+        final gap = 12.0;
+        final cardWidth =
+            (screenWidth - 32 - (crossAxisCount - 1) * gap) / crossAxisCount;
 
-    return DecoratedBox(
-      decoration: buildMobileBackgroundDecoration(),
-      child: Column(
-        children: [
-          MobileTopBar(
-            leading: MobileIconCircleButton(
-              icon:
-                  widget.onOpenAppMenu != null
+        return DecoratedBox(
+          decoration: buildMobileBackgroundDecoration(),
+          child: Column(
+            children: [
+              MobileTopBar(
+                leading: MobileIconCircleButton(
+                  icon: widget.onOpenAppMenu != null
                       ? Icons.menu_rounded
                       : Icons.folder_open_outlined,
-              onTap: widget.onOpenAppMenu,
-            ),
-            title: '历史记录',
-            subtitle: '查看你的聊天、图片和视频',
-            trailing: MobileIconCircleButton(
-              icon: Icons.refresh_rounded,
-              onTap: refreshData,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: MobileSurface(
-              padding: const EdgeInsets.all(14),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _buildFilterChip(MobileHistoryFilter.all, '全部'),
-                  _buildFilterChip(MobileHistoryFilter.images, '图片'),
-                  _buildFilterChip(MobileHistoryFilter.videos, '视频'),
-                  _buildFilterChip(MobileHistoryFilter.chats, '聊天'),
-                  _buildFilterChip(MobileHistoryFilter.projects, '项目'),
-                ],
+                  onTap: widget.onOpenAppMenu,
+                ),
+                title: '历史记录',
+                subtitle: '查看你的聊天、图片和视频',
+                trailing: MobileIconCircleButton(
+                  icon: Icons.refresh_rounded,
+                  onTap: refreshData,
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child:
-                grouped.isEmpty
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: MobileSurface(
+                  padding: const EdgeInsets.all(14),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _buildFilterChip(MobileHistoryFilter.all, '全部'),
+                      _buildFilterChip(MobileHistoryFilter.images, '图片'),
+                      _buildFilterChip(MobileHistoryFilter.videos, '视频'),
+                      _buildFilterChip(MobileHistoryFilter.chats, '聊天'),
+                      _buildFilterChip(MobileHistoryFilter.projects, '项目'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: grouped.isEmpty
                     ? const Center(
-                      child: Text(
-                        '这里还没有内容。',
-                        style: TextStyle(color: MobilePalette.textSecondary),
-                      ),
-                    )
+                        child: Text(
+                          '这里还没有内容。',
+                          style: TextStyle(color: MobilePalette.textSecondary),
+                        ),
+                      )
                     : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                      children:
-                          grouped.entries.map((group) {
-                            final entries = group.value;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 18),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 4,
-                                      bottom: 10,
-                                    ),
-                                    child: Text(
-                                      group.key,
-                                      style: const TextStyle(
-                                        color: MobilePalette.textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+                        children: grouped.entries.map((group) {
+                          final entries = group.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 4,
+                                    bottom: 10,
+                                  ),
+                                  child: Text(
+                                    group.key,
+                                    style: const TextStyle(
+                                      color: MobilePalette.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                  Wrap(
-                                    spacing: gap,
-                                    runSpacing: gap,
-                                    children:
-                                        entries
-                                            .map(
-                                              (entry) =>
-                                                  _buildCard(entry, cardWidth),
-                                            )
-                                            .toList(),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                    ),
+                                ),
+                                Wrap(
+                                  spacing: gap,
+                                  runSpacing: gap,
+                                  children: entries
+                                      .map(
+                                        (entry) => _buildCard(entry, cardWidth),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

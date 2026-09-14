@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
 
 class MobilePalette {
-  static const Color background = Color(0xFFF6F1E8);
-  static const Color surface = Color(0xFFFBF8F2);
+  static const Color background = Color(0xFFF5F7F8);
+  static const Color surface = Color(0xFFF6F8F9);
   static const Color surfaceStrong = Color(0xFFFFFFFF);
   static const Color primary = Color(0xFF0F6B69);
   static const Color primarySoft = Color(0xFFE1F0EE);
   static const Color secondary = Color(0xFFEF6248);
   static const Color textPrimary = Color(0xFF132B3B);
   static const Color textSecondary = Color(0xFF66727C);
-  static const Color border = Color(0xFFE3DDD3);
-  static const Color shadow = Color(0x1A12202F);
+  static const Color border = Color(0xFFE3E9EA);
+  static const Color shadow = Color(0x0812202F);
 }
 
 BoxDecoration buildMobileBackgroundDecoration() {
-  return const BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [Color(0xFFF7F1E8), Color(0xFFF3EEE5), Color(0xFFF8F4EC)],
-      stops: [0, 0.42, 1],
-    ),
-  );
+  return const BoxDecoration(color: MobilePalette.background);
 }
 
 class MobileSurface extends StatelessWidget {
@@ -36,7 +29,7 @@ class MobileSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.margin,
-    this.radius = 22,
+    this.radius = 16,
     this.color,
   });
 
@@ -52,8 +45,8 @@ class MobileSurface extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: MobilePalette.shadow,
-            blurRadius: 22,
-            offset: Offset(0, 10),
+            blurRadius: 12,
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -78,11 +71,13 @@ class MobilePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor =
-        selected ? MobilePalette.primarySoft : MobilePalette.surface;
+    final backgroundColor = selected
+        ? MobilePalette.primarySoft
+        : MobilePalette.surface;
     final borderColor = selected ? MobilePalette.primary : MobilePalette.border;
-    final textColor =
-        selected ? MobilePalette.primary : MobilePalette.textSecondary;
+    final textColor = selected
+        ? MobilePalette.primary
+        : MobilePalette.textSecondary;
 
     return InkWell(
       onTap: onTap,
@@ -177,7 +172,7 @@ class MobileSectionLabel extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: MobilePalette.primary,
               padding: EdgeInsets.zero,
-              minimumSize: const Size(32, 24),
+              minimumSize: const Size(44, 44),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
@@ -220,7 +215,7 @@ class MobileTopBar extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: MobilePalette.textPrimary,
-                    fontSize: 23,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -261,22 +256,26 @@ class MobileIconCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: backgroundColor ?? MobilePalette.surfaceStrong,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: MobilePalette.border),
-        ),
-        child: Icon(
-          icon,
-          size: 19,
-          color: foregroundColor ?? MobilePalette.textPrimary,
-        ),
+    final label = switch (icon) {
+      Icons.menu_rounded => '打开菜单',
+      Icons.edit_note_rounded => '新建对话',
+      Icons.view_list_rounded => '查看会话',
+      Icons.history_toggle_off_rounded => '查看历史',
+      Icons.refresh_rounded => '刷新',
+      Icons.arrow_back_ios_new_rounded => '查看会话',
+      Icons.tune_rounded => '模型设置',
+      _ => null,
+    };
+    return IconButton(
+      tooltip: label,
+      onPressed: onTap,
+      icon: Icon(icon, size: 20),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(44, 44),
+        backgroundColor: backgroundColor ?? MobilePalette.surfaceStrong,
+        foregroundColor: foregroundColor ?? MobilePalette.textPrimary,
+        side: const BorderSide(color: MobilePalette.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

@@ -640,8 +640,9 @@ class MobileChatPageState extends State<MobileChatPage> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.sender == MessageSender.user;
-    final bubbleColor =
-        isUser ? MobilePalette.primary : MobilePalette.surfaceStrong;
+    final bubbleColor = isUser
+        ? MobilePalette.primary
+        : MobilePalette.surfaceStrong;
     final textColor = isUser ? Colors.white : MobilePalette.textPrimary;
 
     Widget child;
@@ -657,8 +658,9 @@ class MobileChatPageState extends State<MobileChatPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
       child: Column(
-        crossAxisAlignment:
-            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Align(
             alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -694,141 +696,187 @@ class MobileChatPageState extends State<MobileChatPage> {
     );
   }
 
+  void _useSuggestion(String prompt) {
+    _textController.value = TextEditingValue(
+      text: prompt,
+      selection: TextSelection.collapsed(offset: prompt.length),
+    );
+    _composerFocus.requestFocus();
+  }
+
   Widget _buildEmptyState(ChatModelProvider chatModel) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 26),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: MobilePalette.primarySoft,
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: const Icon(
-                Icons.smart_toy_rounded,
-                color: MobilePalette.primary,
-                size: 38,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - 48).clamp(0, double.infinity),
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: MobilePalette.primarySoft,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: MobilePalette.primary,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      '让想法，从这里开始',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.8,
+                        color: MobilePalette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '一起探索问题、整理思路，或创造下一份作品。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.6,
+                        color: MobilePalette.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _suggestion(
+                          Icons.edit_note_rounded,
+                          '帮我写作',
+                          '请帮我写一段内容，主题是：',
+                        ),
+                        _suggestion(
+                          Icons.lightbulb_outline_rounded,
+                          '激发灵感',
+                          '请和我一起头脑风暴，方向是：',
+                        ),
+                        _suggestion(Icons.code_rounded, '解决问题', '请帮我分析这个问题：'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 18),
-            const Text(
-              '想问什么都可以',
-              style: TextStyle(
-                color: MobilePalette.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '当前使用 ${chatModel.selectedProvider} 的 ${chatModel.selectedModel}。你可以开始一段新对话，或者直接切换到下方的图片与视频创作。',
-              style: const TextStyle(
-                color: MobilePalette.textSecondary,
-                fontSize: 14,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _suggestion(IconData icon, String label, String prompt) {
+    return OutlinedButton.icon(
+      onPressed: () => _useSuggestion(prompt),
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: MobilePalette.textPrimary,
+        backgroundColor: MobilePalette.surfaceStrong,
+        side: const BorderSide(color: MobilePalette.border),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
+  final FocusNode _composerFocus = FocusNode();
+
   Widget _buildComposer() {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-      child: MobileSurface(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        radius: 24,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            IconButton(
-              onPressed: widget.onOpenImages,
-              icon: const Icon(Icons.image_outlined),
-              color: MobilePalette.textSecondary,
-              tooltip: '创作图片',
-            ),
-            IconButton(
-              onPressed: widget.onOpenVideo,
-              icon: const Icon(Icons.smart_display_outlined),
-              color: MobilePalette.textSecondary,
-              tooltip: '创作视频',
-            ),
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _enableWebSearch = !_enableWebSearch;
-                });
-              },
-              icon: Icon(
-                Icons.public,
-                color:
-                    _enableWebSearch
-                        ? MobilePalette.primary
-                        : MobilePalette.textSecondary,
-              ),
-              tooltip: '网页搜索',
-            ),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                maxLines: 5,
-                minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (value) => _sendMessage(),
-                decoration: const InputDecoration(
-                  hintText: '输入消息...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 12,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 840),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: MobileSurface(
+            padding: const EdgeInsets.all(12),
+            radius: 20,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _textController,
+                  focusNode: _composerFocus,
+                  maxLines: 5,
+                  minLines: 1,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  decoration: const InputDecoration(
+                    hintText: '输入你的想法，或提出一个问题…',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.fromLTRB(8, 10, 8, 16),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _textController,
-              builder: (context, value, child) {
-                final enabled = value.text.trim().isNotEmpty && !_isLoading;
-                return FilledButton(
-                  onPressed: enabled ? _sendMessage : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        enabled
-                            ? MobilePalette.primary
-                            : MobilePalette.primarySoft,
-                    foregroundColor:
-                        enabled ? Colors.white : MobilePalette.textSecondary,
-                    minimumSize: const Size(44, 44),
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: widget.onOpenImages,
+                      icon: const Icon(Icons.image_outlined),
+                      tooltip: '创作图片',
                     ),
-                  ),
-                  child:
-                      _isLoading
-                          ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.onPrimary,
-                            ),
-                          )
-                          : const Icon(Icons.arrow_upward_rounded, size: 18),
-                );
-              },
+                    IconButton(
+                      onPressed: widget.onOpenVideo,
+                      icon: const Icon(Icons.smart_display_outlined),
+                      tooltip: '创作视频',
+                    ),
+                    IconButton(
+                      onPressed: () =>
+                          setState(() => _enableWebSearch = !_enableWebSearch),
+                      isSelected: _enableWebSearch,
+                      style: IconButton.styleFrom(
+                        backgroundColor: _enableWebSearch
+                            ? MobilePalette.primarySoft
+                            : Colors.transparent,
+                        foregroundColor: _enableWebSearch
+                            ? MobilePalette.primary
+                            : MobilePalette.textSecondary,
+                      ),
+                      icon: const Icon(Icons.public_rounded),
+                      tooltip: _enableWebSearch ? '关闭网页搜索' : '开启网页搜索',
+                    ),
+                    const Spacer(),
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _textController,
+                      builder: (context, value, child) => IconButton.filled(
+                        tooltip: _isLoading ? '正在回复' : '发送消息',
+                        onPressed: value.text.trim().isNotEmpty && !_isLoading
+                            ? _sendMessage
+                            : null,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.arrow_upward_rounded),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -836,6 +884,7 @@ class MobileChatPageState extends State<MobileChatPage> {
 
   @override
   void dispose() {
+    _composerFocus.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -853,8 +902,8 @@ class MobileChatPageState extends State<MobileChatPage> {
               icon: Icons.menu_rounded,
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
-            title: 'Chibot',
-            subtitle: '一个入口，覆盖多种 AI 能力',
+            title: '对话',
+            subtitle: '思考、探索与创作',
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -873,92 +922,38 @@ class MobileChatPageState extends State<MobileChatPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: MobileSurface(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: _showModelSheet,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Ink(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: MobilePalette.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: MobilePalette.border),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    chatModel.selectedModel,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: MobilePalette.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    chatModel.selectedProvider,
-                                    style: const TextStyle(
-                                      color: MobilePalette.textSecondary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: MobilePalette.textSecondary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  MobileIconCircleButton(
-                    icon: Icons.tune_rounded,
-                    backgroundColor:
-                        _enableWebSearch
-                            ? MobilePalette.primarySoft
-                            : MobilePalette.surfaceStrong,
-                    foregroundColor:
-                        _enableWebSearch
-                            ? MobilePalette.primary
-                            : MobilePalette.textPrimary,
-                    onTap: _showModelSheet,
-                  ),
-                ],
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _showModelSheet,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                label: Text(
+                  '${chatModel.selectedModel} · ${chatModel.selectedProvider}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: MobilePalette.primary,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 10),
           Expanded(
-            child:
-                _messages.isEmpty
-                    ? _buildEmptyState(chatModel)
-                    : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.only(top: 6, bottom: 12),
-                      itemCount: _messages.length,
-                      itemBuilder:
-                          (context, index) =>
-                              _buildMessageBubble(_messages[index]),
+            child: _messages.isEmpty
+                ? _buildEmptyState(chatModel)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(top: 6, bottom: 12),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) => Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 840),
+                        child: _buildMessageBubble(_messages[index]),
+                      ),
                     ),
+                  ),
           ),
           _buildComposer(),
         ],

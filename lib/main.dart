@@ -113,21 +113,22 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
   }
 
   ThemeData _buildModernTheme() {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: MobilePalette.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: MobilePalette.primary,
-      secondary: MobilePalette.secondary,
-      surface: MobilePalette.surfaceStrong,
-      surfaceContainerHighest: MobilePalette.surface,
-      onSurface: MobilePalette.textPrimary,
-      onSurfaceVariant: MobilePalette.textSecondary,
-      outline: MobilePalette.border,
-      outlineVariant: const Color(0xFFE9E2D8),
-      surfaceTint: Colors.transparent,
-      error: const Color(0xFFD95C45),
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: MobilePalette.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: MobilePalette.primary,
+          secondary: MobilePalette.secondary,
+          surface: MobilePalette.surfaceStrong,
+          surfaceContainerHighest: MobilePalette.surface,
+          onSurface: MobilePalette.textPrimary,
+          onSurfaceVariant: MobilePalette.textSecondary,
+          outline: MobilePalette.border,
+          outlineVariant: MobilePalette.border,
+          surfaceTint: Colors.transparent,
+          error: const Color(0xFFD95C45),
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -181,7 +182,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
       cardTheme: CardThemeData(
         color: MobilePalette.surfaceStrong,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         surfaceTintColor: Colors.transparent,
       ),
 
@@ -195,15 +196,15 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           vertical: 16.0,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
@@ -213,7 +214,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         style: ElevatedButton.styleFrom(
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
@@ -224,7 +225,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
           backgroundColor: MobilePalette.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
@@ -244,12 +245,12 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         backgroundColor: MobilePalette.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
 
       // List Tiles
       listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
 
@@ -271,7 +272,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
         behavior: SnackBarBehavior.floating,
         backgroundColor: MobilePalette.textPrimary,
         contentTextStyle: const TextStyle(color: Colors.white),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
       ),
 

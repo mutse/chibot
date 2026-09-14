@@ -187,136 +187,66 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   }
 
   Widget _buildDesktopSidebar() {
-    final primaryDestinations =
-        _destinations.where((destination) => destination.index != 3).toList();
-    final settingsDestination = _destinations.firstWhere(
-      (destination) => destination.index == 3,
-    );
-
-    return Container(
-      width: 236,
-      decoration: BoxDecoration(
-        color: MobilePalette.surfaceStrong.withValues(alpha: 0.84),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: MobilePalette.border),
-        boxShadow: const [
-          BoxShadow(
-            color: MobilePalette.shadow,
-            blurRadius: 28,
-            offset: Offset(0, 14),
-          ),
-        ],
-      ),
+    return SizedBox(
+      width: 224,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-              decoration: BoxDecoration(
-                color: MobilePalette.surface.withValues(alpha: 0.94),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: MobilePalette.border),
-              ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: MobilePalette.primarySoft,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: MobilePalette.primary,
-                      size: 22,
-                    ),
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    color: MobilePalette.primary,
+                    size: 26,
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Chibot',
-                          style: TextStyle(
-                            color: MobilePalette.textPrimary,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Desktop Workspace',
-                          style: TextStyle(
-                            color: MobilePalette.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  SizedBox(width: 12),
+                  Expanded(child: Text(
+                    'Chibot', maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.8),
+                  )),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            const _DesktopSidebarLabel('Workspace'),
-            const SizedBox(height: 10),
-            ...primaryDestinations.map(
-              (destination) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: _DesktopSidebarItem(
-                  label: destination.label,
-                  icon: destination.icon,
-                  selected: _currentIndex == destination.index,
-                  onTap: () => _switchTo(destination.index),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () {
+                _switchTo(0);
+                _chatKey.currentState?.startNewChat();
+              },
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: const Text('新建对话'),
+            ),
+            const SizedBox(height: 28),
+            const _DesktopSidebarLabel('工作空间'),
+            const SizedBox(height: 12),
+            ..._destinations
+                .where((d) => d.index != 3)
+                .map(
+                  (d) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: _DesktopSidebarItem(
+                      label: d.label,
+                      icon: d.icon,
+                      selected: _currentIndex == d.index,
+                      onTap: () => _switchTo(d.index),
+                    ),
+                  ),
                 ),
-              ),
-            ),
             const Spacer(),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: MobilePalette.surface.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: MobilePalette.border),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Desktop navigation',
-                    style: TextStyle(
-                      color: MobilePalette.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '仅调整左侧菜单样式，页面功能与会话状态保持原样。',
-                    style: TextStyle(
-                      color: MobilePalette.textSecondary,
-                      fontSize: 12,
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const _DesktopSidebarLabel('System'),
-            const SizedBox(height: 10),
+            const Divider(),
+            const SizedBox(height: 12),
             _DesktopSidebarItem(
-              label: settingsDestination.label,
-              icon: settingsDestination.icon,
-              selected: _currentIndex == settingsDestination.index,
-              onTap: () => _switchTo(settingsDestination.index),
+              label: '设置',
+              icon: Icons.settings_outlined,
+              selected: _currentIndex == 3,
+              onTap: () => _switchTo(3),
             ),
           ],
         ),
@@ -328,61 +258,15 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: MobilePalette.background,
-      body: DecoratedBox(
-        decoration: buildMobileBackgroundDecoration(),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final sidebarWidth =
-                  constraints.maxWidth >= 1260
-                      ? 244.0
-                      : constraints.maxWidth >= 980
-                      ? 236.0
-                      : 216.0;
-              return Padding(
-                padding: EdgeInsets.fromLTRB(
-                  12,
-                  Platform.isMacOS ? 10 : 12,
-                  12,
-                  12,
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: sidebarWidth,
-                      child: _buildDesktopSidebar(),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: MobilePalette.surfaceStrong.withValues(
-                              alpha: 0.72,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: MobilePalette.border),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: MobilePalette.shadow,
-                                blurRadius: 30,
-                                offset: Offset(0, 16),
-                              ),
-                            ],
-                          ),
-                          child: IndexedStack(
-                            index: _currentIndex,
-                            children: pages,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+      body: SafeArea(
+        child: Row(
+          children: [
+            _buildDesktopSidebar(),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: IndexedStack(index: _currentIndex, children: pages),
+            ),
+          ],
         ),
       ),
     );
@@ -422,7 +306,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       ),
     ];
 
-    if (_usesDesktopSidebar) {
+    if (_usesDesktopSidebar && MediaQuery.sizeOf(context).width >= 900) {
       return _buildDesktopShell(pages);
     }
 
@@ -430,7 +314,24 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       key: _scaffoldKey,
       backgroundColor: MobilePalette.background,
       drawer: _usesDrawerMenu ? _buildDrawer() : null,
-      body: IndexedStack(index: _currentIndex, children: pages),
+      body: SafeArea(
+        child: IndexedStack(index: _currentIndex, children: pages),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _destinations.indexWhere(
+          (d) => d.index == _currentIndex,
+        ),
+        onDestinationSelected: (index) => _switchTo(_destinations[index].index),
+        backgroundColor: MobilePalette.surfaceStrong,
+        indicatorColor: MobilePalette.primarySoft,
+        elevation: 0,
+        height: 72,
+        destinations: _destinations
+            .map(
+              (d) => NavigationDestination(icon: Icon(d.icon), label: d.label),
+            )
+            .toList(),
+      ),
     );
   }
 }
@@ -462,10 +363,12 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        selected ? MobilePalette.primary : MobilePalette.textPrimary;
-    final background =
-        selected ? MobilePalette.primarySoft : Colors.transparent;
+    final foreground = selected
+        ? MobilePalette.primary
+        : MobilePalette.textPrimary;
+    final background = selected
+        ? MobilePalette.primarySoft
+        : Colors.transparent;
 
     return InkWell(
       onTap: onTap,
@@ -475,12 +378,9 @@ class _DrawerItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(18),
-          border:
-              selected
-                  ? Border.all(
-                    color: MobilePalette.primary.withValues(alpha: 0.2),
-                  )
-                  : null,
+          border: selected
+              ? Border.all(color: MobilePalette.primary.withValues(alpha: 0.2))
+              : null,
         ),
         child: Row(
           children: [
@@ -538,14 +438,15 @@ class _DesktopSidebarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor =
-        selected ? MobilePalette.primary : MobilePalette.textSecondary;
-    final labelColor =
-        selected ? MobilePalette.textPrimary : MobilePalette.textSecondary;
-    final background =
-        selected
-            ? MobilePalette.primarySoft.withValues(alpha: 0.96)
-            : Colors.transparent;
+    final iconColor = selected
+        ? MobilePalette.primary
+        : MobilePalette.textSecondary;
+    final labelColor = selected
+        ? MobilePalette.textPrimary
+        : MobilePalette.textSecondary;
+    final background = selected
+        ? MobilePalette.primarySoft.withValues(alpha: 0.96)
+        : Colors.transparent;
 
     return InkWell(
       onTap: onTap,
@@ -555,12 +456,9 @@ class _DesktopSidebarItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(18),
-          border:
-              selected
-                  ? Border.all(
-                    color: MobilePalette.primary.withValues(alpha: 0.18),
-                  )
-                  : null,
+          border: selected
+              ? Border.all(color: MobilePalette.primary.withValues(alpha: 0.18))
+              : null,
         ),
         child: Row(
           children: [
@@ -568,10 +466,9 @@ class _DesktopSidebarItem extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color:
-                    selected
-                        ? Colors.white.withValues(alpha: 0.86)
-                        : MobilePalette.surface.withValues(alpha: 0.9),
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.86)
+                    : MobilePalette.surface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 19),
