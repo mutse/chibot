@@ -34,7 +34,8 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
 
   int _currentIndex = 0;
 
-  bool get _usesDrawerMenu => Platform.isAndroid || Platform.isIOS;
+  bool get _usesDrawerMenu =>
+      !_usesDesktopSidebar || MediaQuery.sizeOf(context).width < 900;
   bool get _usesDesktopSidebar =>
       Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
@@ -316,21 +317,6 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       drawer: _usesDrawerMenu ? _buildDrawer() : null,
       body: SafeArea(
         child: IndexedStack(index: _currentIndex, children: pages),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _destinations.indexWhere(
-          (d) => d.index == _currentIndex,
-        ),
-        onDestinationSelected: (index) => _switchTo(_destinations[index].index),
-        backgroundColor: MobilePalette.surfaceStrong,
-        indicatorColor: MobilePalette.primarySoft,
-        elevation: 0,
-        height: 72,
-        destinations: _destinations
-            .map(
-              (d) => NavigationDestination(icon: Icon(d.icon), label: d.label),
-            )
-            .toList(),
       ),
     );
   }
