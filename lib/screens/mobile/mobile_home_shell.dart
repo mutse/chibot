@@ -33,6 +33,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       GlobalKey<MobileHistoryPageState>();
 
   int _currentIndex = 0;
+  bool _sidebarCollapsed = false;
 
   bool get _usesDrawerMenu =>
       !_usesDesktopSidebar || MediaQuery.sizeOf(context).width < 900;
@@ -114,6 +115,10 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
 
   void _selectDrawerDestination(int index) {
     Navigator.of(context).pop();
+    if (index == 3) {
+      _openSettingsSection(SettingsScreenSection.overview);
+      return;
+    }
     _switchTo(index);
   }
 
@@ -188,68 +193,129 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   }
 
   Widget _buildDesktopSidebar() {
-    return SizedBox(
-      width: 224,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: MobilePalette.primary,
-                    size: 26,
+    final width = _sidebarCollapsed ? 80.0 : 224.0;
+    final toggleButton = IconButton(
+      tooltip: _sidebarCollapsed ? '展开侧边栏' : '收起侧边栏',
+      onPressed:
+          () => setState(() {
+            _sidebarCollapsed = !_sidebarCollapsed;
+          }),
+      icon: Icon(
+        _sidebarCollapsed
+            ? Icons.chevron_right_rounded
+            : Icons.chevron_left_rounded,
+      ),
+    );
+
+    void startNewChat() {
+      _switchTo(0);
+      _chatKey.currentState?.startNewChat();
+    }
+
+    return AnimatedContainer(
+      width: width,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOutCubic,
+      clipBehavior: Clip.hardEdge,
+      decoration: const BoxDecoration(),
+      // Lay out at the target width so labels cannot overflow during animation.
+      child: OverflowBox(
+        alignment: Alignment.topLeft,
+        minWidth: width,
+        maxWidth: width,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            _sidebarCollapsed ? 12 : 16,
+            24,
+            _sidebarCollapsed ? 12 : 16,
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 48,
+                child:
+                    _sidebarCollapsed
+                        ? Center(child: toggleButton)
+                        : Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              color: MobilePalette.primary,
+                              size: 26,
+                            ),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Chibot',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.8,
+                                ),
+                              ),
+                            ),
+                            toggleButton,
+                          ],
+                        ),
+              ),
+              const SizedBox(height: 32),
+              if (_sidebarCollapsed)
+                SizedBox(
+                  height: 48,
+                  child: IconButton.filled(
+                    tooltip: '新建对话',
+                    onPressed: startNewChat,
+                    icon: const Icon(Icons.add_rounded, size: 20),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(child: Text(
-                    'Chibot', maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.8),
-                  )),
-                ],
+                )
+              else
+                FilledButton.icon(
+                  onPressed: startNewChat,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('新建对话'),
+                ),
+              const SizedBox(height: 28),
+              SizedBox(
+                height: 16,
+                child:
+                    _sidebarCollapsed
+                        ? null
+                        : const _DesktopSidebarLabel('工作空间'),
               ),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () {
-                _switchTo(0);
-                _chatKey.currentState?.startNewChat();
-              },
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
-              ),
-              icon: const Icon(Icons.add_rounded, size: 20),
-              label: const Text('新建对话'),
-            ),
-            const SizedBox(height: 28),
-            const _DesktopSidebarLabel('工作空间'),
-            const SizedBox(height: 12),
-            ..._destinations
-                .where((d) => d.index != 3)
-                .map(
-                  (d) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: _DesktopSidebarItem(
-                      label: d.label,
-                      icon: d.icon,
-                      selected: _currentIndex == d.index,
-                      onTap: () => _switchTo(d.index),
+              const SizedBox(height: 12),
+              ..._destinations
+                  .where((d) => d.index != 3)
+                  .map(
+                    (d) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: _DesktopSidebarItem(
+                        label: d.label,
+                        icon: d.icon,
+                        selected: _currentIndex == d.index,
+                        collapsed: _sidebarCollapsed,
+                        onTap: () => _switchTo(d.index),
+                      ),
                     ),
                   ),
-                ),
-            const Spacer(),
-            const Divider(),
-            const SizedBox(height: 12),
-            _DesktopSidebarItem(
-              label: '设置',
-              icon: Icons.settings_outlined,
-              selected: _currentIndex == 3,
-              onTap: () => _switchTo(3),
-            ),
-          ],
+              const Spacer(),
+              const Divider(),
+              const SizedBox(height: 12),
+              _DesktopSidebarItem(
+                label: '设置',
+                icon: Icons.settings_outlined,
+                selected: _currentIndex == 3,
+                collapsed: _sidebarCollapsed,
+                onTap: () => _switchTo(3),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -349,12 +415,10 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected
-        ? MobilePalette.primary
-        : MobilePalette.textPrimary;
-    final background = selected
-        ? MobilePalette.primarySoft
-        : Colors.transparent;
+    final foreground =
+        selected ? MobilePalette.primary : MobilePalette.textPrimary;
+    final background =
+        selected ? MobilePalette.primarySoft : Colors.transparent;
 
     return InkWell(
       onTap: onTap,
@@ -364,9 +428,12 @@ class _DrawerItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(18),
-          border: selected
-              ? Border.all(color: MobilePalette.primary.withValues(alpha: 0.2))
-              : null,
+          border:
+              selected
+                  ? Border.all(
+                    color: MobilePalette.primary.withValues(alpha: 0.2),
+                  )
+                  : null,
         ),
         child: Row(
           children: [
@@ -413,76 +480,99 @@ class _DesktopSidebarItem extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool selected;
+  final bool collapsed;
   final VoidCallback onTap;
 
   const _DesktopSidebarItem({
     required this.label,
     required this.icon,
     required this.selected,
+    required this.collapsed,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = selected
-        ? MobilePalette.primary
-        : MobilePalette.textSecondary;
-    final labelColor = selected
-        ? MobilePalette.textPrimary
-        : MobilePalette.textSecondary;
-    final background = selected
-        ? MobilePalette.primarySoft.withValues(alpha: 0.96)
-        : Colors.transparent;
+    final iconColor =
+        selected ? MobilePalette.primary : MobilePalette.textSecondary;
+    final labelColor =
+        selected ? MobilePalette.textPrimary : MobilePalette.textSecondary;
+    final background =
+        selected
+            ? MobilePalette.primarySoft.withValues(alpha: 0.96)
+            : Colors.transparent;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: background,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: collapsed ? label : null,
+      child: Tooltip(
+        message: collapsed ? label : '',
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(18),
-          border: selected
-              ? Border.all(color: MobilePalette.primary.withValues(alpha: 0.18))
-              : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: selected
-                    ? Colors.white.withValues(alpha: 0.86)
-                    : MobilePalette.surface.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 19),
+          child: Ink(
+            padding: EdgeInsets.symmetric(
+              horizontal: collapsed ? 0 : 12,
+              vertical: 10,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: labelColor,
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(18),
+              border:
+                  selected
+                      ? Border.all(
+                        color: MobilePalette.primary.withValues(alpha: 0.18),
+                      )
+                      : null,
+            ),
+            child: Row(
+              mainAxisAlignment:
+                  collapsed
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color:
+                        selected
+                            ? Colors.white.withValues(alpha: 0.86)
+                            : MobilePalette.surface.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 19),
                 ),
-              ),
+                if (!collapsed) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: labelColor,
+                        fontSize: 14,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 160),
+                    opacity: selected ? 1 : 0,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: MobilePalette.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 160),
-              opacity: selected ? 1 : 0,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: MobilePalette.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
