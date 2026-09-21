@@ -450,13 +450,13 @@ abstract class AppLocalizations {
   /// No description provided for @version.
   ///
   /// In en, this message translates to:
-  /// **'Version v0.1.3'**
+  /// **'Version v0.3.0'**
   String get version;
 
   /// No description provided for @releaseDate.
   ///
   /// In en, this message translates to:
-  /// **'July 2025'**
+  /// **'September 2026'**
   String get releaseDate;
 
   /// No description provided for @featureSmartChat.
@@ -576,7 +576,7 @@ abstract class AppLocalizations {
   /// No description provided for @copyright.
   ///
   /// In en, this message translates to:
-  /// **'© 2025 Chibot AI. All rights reserved.'**
+  /// **'© 2025-2026 Chibot AI. All rights reserved.'**
   String get copyright;
 
   /// No description provided for @vision.

@@ -70,22 +70,11 @@ class AboutScreen extends StatelessWidget {
             height: 96,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [MobilePalette.primary, Color(0xFF3D9186)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: const [
-                BoxShadow(
-                  color: MobilePalette.shadow,
-                  blurRadius: 24,
-                  offset: Offset(0, 12),
-                ),
-              ],
+              color: MobilePalette.primarySoft,
+              borderRadius: BorderRadius.circular(22),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               child: Image.asset(
                 'assets/images/logo.png',
                 width: 80,
@@ -147,23 +136,23 @@ class AboutScreen extends StatelessWidget {
             title: localizations.featureSmartChat,
             description: localizations.featureSmartDesc,
             accent: MobilePalette.primary,
-            tint: MobilePalette.primarySoft,
+            tint: MobilePalette.surface,
           ),
           const SizedBox(height: 12),
           _buildFeatureCard(
             icon: Icons.image_outlined,
             title: localizations.featureImageGen,
             description: localizations.featureImageGenDesc,
-            accent: MobilePalette.secondary,
-            tint: const Color(0xFFFFEEE7),
+            accent: MobilePalette.primary,
+            tint: MobilePalette.surface,
           ),
           const SizedBox(height: 12),
           _buildFeatureCard(
             icon: Icons.tune_rounded,
             title: localizations.featureFlexible,
             description: localizations.featureFlexibleDesc,
-            accent: const Color(0xFF2F6D95),
-            tint: const Color(0xFFEAF3FA),
+            accent: MobilePalette.primary,
+            tint: MobilePalette.surface,
           ),
         ],
       ),
@@ -176,7 +165,7 @@ class AboutScreen extends StatelessWidget {
       (
         name: 'OpenAI GPT-4',
         type: localizations.textChat,
-        color: const Color(0xFF2F6D95),
+        color: MobilePalette.primary,
         icon: Icons.psychology_alt_outlined,
       ),
       (
@@ -188,13 +177,13 @@ class AboutScreen extends StatelessWidget {
       (
         name: 'Google Gemini',
         type: localizations.textChat,
-        color: const Color(0xFFB36A1D),
+        color: MobilePalette.primary,
         icon: Icons.auto_awesome_outlined,
       ),
       (
         name: 'DALL-E 3',
         type: localizations.textImage,
-        color: MobilePalette.secondary,
+        color: MobilePalette.primary,
         icon: Icons.image_search_outlined,
       ),
     ];
@@ -231,17 +220,17 @@ class AboutScreen extends StatelessWidget {
       (
         icon: Icons.menu_book_outlined,
         title: localizations.userManual,
-        color: const Color(0xFF2F6D95),
+        color: MobilePalette.primary,
       ),
       (
         icon: Icons.bug_report_outlined,
         title: localizations.problemFeedback,
-        color: MobilePalette.secondary,
+        color: MobilePalette.primary,
       ),
       (
         icon: Icons.alternate_email_rounded,
         title: localizations.contact,
-        color: const Color(0xFFB36A1D),
+        color: MobilePalette.primary,
       ),
     ];
 
@@ -308,7 +297,7 @@ class AboutScreen extends StatelessWidget {
         children: [
           const Icon(
             Icons.favorite_outline_rounded,
-            color: MobilePalette.secondary,
+            color: MobilePalette.primary,
             size: 22,
           ),
           const SizedBox(height: 10),
@@ -395,7 +384,7 @@ class AboutScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: tint,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MobilePalette.border),
       ),
       child: Row(
@@ -405,10 +394,10 @@ class AboutScreen extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: accent,
+              color: MobilePalette.primarySoft,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(icon, color: accent, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -450,7 +439,7 @@ class AboutScreen extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: MobilePalette.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MobilePalette.border),
       ),
       child: Row(
@@ -459,7 +448,7 @@ class AboutScreen extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
+              color: MobilePalette.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -506,12 +495,12 @@ class AboutScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             color: MobilePalette.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: MobilePalette.border),
           ),
           child: Row(
@@ -520,7 +509,7 @@ class AboutScreen extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
+                  color: MobilePalette.primarySoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 18),

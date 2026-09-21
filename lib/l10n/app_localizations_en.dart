@@ -189,10 +189,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appDesc => 'Smart Chat Assistant';
 
   @override
-  String get version => 'Version v0.1.3';
+  String get version => 'Version v0.3.0';
 
   @override
-  String get releaseDate => 'July 2025';
+  String get releaseDate => 'September 2026';
 
   @override
   String get featureSmartChat => 'Smart Chat';
@@ -255,7 +255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get legalInfo => 'Legal Information';
 
   @override
-  String get copyright => '© 2025 Chibot AI. All rights reserved.';
+  String get copyright => '© 2025-2026 Chibot AI. All rights reserved.';
 
   @override
   String get vision => 'Made with ❤️ for better AI experience';

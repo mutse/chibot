@@ -188,10 +188,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appDesc => '智能聊天助手';
 
   @override
-  String get version => '版本 v0.1.3';
+  String get version => '版本 v0.3.0';
 
   @override
-  String get releaseDate => '2025年7月';
+  String get releaseDate => '2026年9月';
 
   @override
   String get featureSmartChat => '智能聊天';
@@ -251,7 +251,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get legalInfo => '法律信息';
 
   @override
-  String get copyright => '© 2025 Chibot AI. 版权所有';
+  String get copyright => '© 2025-2026 Chibot AI. 版权所有';
 
   @override
   String get vision => '用 ❤️ 打造更佳 AI 体验';
@@ -508,10 +508,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get appDesc => '智能聊天助手';
 
   @override
-  String get version => '版本 v0.1.3';
+  String get version => '版本 v0.3.0';
 
   @override
-  String get releaseDate => '2025年7月';
+  String get releaseDate => '2026年9月';
 
   @override
   String get featureSmartChat => '智能對話';
@@ -571,7 +571,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get legalInfo => '法律資訊';
 
   @override
-  String get copyright => '© 2025 Chibot AI. 版權所有。';
+  String get copyright => '© 2025-2026 Chibot AI. 版權所有。';
 
   @override
   String get vision => '用 ❤️ 打造更好的 AI 體驗';

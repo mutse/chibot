@@ -40,6 +40,6 @@ class AppConstants {
 
   // App Info
   static const String appName = 'Chi AI Chatbot';
-  static const String appVersion = '0.2.1';
+  static const String appVersion = '0.3.0';
   static const String githubUrl = 'https://github.com/mutse/chibot';
 }
