@@ -2,7 +2,12 @@
 
 # Configuration
 APP_NAME="chibot"
-VERSION="1.0.0"
+# Keep in sync with pubspec.yaml (strip the "+build" suffix).
+VERSION="$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' "$(dirname "$0")/../pubspec.yaml")"
+if [ -z "$VERSION" ]; then
+  echo "Could not read version from pubspec.yaml" >&2
+  exit 1
+fi
 MAINTAINER="Mutse Young <young@mutse.top>"
 DESCRIPTION="Chibot AI app powered by Flutter"
 
