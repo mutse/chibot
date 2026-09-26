@@ -287,6 +287,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                         const Spacer(),
                         MobileIconCircleButton(
                           icon: Icons.add_rounded,
+                          tooltip: '新建图片会话',
                           onTap: () {
                             Navigator.pop(context);
                             startNewSession();
@@ -472,16 +473,17 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
         children: [
           MobileTopBar(
             leading: MobileIconCircleButton(
-              icon:
-                  widget.onOpenAppMenu != null
-                      ? Icons.menu_rounded
-                      : Icons.arrow_back_ios_new_rounded,
+              icon: widget.onOpenAppMenu != null
+                  ? Icons.menu_rounded
+                  : Icons.view_list_rounded,
+              tooltip: widget.onOpenAppMenu != null ? '打开菜单' : '查看会话',
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: '创作图片',
             subtitle: '${imageModel.selectedImageProvider} 图片工作台',
             trailing: MobileIconCircleButton(
               icon: Icons.history_toggle_off_rounded,
+              tooltip: '查看历史',
               onTap: _showSessionSheet,
             ),
           ),
@@ -649,6 +651,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
                                 right: 12,
                                 child: MobileIconCircleButton(
                                   icon: Icons.download_rounded,
+                                  tooltip: '保存图片',
                                   onTap: () async {
                                     final source =
                                         selectedImage.bestImageSource;

@@ -44,12 +44,16 @@ class MobileChatPageState extends State<MobileChatPage> {
   final ChatSessionService _sessionService = ChatSessionService();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _composerFocus = FocusNode();
 
   final List<ChatMessage> _messages = [];
   List<ChatSession> _sessions = [];
   String? _currentSessionId;
   bool _isLoading = false;
   bool _enableWebSearch = false;
+  // Bumped whenever the visible conversation changes so an in-flight response
+  // cannot write into (or save over) a different session.
+  int _conversationGeneration = 0;
 
   @override
   void initState() {
@@ -71,6 +75,7 @@ class MobileChatPageState extends State<MobileChatPage> {
       available_model.ModelType.text,
     );
     setState(() {
+      _conversationGeneration++;
       _messages.clear();
       _currentSessionId = null;
       _isLoading = false;
@@ -82,6 +87,7 @@ class MobileChatPageState extends State<MobileChatPage> {
       available_model.ModelType.text,
     );
     setState(() {
+      _conversationGeneration++;
       _messages
         ..clear()
         ..addAll(session.messages);
@@ -95,6 +101,7 @@ class MobileChatPageState extends State<MobileChatPage> {
     required String text,
     required SearchProvider searchProvider,
     required ApiKeyProvider apiKeys,
+    required int generation,
   }) async {
     if (!_enableWebSearch) {
       return text;
@@ -117,6 +124,7 @@ class MobileChatPageState extends State<MobileChatPage> {
       if (!mounted) return null;
       return AppLocalizations.of(context)!.webSearchPrompt(webResult, text);
     } catch (e) {
+      if (!mounted || generation != _conversationGeneration) return null;
       _appendAiMessage(
         AppLocalizations.of(context)!.webSearchFailed(e.toString()),
       );
@@ -196,22 +204,6 @@ class MobileChatPageState extends State<MobileChatPage> {
     widget.onDataChanged?.call();
   }
 
-  List<ChatMessage> _buildAiContextMessages(String prompt) {
-    final aiMessages = List<ChatMessage>.from(_messages);
-    if (_enableWebSearch && aiMessages.isNotEmpty) {
-      aiMessages.removeLast();
-      aiMessages.add(
-        ChatMessage.user(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          text: prompt,
-        ),
-      );
-    }
-    return aiMessages
-        .where((message) => message.sender != MessageSender.user)
-        .toList();
-  }
-
   Future<void> _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty || _isLoading) {
@@ -222,17 +214,33 @@ class MobileChatPageState extends State<MobileChatPage> {
     final apiKeys = context.read<ApiKeyProvider>();
     final chatModelProvider = context.read<ChatModelProvider>();
     final localizations = AppLocalizations.of(context)!;
+    final generation = _conversationGeneration;
+    bool isCurrent() => mounted && generation == _conversationGeneration;
 
     _textController.clear();
+    // Block re-entry while the (optional) web search is running.
+    setState(() {
+      _isLoading = true;
+    });
     final prompt = await _buildPromptWithWebSearch(
       text: text,
       searchProvider: searchProvider,
       apiKeys: apiKeys,
+      generation: generation,
     );
+    if (!isCurrent()) {
+      return;
+    }
     if (prompt == null) {
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
+    // Prior turns only: the service appends [prompt] as the final user turn,
+    // and toApiJson() already skips loading/error placeholders.
+    final history = List<ChatMessage>.from(_messages);
     final userMessage = ChatMessage.user(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       text: prompt,
@@ -240,7 +248,6 @@ class MobileChatPageState extends State<MobileChatPage> {
 
     setState(() {
       _messages.add(userMessage);
-      _isLoading = true;
       _messages.add(
         ChatMessage.loading(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -249,18 +256,18 @@ class MobileChatPageState extends State<MobileChatPage> {
     });
     _scrollToBottom();
     await _ensureCurrentSession(userMessage, text);
+    if (!isCurrent()) {
+      return;
+    }
 
-    if (apiKeys.getApiKeyForProvider(chatModelProvider.selectedProvider) ==
-            null ||
-        apiKeys
-            .getApiKeyForProvider(chatModelProvider.selectedProvider)!
-            .isEmpty) {
+    final apiKey = apiKeys.getApiKeyForProvider(
+      chatModelProvider.selectedProvider,
+    );
+    if (apiKey == null || apiKey.isEmpty) {
       _replaceLastAiMessage(localizations.apiKeyNotSetError);
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -271,12 +278,15 @@ class MobileChatPageState extends State<MobileChatPage> {
       );
       final stream = chatService.generateResponse(
         prompt: prompt,
-        context: _buildAiContextMessages(prompt),
+        context: history,
         model: chatModelProvider.selectedModel,
       );
 
       var fullResponse = '';
       await for (final chunk in stream) {
+        if (!isCurrent()) {
+          return;
+        }
         fullResponse += chunk;
         _replaceLastAiMessage(
           fullResponse.isEmpty ? localizations.aiIsThinking : fullResponse,
@@ -284,24 +294,30 @@ class MobileChatPageState extends State<MobileChatPage> {
         );
         _scrollToBottom();
       }
+      if (!isCurrent()) {
+        return;
+      }
 
       _replaceLastAiMessage(
         fullResponse.isEmpty ? localizations.noResponseFromAI : fullResponse,
       );
       await _saveCurrentSnapshot();
     } catch (error) {
+      if (!isCurrent()) {
+        return;
+      }
       if (error is MissingApiKeyException) {
         _replaceLastAiMessage(error.userFriendlyMessage);
       } else {
         _replaceLastAiMessage('错误：$error');
       }
     } finally {
-      if (mounted) {
+      if (isCurrent()) {
         setState(() {
           _isLoading = false;
         });
+        _scrollToBottom();
       }
-      _scrollToBottom();
     }
   }
 
@@ -487,6 +503,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                         const Spacer(),
                         MobileIconCircleButton(
                           icon: Icons.add_rounded,
+                          tooltip: '新建对话',
                           onTap: () {
                             Navigator.pop(context);
                             startNewChat();
@@ -517,7 +534,7 @@ class MobileChatPageState extends State<MobileChatPage> {
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.push(
-                              context,
+                              this.context,
                               MaterialPageRoute(
                                 builder: (_) => const SettingsScreen(),
                               ),
@@ -704,7 +721,7 @@ class MobileChatPageState extends State<MobileChatPage> {
     _composerFocus.requestFocus();
   }
 
-  Widget _buildEmptyState(ChatModelProvider chatModel) {
+  Widget _buildEmptyState() {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -795,8 +812,6 @@ class MobileChatPageState extends State<MobileChatPage> {
       ),
     );
   }
-
-  final FocusNode _composerFocus = FocusNode();
 
   Widget _buildComposer() {
     return Center(
@@ -900,6 +915,7 @@ class MobileChatPageState extends State<MobileChatPage> {
           MobileTopBar(
             leading: MobileIconCircleButton(
               icon: Icons.menu_rounded,
+              tooltip: widget.onOpenAppMenu != null ? '打开菜单' : '查看会话',
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: '对话',
@@ -910,12 +926,14 @@ class MobileChatPageState extends State<MobileChatPage> {
                 if (widget.onOpenAppMenu != null) ...[
                   MobileIconCircleButton(
                     icon: Icons.view_list_rounded,
+                    tooltip: '查看会话',
                     onTap: _showSessionSheet,
                   ),
                   const SizedBox(width: 10),
                 ],
                 MobileIconCircleButton(
                   icon: Icons.edit_note_rounded,
+                  tooltip: '新建对话',
                   onTap: startNewChat,
                 ),
               ],
@@ -942,7 +960,7 @@ class MobileChatPageState extends State<MobileChatPage> {
           const SizedBox(height: 10),
           Expanded(
             child: _messages.isEmpty
-                ? _buildEmptyState(chatModel)
+                ? _buildEmptyState()
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(top: 6, bottom: 12),

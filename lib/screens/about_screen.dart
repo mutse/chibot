@@ -20,6 +20,7 @@ class AboutScreen extends StatelessWidget {
               MobileTopBar(
                 leading: MobileIconCircleButton(
                   icon: Icons.arrow_back_ios_new_rounded,
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   onTap: () => Navigator.of(context).pop(),
                 ),
                 title: localizations.about,

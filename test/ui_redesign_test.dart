@@ -89,6 +89,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('settings stays navigable after the window narrows', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('设置').last);
+    await tester.pumpAndSettle();
+
+    tester.view.physicalSize = const Size(700, 800);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('打开菜单'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: find.byType(Drawer), matching: find.text('聊天')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('让想法，从这里开始'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('desktop workspace and compact layout fit available space', (
     tester,
   ) async {

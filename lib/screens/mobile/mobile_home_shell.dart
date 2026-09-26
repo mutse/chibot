@@ -32,37 +32,58 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   final GlobalKey<MobileHistoryPageState> _historyKey =
       GlobalKey<MobileHistoryPageState>();
 
-  int _currentIndex = 0;
-  bool _sidebarCollapsed = false;
+  // IndexedStack slots. Settings sits before history for historical reasons;
+  // always refer to pages through these names.
+  static const int _chatPage = 0;
+  static const int _imagePage = 1;
+  static const int _videoPage = 2;
+  static const int _settingsPage = 3;
+  static const int _historyPage = 4;
 
-  bool get _usesDrawerMenu =>
-      !_usesDesktopSidebar || MediaQuery.sizeOf(context).width < 900;
-  bool get _usesDesktopSidebar =>
-      Platform.isWindows || Platform.isMacOS || Platform.isLinux;
-
-  List<_ShellDestination> get _destinations => const [
+  static const List<_ShellDestination> _workspaceDestinations = [
     _ShellDestination(
-      index: 0,
+      index: _chatPage,
       label: '聊天',
       icon: Icons.chat_bubble_outline_rounded,
     ),
-    _ShellDestination(index: 1, label: '图片', icon: Icons.image_outlined),
     _ShellDestination(
-      index: 2,
+      index: _imagePage,
+      label: '图片',
+      icon: Icons.image_outlined,
+    ),
+    _ShellDestination(
+      index: _videoPage,
       label: '视频',
       icon: Icons.smart_display_outlined,
     ),
-    _ShellDestination(index: 4, label: '历史', icon: Icons.history_rounded),
-    _ShellDestination(index: 3, label: '设置', icon: Icons.settings_outlined),
+    _ShellDestination(
+      index: _historyPage,
+      label: '历史',
+      icon: Icons.history_rounded,
+    ),
   ];
+  static const _ShellDestination _settingsDestination = _ShellDestination(
+    index: _settingsPage,
+    label: '设置',
+    icon: Icons.settings_outlined,
+  );
+
+  int _currentIndex = _chatPage;
+  bool _sidebarCollapsed = false;
+
+  /// Desktop platforms get a persistent sidebar when the window is wide
+  /// enough; everything else navigates through the drawer.
+  bool get _usesDesktopSidebar =>
+      (Platform.isWindows || Platform.isMacOS || Platform.isLinux) &&
+      MediaQuery.sizeOf(context).width >= 900;
 
   void _syncSelectedMode(int index) {
     final settings = context.read<UnifiedSettingsProvider>();
-    if (index == 0) {
+    if (index == _chatPage) {
       settings.setSelectedModelType(available_model.ModelType.text);
-    } else if (index == 1) {
+    } else if (index == _imagePage) {
       settings.setSelectedModelType(available_model.ModelType.image);
-    } else if (index == 2) {
+    } else if (index == _videoPage) {
       settings.setSelectedModelType(available_model.ModelType.video);
     }
   }
@@ -73,27 +94,27 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       _currentIndex = index;
     });
     _syncSelectedMode(index);
-    if (index == 4) {
+    if (index == _historyPage) {
       _historyKey.currentState?.refreshData();
     }
   }
 
   void _openChatSession(ChatSession session) {
-    _switchTo(0);
+    _switchTo(_chatPage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatKey.currentState?.loadSession(session);
     });
   }
 
   void _openImageSession(ImageSession session) {
-    _switchTo(1);
+    _switchTo(_imagePage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _imageKey.currentState?.loadSession(session);
     });
   }
 
   void _openVideoSession(VideoSession session) {
-    _switchTo(2);
+    _switchTo(_videoPage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _videoKey.currentState?.loadSession(session);
     });
@@ -115,7 +136,9 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
 
   void _selectDrawerDestination(int index) {
     Navigator.of(context).pop();
-    if (index == 3) {
+    // On compact layouts settings is a pushed page so system back returns to
+    // the current workspace with its drafts intact.
+    if (index == _settingsPage) {
       _openSettingsSection(SettingsScreenSection.overview);
       return;
     }
@@ -123,6 +146,13 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   }
 
   Widget _buildDrawer() {
+    Widget item(_ShellDestination d) => _DrawerItem(
+      label: d.label,
+      icon: d.icon,
+      selected: _currentIndex == d.index,
+      onTap: () => _selectDrawerDestination(d.index),
+    );
+
     return Drawer(
       backgroundColor: MobilePalette.surfaceStrong,
       child: SafeArea(
@@ -149,42 +179,14 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
                 ),
               ),
               const SizedBox(height: 28),
-              _DrawerItem(
-                label: '聊天',
-                icon: Icons.chat_bubble_outline_rounded,
-                selected: _currentIndex == 0,
-                onTap: () => _selectDrawerDestination(0),
-              ),
-              const SizedBox(height: 8),
-              _DrawerItem(
-                label: '图片',
-                icon: Icons.image_outlined,
-                selected: _currentIndex == 1,
-                onTap: () => _selectDrawerDestination(1),
-              ),
-              const SizedBox(height: 8),
-              _DrawerItem(
-                label: '视频',
-                icon: Icons.smart_display_outlined,
-                selected: _currentIndex == 2,
-                onTap: () => _selectDrawerDestination(2),
-              ),
-              const SizedBox(height: 8),
-              _DrawerItem(
-                label: '历史',
-                icon: Icons.history_rounded,
-                selected: _currentIndex == 4,
-                onTap: () => _selectDrawerDestination(4),
-              ),
+              for (final d in _workspaceDestinations) ...[
+                item(d),
+                const SizedBox(height: 8),
+              ],
               const Spacer(),
               const Divider(height: 1, color: MobilePalette.border),
               const SizedBox(height: 18),
-              _DrawerItem(
-                label: '设置',
-                icon: Icons.settings_outlined,
-                selected: _currentIndex == 3,
-                onTap: () => _selectDrawerDestination(3),
-              ),
+              item(_settingsDestination),
             ],
           ),
         ),
@@ -207,8 +209,16 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
       ),
     );
 
+    Widget sidebarItem(_ShellDestination d) => _DesktopSidebarItem(
+      label: d.label,
+      icon: d.icon,
+      selected: _currentIndex == d.index,
+      collapsed: _sidebarCollapsed,
+      onTap: () => _switchTo(d.index),
+    );
+
     void startNewChat() {
-      _switchTo(0);
+      _switchTo(_chatPage);
       _chatKey.currentState?.startNewChat();
     }
 
@@ -290,30 +300,15 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
                         : const _DesktopSidebarLabel('工作空间'),
               ),
               const SizedBox(height: 12),
-              ..._destinations
-                  .where((d) => d.index != 3)
-                  .map(
-                    (d) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: _DesktopSidebarItem(
-                        label: d.label,
-                        icon: d.icon,
-                        selected: _currentIndex == d.index,
-                        collapsed: _sidebarCollapsed,
-                        onTap: () => _switchTo(d.index),
-                      ),
-                    ),
-                  ),
+              for (final d in _workspaceDestinations)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: sidebarItem(d),
+                ),
               const Spacer(),
               const Divider(),
               const SizedBox(height: 12),
-              _DesktopSidebarItem(
-                label: '设置',
-                icon: Icons.settings_outlined,
-                selected: _currentIndex == 3,
-                collapsed: _sidebarCollapsed,
-                onTap: () => _switchTo(3),
-              ),
+              sidebarItem(_settingsDestination),
             ],
           ),
         ),
@@ -341,46 +336,49 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final usesDesktopSidebar = _usesDesktopSidebar;
+    final VoidCallback? openAppMenu = usesDesktopSidebar ? null : _openAppMenu;
+    // Order must match the _xxxPage index constants.
     final pages = [
       MobileChatPage(
         key: _chatKey,
-        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
-        onOpenImages: () => _switchTo(1),
-        onOpenVideo: () => _switchTo(2),
+        onOpenAppMenu: openAppMenu,
+        onOpenImages: () => _switchTo(_imagePage),
+        onOpenVideo: () => _switchTo(_videoPage),
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
-        onOpenHistory: () => _switchTo(4),
+        onOpenHistory: () => _switchTo(_historyPage),
         onDataChanged: _refreshHistory,
       ),
       MobileImageStudioPage(
         key: _imageKey,
-        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
+        onOpenAppMenu: openAppMenu,
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
       MobileVideoStudioPage(
         key: _videoKey,
-        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
+        onOpenAppMenu: openAppMenu,
         onOpenModels: () => _openSettingsSection(SettingsScreenSection.models),
         onDataChanged: _refreshHistory,
       ),
-      const SettingsScreen(),
+      SettingsScreen(onOpenAppMenu: openAppMenu),
       MobileHistoryPage(
         key: _historyKey,
-        onOpenAppMenu: _usesDrawerMenu ? _openAppMenu : null,
+        onOpenAppMenu: openAppMenu,
         onOpenChatSession: _openChatSession,
         onOpenImageSession: _openImageSession,
         onOpenVideoSession: _openVideoSession,
       ),
     ];
 
-    if (_usesDesktopSidebar && MediaQuery.sizeOf(context).width >= 900) {
+    if (usesDesktopSidebar) {
       return _buildDesktopShell(pages);
     }
 
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: MobilePalette.background,
-      drawer: _usesDrawerMenu ? _buildDrawer() : null,
+      drawer: _buildDrawer(),
       body: SafeArea(
         child: IndexedStack(index: _currentIndex, children: pages),
       ),

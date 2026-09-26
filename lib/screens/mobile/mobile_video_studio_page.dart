@@ -366,6 +366,7 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
                         const Spacer(),
                         MobileIconCircleButton(
                           icon: Icons.add_rounded,
+                          tooltip: '新建视频会话',
                           onTap: () {
                             Navigator.pop(context);
                             startNewSession();
@@ -472,16 +473,17 @@ class MobileVideoStudioPageState extends State<MobileVideoStudioPage> {
         children: [
           MobileTopBar(
             leading: MobileIconCircleButton(
-              icon:
-                  widget.onOpenAppMenu != null
-                      ? Icons.menu_rounded
-                      : Icons.arrow_back_ios_new_rounded,
+              icon: widget.onOpenAppMenu != null
+                  ? Icons.menu_rounded
+                  : Icons.view_list_rounded,
+              tooltip: widget.onOpenAppMenu != null ? '打开菜单' : '查看会话',
               onTap: widget.onOpenAppMenu ?? _showSessionSheet,
             ),
             title: '创作视频',
             subtitle: videoModel.selectedVideoProvider,
             trailing: MobileIconCircleButton(
               icon: Icons.history_rounded,
+              tooltip: '查看历史',
               onTap: _showSessionSheet,
             ),
           ),

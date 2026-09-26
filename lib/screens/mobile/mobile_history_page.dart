@@ -468,6 +468,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                 subtitle: '查看你的聊天、图片和视频',
                 trailing: MobileIconCircleButton(
                   icon: Icons.refresh_rounded,
+                  tooltip: '刷新',
                   onTap: refreshData,
                 ),
               ),

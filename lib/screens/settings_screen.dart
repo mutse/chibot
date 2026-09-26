@@ -22,10 +22,12 @@ enum SettingsScreenSection { overview, models, search, data }
 
 class SettingsScreen extends StatefulWidget {
   final SettingsScreenSection section;
+  final VoidCallback? onOpenAppMenu;
 
   const SettingsScreen({
     super.key,
     this.section = SettingsScreenSection.overview,
+    this.onOpenAppMenu,
   });
 
   @override
@@ -218,8 +220,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildInlineActionButton({
     required IconData icon,
     required VoidCallback onTap,
+    String? tooltip,
   }) {
-    return MobileIconCircleButton(icon: icon, onTap: onTap);
+    return MobileIconCircleButton(icon: icon, onTap: onTap, tooltip: tooltip);
   }
 
   Widget _buildModelListTile({
@@ -1783,6 +1786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 10),
                   _buildInlineActionButton(
                     icon: Icons.add_rounded,
+                    tooltip: l10n.add,
                     onTap: () {
                       final modelName = _customModelController.text.trim();
                       if (modelName.isNotEmpty) {
@@ -1970,6 +1974,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(width: 10),
                   _buildInlineActionButton(
                     icon: Icons.add_rounded,
+                    tooltip: l10n.add,
                     onTap: () {
                       final modelName = _customModelController.text.trim();
                       if (modelName.isNotEmpty) {
@@ -2515,6 +2520,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
+    // Ask the enclosing route, not the navigator: when embedded in the home
+    // shell this screen is on the root route even if other routes are pushed.
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final Widget leading;
+    if (canPop) {
+      leading = MobileIconCircleButton(
+        icon: Icons.arrow_back_ios_new_rounded,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onTap: () => Navigator.maybePop(context),
+      );
+    } else if (widget.onOpenAppMenu != null) {
+      leading = MobileIconCircleButton(
+        icon: Icons.menu_rounded,
+        tooltip: '打开菜单',
+        onTap: widget.onOpenAppMenu,
+      );
+    } else {
+      leading = const MobileIconCircleButton(icon: Icons.settings_outlined);
+    }
+
     return Scaffold(
       backgroundColor: MobilePalette.background,
       body: DecoratedBox(
@@ -2523,16 +2548,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             children: [
               MobileTopBar(
-                leading: MobileIconCircleButton(
-                  icon:
-                      Navigator.canPop(context)
-                          ? Icons.arrow_back_ios_new_rounded
-                          : Icons.settings_outlined,
-                  onTap:
-                      Navigator.canPop(context)
-                          ? () => Navigator.maybePop(context)
-                          : null,
-                ),
+                leading: leading,
                 title: _pageTitle(),
                 subtitle: _pageSubtitle(),
               ),

@@ -243,6 +243,7 @@ class MobileTopBar extends StatelessWidget {
 class MobileIconCircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final String? tooltip;
   final Color? backgroundColor;
   final Color? foregroundColor;
 
@@ -250,24 +251,15 @@ class MobileIconCircleButton extends StatelessWidget {
     super.key,
     required this.icon,
     this.onTap,
+    this.tooltip,
     this.backgroundColor,
     this.foregroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (icon) {
-      Icons.menu_rounded => '打开菜单',
-      Icons.edit_note_rounded => '新建对话',
-      Icons.view_list_rounded => '查看会话',
-      Icons.history_toggle_off_rounded => '查看历史',
-      Icons.refresh_rounded => '刷新',
-      Icons.arrow_back_ios_new_rounded => '查看会话',
-      Icons.tune_rounded => '模型设置',
-      _ => null,
-    };
     return IconButton(
-      tooltip: label,
+      tooltip: tooltip,
       onPressed: onTap,
       icon: Icon(icon, size: 20),
       style: IconButton.styleFrom(
