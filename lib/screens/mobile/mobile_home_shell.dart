@@ -89,6 +89,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   }
 
   void _switchTo(int index) {
+    if (index != _chatPage) _chatKey.currentState?.stopGeneration();
     if (!mounted) return;
     setState(() {
       _currentIndex = index;
@@ -125,6 +126,7 @@ class _MobileHomeShellState extends State<MobileHomeShell> {
   }
 
   void _openSettingsSection(SettingsScreenSection section) {
+    _chatKey.currentState?.stopGeneration();
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => SettingsScreen(section: section)));

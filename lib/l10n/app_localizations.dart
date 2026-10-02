@@ -710,6 +710,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Aspect Ratio'**
   String get aspectRatio;
+
+  /// No description provided for @plugins.
+  ///
+  /// In en, this message translates to:
+  /// **'Plugins'**
+  String get plugins;
+
+  /// No description provided for @githubPluginDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect GitHub to query repositories and confirm writes in chat. Requires a model that supports tools.'**
+  String get githubPluginDescription;
+
+  /// No description provided for @githubToken.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub personal access token (PAT)'**
+  String get githubToken;
+
+  /// No description provided for @githubTestConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and test connection'**
+  String get githubTestConnection;
+
+  /// No description provided for @githubDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get githubDisconnect;
+
+  /// No description provided for @githubPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'PAT permissions guide'**
+  String get githubPermissions;
+
+  /// No description provided for @githubNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get githubNotConnected;
+
+  /// No description provided for @githubTokenSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Token saved; test connection to verify'**
+  String get githubTokenSaved;
+
+  /// No description provided for @githubConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed. Check your PAT and network.'**
+  String get githubConnectionFailed;
+
+  /// No description provided for @githubEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable GitHub plugin'**
+  String get githubEnable;
+
+  /// No description provided for @githubStorageNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored locally like existing API keys; excluded from configuration exports. Repository access depends on PAT permissions.'**
+  String get githubStorageNotice;
+
+  /// No description provided for @confirmToolWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm GitHub write'**
+  String get confirmToolWrite;
+
+  /// No description provided for @approveTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve this operation'**
+  String get approveTool;
+
+  /// No description provided for @rejectTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get rejectTool;
+
+  /// No description provided for @stopToolRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stopToolRun;
+
+  /// No description provided for @toolAwaitingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting confirmation'**
+  String get toolAwaitingApproval;
+
+  /// No description provided for @toolRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get toolRunning;
+
+  /// No description provided for @toolCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get toolCompleted;
+
+  /// No description provided for @toolCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get toolCancelled;
+
+  /// No description provided for @toolRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get toolRejected;
+
+  /// No description provided for @toolOutcomeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Outcome unknown; check GitHub before retrying'**
+  String get toolOutcomeUnknown;
+
+  /// No description provided for @toolInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Interrupted; will not resume automatically'**
+  String get toolInterrupted;
+
+  /// No description provided for @toolFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool failed'**
+  String get toolFailure;
+
+  /// No description provided for @toolChatFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool chat failed. Check your model supports tools, or disable the plugin and retry.'**
+  String get toolChatFailed;
+
+  /// No description provided for @toolStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get toolStopped;
+
+  /// No description provided for @githubMissingToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure a GitHub PAT in Settings → Plugins first.'**
+  String get githubMissingToken;
+
+  /// No description provided for @openGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in GitHub'**
+  String get openGitHub;
 }
 
 class _AppLocalizationsDelegate

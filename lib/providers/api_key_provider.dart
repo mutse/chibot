@@ -6,6 +6,17 @@ import '_provider_storage_helpers.dart';
 /// 负责管理所有 API 密钥的提供者
 /// 职责：存储、加载、更新各个 AI 服务的 API 密钥
 class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
+  late final Future<void> ready;
+  String? _githubToken;
+  String? get githubToken => _githubToken;
+  Future<void> setGitHubToken(String? token) async {
+    await ready;
+    final prefs = await SharedPreferences.getInstance();
+    _githubToken = normalizeNullableInput(token);
+    await persistNullableString(prefs, 'github_pat', _githubToken);
+    notifyListeners();
+  }
+
   // OpenAI API Key
   String? _openaiApiKey;
   static const String _openaiApiKeyKey = 'openai_api_key';
@@ -146,11 +157,12 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
   // ==================== 初始化 ====================
 
   ApiKeyProvider() {
-    _loadApiKeys();
+    ready = _loadApiKeys();
   }
 
   Future<void> _loadApiKeys() async {
     final prefs = await SharedPreferences.getInstance();
+    _githubToken = prefs.getString('github_pat');
     _openaiApiKey = prefs.getString(_openaiApiKeyKey);
     _claudeApiKey = prefs.getString(_claudeApiKeyKey);
     _googleApiKey = prefs.getString(_googleApiKeyKey);

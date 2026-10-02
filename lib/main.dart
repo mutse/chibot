@@ -1,3 +1,4 @@
+import 'providers/plugin_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
         // New specialized providers (Phase 1 refactoring)
         ChangeNotifierProvider(create: (_) => ApiKeyProvider()),
+        ChangeNotifierProvider(create: (_) => PluginProvider()),
         ChangeNotifierProvider(
           create: (_) => ChatModelProvider(modelRegistry: modelRegistry),
         ),

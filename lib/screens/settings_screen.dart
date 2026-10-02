@@ -1,3 +1,4 @@
+import '../widgets/github_plugin_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chibot/providers/api_key_provider.dart';
@@ -18,7 +19,7 @@ import 'dart:io';
 import 'package:chibot/models/available_model.dart' as available_model;
 import 'package:chibot/screens/mobile/mobile_ui.dart';
 
-enum SettingsScreenSection { overview, models, search, data }
+enum SettingsScreenSection { overview, models, search, data, plugins }
 
 class SettingsScreen extends StatefulWidget {
   final SettingsScreenSection section;
@@ -329,6 +330,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _pageTitle() {
     switch (widget.section) {
+      case SettingsScreenSection.plugins:
+        return l10n.plugins;
       case SettingsScreenSection.models:
         return '模型';
       case SettingsScreenSection.search:
@@ -342,6 +345,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _pageSubtitle() {
     switch (widget.section) {
+      case SettingsScreenSection.plugins:
+        return l10n.plugins;
       case SettingsScreenSection.models:
         return '管理提供商、模型和 API Key';
       case SettingsScreenSection.search:
@@ -790,6 +795,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           imageModel: imageModel,
           videoModel: videoModel,
           search: search,
+        ),
+        _buildOverviewLinkCard(
+          icon: Icons.extension_outlined,
+          title: l10n.plugins,
+          subtitle: l10n.githubPluginDescription,
+          detail: 'GitHub',
+          onTap: () => _openSection(SettingsScreenSection.plugins),
         ),
         _buildOverviewLinkCard(
           icon: Icons.layers_outlined,
@@ -2351,6 +2363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
       children: <Widget>[
+        const GitHubPluginSettings(),
         _buildModelTypeCard(unifiedSettings),
         _buildAddProviderCard(context, unifiedSettings),
         if (_isTextLikeModelType(unifiedSettings.selectedModelType)) ...[
@@ -2491,6 +2504,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         imageModel: imageModel,
         videoModel: videoModel,
         search: search,
+      );
+    } else if (widget.section == SettingsScreenSection.plugins) {
+      body = ListView(
+        padding: const EdgeInsets.all(16),
+        children: const [GitHubPluginSettings()],
       );
     } else if (widget.section == SettingsScreenSection.models) {
       body = _buildModelsBody(

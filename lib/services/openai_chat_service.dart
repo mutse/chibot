@@ -5,11 +5,13 @@ import '../core/exceptions.dart';
 import '../core/logger.dart';
 import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
+import '../models/tool_call.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
 import 'service_model_registry.dart';
 
-class OpenAIService extends BaseApiService implements ChatService {
+class OpenAIService extends BaseApiService
+    implements ChatService, ToolChatService {
   OpenAIService({
     required super.apiKey,
     String? baseUrl,
@@ -168,6 +170,91 @@ class OpenAIService extends BaseApiService implements ChatService {
   }
 
   @override
+  Stream<ToolModelEvent> generateToolTurn({
+    required List<Map<String, dynamic>> messages,
+    required List<ToolDefinition> tools,
+    required String model,
+  }) async* {
+    validateApiKey();
+    final root = baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    final request =
+        http.Request('POST', Uri.parse('$root/chat/completions'))
+          ..headers.addAll(getHeaders())
+          ..body = _buildChatRequest(model, messages, {
+            if (tools.isNotEmpty)
+              'tools': tools.map((t) => t.toJson()).toList(),
+            if (tools.isNotEmpty) 'tool_choice': 'auto',
+          });
+    final response = await client.send(request).timeout(timeout);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      await response.stream.listen((_) {}).cancel();
+      // Do not include provider bodies: they can echo private tool content.
+      throw StateError(
+        'Tool chat request failed (${response.statusCode}). Disable plugins or select a model supporting tools.',
+      );
+    }
+    final pending = <int, Map<String, String>>{};
+    String? finishReason;
+    await for (final line in response.stream
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .timeout(timeout)) {
+      if (!line.startsWith('data:')) continue;
+      final data = line.substring(5).trim();
+      if (data == '[DONE]') break;
+      if (data.isEmpty) continue;
+      // A malformed tool stream must never execute partially received calls.
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      if (json['error'] != null) {
+        throw StateError(
+          'Tool chat stream failed. Disable plugins or select a model supporting tools.',
+        );
+      }
+      final choices = json['choices'] as List?;
+      if (choices == null || choices.isEmpty) continue;
+      final choice = choices.first as Map;
+      finishReason = choice['finish_reason'] as String? ?? finishReason;
+      final delta = choice['delta'] as Map?;
+      if (delta?['content'] is String) {
+        yield ToolModelEvent.text(delta!['content'] as String);
+      }
+      for (final raw in (delta?['tool_calls'] as List? ?? [])) {
+        final index = raw['index'] as int;
+        final item = pending.putIfAbsent(
+          index,
+          () => {'id': '', 'name': '', 'arguments': ''},
+        );
+        final function = raw['function'] as Map?;
+        item['id'] = item['id']! + (raw['id'] as String? ?? '');
+        item['name'] = item['name']! + (function?['name'] as String? ?? '');
+        item['arguments'] =
+            item['arguments']! + (function?['arguments'] as String? ?? '');
+        if (item['arguments']!.length > 131072 || pending.length > 32) {
+          throw StateError('Tool call payload exceeds limit');
+        }
+      }
+    }
+    if (pending.isNotEmpty) {
+      if (finishReason != 'tool_calls') {
+        throw StateError('Incomplete tool call stream');
+      }
+      final indexes = pending.keys.toList()..sort();
+      final ids = <String>{};
+      final calls = <ToolCall>[];
+      for (final index in indexes) {
+        final item = pending[index]!;
+        if (item['id']!.isEmpty ||
+            item['name']!.isEmpty ||
+            !ids.add(item['id']!)) {
+          throw StateError('Invalid tool call identity');
+        }
+        calls.add(ToolCall(item['id']!, item['name']!, item['arguments']!));
+      }
+      yield ToolModelEvent.calls(calls);
+    }
+  }
+
+  @override
   Future<String> generateTitle(List<ChatMessage> messages) async {
     validateApiKey();
 
@@ -242,7 +329,7 @@ class OpenAIService extends BaseApiService implements ChatService {
 
   String _buildChatRequest(
     String model,
-    List<Map<String, String>> messages,
+    List<Map<String, dynamic>> messages,
     Map<String, dynamic>? parameters, {
     bool stream = true,
   }) {

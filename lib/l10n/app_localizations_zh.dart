@@ -324,6 +324,88 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aspectRatio => '宽长比';
+
+  @override
+  String get plugins => '插件';
+
+  @override
+  String get githubPluginDescription => '连接 GitHub，在聊天中查询仓库并确认写入。需要支持工具调用的模型。';
+
+  @override
+  String get githubToken => 'GitHub 个人访问令牌（PAT）';
+
+  @override
+  String get githubTestConnection => '保存并测试连接';
+
+  @override
+  String get githubDisconnect => '断开连接';
+
+  @override
+  String get githubPermissions => 'PAT 权限说明';
+
+  @override
+  String get githubNotConnected => '未连接';
+
+  @override
+  String get githubTokenSaved => '已保存令牌，请测试连接';
+
+  @override
+  String get githubConnectionFailed => '连接失败，请检查 PAT 和网络。';
+
+  @override
+  String get githubEnable => '启用 GitHub 插件';
+
+  @override
+  String get githubStorageNotice =>
+      '与现有 API Key 一样存储在本机，不包含在配置导出中。仓库访问取决于 PAT 权限。';
+
+  @override
+  String get confirmToolWrite => '确认 GitHub 写入';
+
+  @override
+  String get approveTool => '确认本次操作';
+
+  @override
+  String get rejectTool => '拒绝';
+
+  @override
+  String get stopToolRun => '停止';
+
+  @override
+  String get toolAwaitingApproval => '等待确认';
+
+  @override
+  String get toolRunning => '执行中';
+
+  @override
+  String get toolCompleted => '已完成';
+
+  @override
+  String get toolCancelled => '已取消';
+
+  @override
+  String get toolRejected => '已拒绝';
+
+  @override
+  String get toolOutcomeUnknown => '结果未知，请先检查 GitHub 再重试';
+
+  @override
+  String get toolInterrupted => '已中断，不会自动继续执行';
+
+  @override
+  String get toolFailure => '工具执行失败';
+
+  @override
+  String get toolChatFailed => '工具聊天失败。请检查模型是否支持工具调用，或关闭插件后重试。';
+
+  @override
+  String get toolStopped => '已停止';
+
+  @override
+  String get githubMissingToken => '请先在设置 → 插件中配置 GitHub PAT。';
+
+  @override
+  String get openGitHub => '在 GitHub 中打开';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

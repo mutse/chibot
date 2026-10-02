@@ -1,3 +1,5 @@
+import 'package:chibot/widgets/tool_chat_run.dart';
+import 'package:chibot/widgets/tool_call_records.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'package:chibot/models/available_model.dart' as available_model;
 import 'package:chibot/models/chat_message.dart';
@@ -49,6 +51,7 @@ class MobileChatPageState extends State<MobileChatPage> {
   final List<ChatMessage> _messages = [];
   List<ChatSession> _sessions = [];
   String? _currentSessionId;
+  ToolChatRun? _toolRun;
   bool _isLoading = false;
   bool _enableWebSearch = false;
   // Bumped whenever the visible conversation changes so an in-flight response
@@ -71,6 +74,7 @@ class MobileChatPageState extends State<MobileChatPage> {
   }
 
   void startNewChat() {
+    stopGeneration();
     context.read<UnifiedSettingsProvider>().setSelectedModelType(
       available_model.ModelType.text,
     );
@@ -83,6 +87,7 @@ class MobileChatPageState extends State<MobileChatPage> {
   }
 
   void loadSession(ChatSession session) {
+    stopGeneration();
     context.read<UnifiedSettingsProvider>().setSelectedModelType(
       available_model.ModelType.text,
     );
@@ -204,6 +209,28 @@ class MobileChatPageState extends State<MobileChatPage> {
     widget.onDataChanged?.call();
   }
 
+  void stopGeneration() {
+    final run = _toolRun;
+    run?.cancel();
+    if (!_isLoading) return;
+    _conversationGeneration++;
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (_messages.isNotEmpty && _messages.last.isAI) {
+          _messages[_messages.length - 1] = _messages.last.copyWith(
+            isLoading: false,
+            text:
+                _messages.last.text.isEmpty
+                    ? AppLocalizations.of(context)!.toolStopped
+                    : _messages.last.text,
+          );
+        }
+      });
+      _saveCurrentSnapshot();
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty || _isLoading) {
@@ -276,9 +303,28 @@ class MobileChatPageState extends State<MobileChatPage> {
         chatModel: chatModelProvider,
         apiKeys: apiKeys,
       );
-      final stream = chatService.generateResponse(
+      await _saveCurrentSnapshot();
+      if (!mounted || !isCurrent()) return;
+      final messageId = _messages.last.id;
+      final run = ToolChatRun(
+        context: context,
+        sessionId: _currentSessionId!,
+        messageId: messageId,
+        onMetadata: (metadata) {
+          if (!mounted || _currentSessionId == null) return;
+          final index = _messages.indexWhere((m) => m.id == messageId);
+          if (index >= 0) {
+            setState(() {
+              _messages[index] = _messages[index].copyWith(metadata: metadata);
+            });
+          }
+        },
+      );
+      _toolRun = run;
+      final stream = run.generate(
+        service: chatService,
         prompt: prompt,
-        context: history,
+        history: history,
         model: chatModelProvider.selectedModel,
       );
 
@@ -339,6 +385,7 @@ class MobileChatPageState extends State<MobileChatPage> {
           id: _messages[lastIndex].id,
           text: text,
           timestamp: _messages[lastIndex].timestamp,
+          metadata: _messages[lastIndex].metadata,
           isLoading: isLoading,
         );
       }
@@ -657,9 +704,8 @@ class MobileChatPageState extends State<MobileChatPage> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.sender == MessageSender.user;
-    final bubbleColor = isUser
-        ? MobilePalette.primary
-        : MobilePalette.surfaceStrong;
+    final bubbleColor =
+        isUser ? MobilePalette.primary : MobilePalette.surfaceStrong;
     final textColor = isUser ? Colors.white : MobilePalette.textPrimary;
 
     Widget child;
@@ -672,12 +718,16 @@ class MobileChatPageState extends State<MobileChatPage> {
       child = ChatMarkdown(text: message.text, textColor: textColor);
     }
 
+    child = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [ToolCallRecords(message: message), child],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
       child: Column(
-        crossAxisAlignment: isUser
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Align(
             alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -854,16 +904,20 @@ class MobileChatPageState extends State<MobileChatPage> {
                       tooltip: '创作视频',
                     ),
                     IconButton(
-                      onPressed: () =>
-                          setState(() => _enableWebSearch = !_enableWebSearch),
+                      onPressed:
+                          () => setState(
+                            () => _enableWebSearch = !_enableWebSearch,
+                          ),
                       isSelected: _enableWebSearch,
                       style: IconButton.styleFrom(
-                        backgroundColor: _enableWebSearch
-                            ? MobilePalette.primarySoft
-                            : Colors.transparent,
-                        foregroundColor: _enableWebSearch
-                            ? MobilePalette.primary
-                            : MobilePalette.textSecondary,
+                        backgroundColor:
+                            _enableWebSearch
+                                ? MobilePalette.primarySoft
+                                : Colors.transparent,
+                        foregroundColor:
+                            _enableWebSearch
+                                ? MobilePalette.primary
+                                : MobilePalette.textSecondary,
                       ),
                       icon: const Icon(Icons.public_rounded),
                       tooltip: _enableWebSearch ? '关闭网页搜索' : '开启网页搜索',
@@ -871,21 +925,23 @@ class MobileChatPageState extends State<MobileChatPage> {
                     const Spacer(),
                     ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _textController,
-                      builder: (context, value, child) => IconButton.filled(
-                        tooltip: _isLoading ? '正在回复' : '发送消息',
-                        onPressed: value.text.trim().isNotEmpty && !_isLoading
-                            ? _sendMessage
-                            : null,
-                        icon: _isLoading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.arrow_upward_rounded),
-                      ),
+                      builder:
+                          (context, value, child) => IconButton.filled(
+                            tooltip:
+                                _isLoading
+                                    ? AppLocalizations.of(context)!.stopToolRun
+                                    : '发送消息',
+                            onPressed:
+                                _isLoading
+                                    ? stopGeneration
+                                    : value.text.trim().isNotEmpty
+                                    ? _sendMessage
+                                    : null,
+                            icon:
+                                _isLoading
+                                    ? const Icon(Icons.stop_rounded)
+                                    : const Icon(Icons.arrow_upward_rounded),
+                          ),
                     ),
                   ],
                 ),
@@ -899,6 +955,7 @@ class MobileChatPageState extends State<MobileChatPage> {
 
   @override
   void dispose() {
+    _toolRun?.cancel();
     _composerFocus.dispose();
     _textController.dispose();
     _scrollController.dispose();
@@ -959,19 +1016,21 @@ class MobileChatPageState extends State<MobileChatPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: _messages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(top: 6, bottom: 12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) => Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 840),
-                        child: _buildMessageBubble(_messages[index]),
-                      ),
+            child:
+                _messages.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.only(top: 6, bottom: 12),
+                      itemCount: _messages.length,
+                      itemBuilder:
+                          (context, index) => Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 840),
+                              child: _buildMessageBubble(_messages[index]),
+                            ),
+                          ),
                     ),
-                  ),
           ),
           _buildComposer(),
         ],

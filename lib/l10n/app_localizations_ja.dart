@@ -323,4 +323,91 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aspectRatio => 'アスペクト比';
+
+  @override
+  String get plugins => 'Plugins';
+
+  @override
+  String get githubPluginDescription =>
+      'Connect GitHub to query repositories and confirm writes in chat. Requires a model that supports tools.';
+
+  @override
+  String get githubToken => 'GitHub personal access token (PAT)';
+
+  @override
+  String get githubTestConnection => 'Save and test connection';
+
+  @override
+  String get githubDisconnect => 'Disconnect';
+
+  @override
+  String get githubPermissions => 'PAT permissions guide';
+
+  @override
+  String get githubNotConnected => 'Not connected';
+
+  @override
+  String get githubTokenSaved => 'Token saved; test connection to verify';
+
+  @override
+  String get githubConnectionFailed =>
+      'Connection failed. Check your PAT and network.';
+
+  @override
+  String get githubEnable => 'Enable GitHub plugin';
+
+  @override
+  String get githubStorageNotice =>
+      'Stored locally like existing API keys; excluded from configuration exports. Repository access depends on PAT permissions.';
+
+  @override
+  String get confirmToolWrite => 'Confirm GitHub write';
+
+  @override
+  String get approveTool => 'Approve this operation';
+
+  @override
+  String get rejectTool => 'Reject';
+
+  @override
+  String get stopToolRun => 'Stop';
+
+  @override
+  String get toolAwaitingApproval => 'Awaiting confirmation';
+
+  @override
+  String get toolRunning => 'Running';
+
+  @override
+  String get toolCompleted => 'Completed';
+
+  @override
+  String get toolCancelled => 'Cancelled';
+
+  @override
+  String get toolRejected => 'Rejected';
+
+  @override
+  String get toolOutcomeUnknown =>
+      'Outcome unknown; check GitHub before retrying';
+
+  @override
+  String get toolInterrupted => 'Interrupted; will not resume automatically';
+
+  @override
+  String get toolFailure => 'Tool failed';
+
+  @override
+  String get toolChatFailed =>
+      'Tool chat failed. Check your model supports tools, or disable the plugin and retry.';
+
+  @override
+  String get toolStopped => 'Stopped';
+
+  @override
+  String get githubMissingToken =>
+      'Configure a GitHub PAT in Settings → Plugins first.';
+
+  @override
+  String get openGitHub => 'Open in GitHub';
 }

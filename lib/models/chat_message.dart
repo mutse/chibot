@@ -59,10 +59,7 @@ class ChatMessage extends Equatable {
   }
 
   // Factory constructor for loading messages
-  factory ChatMessage.loading({
-    required String id,
-    DateTime? timestamp,
-  }) {
+  factory ChatMessage.loading({required String id, DateTime? timestamp}) {
     return ChatMessage(
       id: id,
       text: '',
@@ -89,14 +86,14 @@ class ChatMessage extends Equatable {
 
   // Convert a ChatMessage object into a Map object
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'text': text,
-        'sender': sender.name,
-        'timestamp': timestamp.toIso8601String(),
-        'isLoading': isLoading,
-        'error': error,
-        'metadata': metadata,
-      };
+    'id': id,
+    'text': text,
+    'sender': sender.name,
+    'timestamp': timestamp.toIso8601String(),
+    'isLoading': isLoading,
+    'error': error,
+    'metadata': metadata,
+  };
 
   // OpenAI API format
   Map<String, String>? toApiJson() {
@@ -120,13 +117,20 @@ class ChatMessage extends Equatable {
           orElse: () => MessageSender.ai,
         ),
         timestamp: DateTime.parse(json['timestamp'] as String),
-        isLoading: json['isLoading'] as bool? ?? false,
+        isLoading:
+            (json['metadata'] is Map &&
+                    (json['metadata'] as Map).containsKey('toolRecords'))
+                ? false
+                : json['isLoading'] as bool? ?? false,
         error: json['error'] as String?,
         metadata: json['metadata'] as Map<String, dynamic>?,
       );
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to parse ChatMessage from JSON', 
-        error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Failed to parse ChatMessage from JSON',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -161,14 +165,14 @@ class ChatMessage extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        text,
-        sender,
-        timestamp,
-        isLoading,
-        error,
-        metadata,
-      ];
+    id,
+    text,
+    sender,
+    timestamp,
+    isLoading,
+    error,
+    metadata,
+  ];
 
   @override
   String toString() {

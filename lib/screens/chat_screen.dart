@@ -1,3 +1,5 @@
+import 'package:chibot/widgets/tool_chat_run.dart';
+import 'package:chibot/widgets/tool_call_records.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
@@ -53,6 +55,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final image_service.ImageGenerationService _imageGenerationService =
       image_service.ImageGenerationService(); // Added
   final ScrollController _scrollController = ScrollController();
+  ToolChatRun? _toolRun;
+  int _conversationGeneration = 0;
   bool _isLoading = false;
   bool _enableWebSearch = false;
 
@@ -82,6 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewChat() {
+    _stopGeneration();
     final settings = Provider.of<UnifiedSettingsProvider>(
       context,
       listen: false,
@@ -95,6 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _loadSession(ChatSession session) {
+    _stopGeneration();
     setState(() {
       _messages.clear();
       _messages.addAll(session.messages);
@@ -105,6 +111,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startNewImageSession() {
+    _stopGeneration();
     final settings = Provider.of<UnifiedSettingsProvider>(
       context,
       listen: false,
@@ -118,6 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _loadImageSession(ImageSession session) {
+    _stopGeneration();
     setState(() {
       _messages.clear();
       _messages.addAll(session.messages);
@@ -166,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(
         ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
           text: text,
           sender: MessageSender.ai,
           timestamp: DateTime.now(),
@@ -185,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+    _currentSessionId = DateTime.now().microsecondsSinceEpoch.toString();
     final newSession = ChatSession(
       id: _currentSessionId!,
       title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
@@ -199,7 +207,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   ChatMessage _createAiPlaceholderMessage() {
     return ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
       text: '',
       sender: MessageSender.ai,
       timestamp: DateTime.now(),
@@ -219,6 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
           text: text,
           sender: MessageSender.ai,
           timestamp: _messages[lastMessageIndex].timestamp,
+          metadata: _messages[lastMessageIndex].metadata,
           isLoading: isLoading,
         );
       }
@@ -257,23 +266,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  List<ChatMessage> _buildAiContextMessages(String prompt) {
-    final aiMessages = List<ChatMessage>.from(_messages);
-    if (_enableWebSearch && aiMessages.isNotEmpty) {
-      aiMessages.removeLast();
-      aiMessages.add(
-        ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: prompt,
-          sender: MessageSender.user,
-          timestamp: DateTime.now(),
-        ),
-      );
-    }
-
-    return aiMessages.where((msg) => msg.sender != MessageSender.user).toList();
-  }
-
   void _handleMissingApiKeyError() {
     if (!mounted) return;
 
@@ -299,12 +291,13 @@ class _ChatScreenState extends State<ChatScreen> {
           text: '错误：${error.toString()}',
           sender: MessageSender.ai,
           timestamp: _messages[lastMessageIndex].timestamp,
+          metadata: _messages[lastMessageIndex].metadata,
           isLoading: false,
         );
       } else {
         _messages.add(
           ChatMessage(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
             text: '错误：${error.toString()}',
             sender: MessageSender.ai,
             timestamp: DateTime.now(),
@@ -353,7 +346,7 @@ class _ChatScreenState extends State<ChatScreen> {
     required ImageModelProvider imageModelProvider,
   }) async {
     if (_currentImageSessionId == null) {
-      _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      _currentImageSessionId = DateTime.now().microsecondsSinceEpoch.toString();
       final newSession = ImageSession(
         id: _currentImageSessionId!,
         title: prompt.length > 30 ? '${prompt.substring(0, 30)}...' : prompt,
@@ -376,7 +369,7 @@ class _ChatScreenState extends State<ChatScreen> {
       debugPrint(
         'Warning: Existing image session with ID $_currentImageSessionId not found. Creating a new session: $e',
       );
-      _currentImageSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+      _currentImageSessionId = DateTime.now().microsecondsSinceEpoch.toString();
     }
 
     final updatedSession = ImageSession(
@@ -399,7 +392,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(
         ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
           text: '/imagine $prompt',
           sender: MessageSender.user,
           timestamp: DateTime.now(),
@@ -407,7 +400,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       _messages.add(
         ImageMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
           text: prompt,
           imageUrl: '',
           sender: MessageSender.ai,
@@ -419,9 +412,35 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _stopGeneration() {
+    _toolRun?.cancel();
+    _conversationGeneration++;
+    if (mounted && _isLoading) {
+      setState(() {
+        _isLoading = false;
+        if (_messages.isNotEmpty && _messages.last.isAI) {
+          _messages[_messages.length - 1] = _messages.last.copyWith(
+            isLoading: false,
+          );
+        }
+      });
+      _saveCurrentSessionSnapshot();
+    }
+  }
+
+  @override
+  void dispose() {
+    _toolRun?.cancel();
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _sendMessage() async {
+    final generation = _conversationGeneration;
+    bool isCurrent() => mounted && generation == _conversationGeneration;
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isLoading) return;
 
     final unifiedSettings = Provider.of<UnifiedSettingsProvider>(
       context,
@@ -437,17 +456,21 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _textController.clear();
+    setState(() => _isLoading = true);
     final prompt = await _buildPromptWithWebSearch(
       text: text,
       searchProvider: searchProvider,
       apiKeys: apiKeys,
     );
+    if (!mounted || !isCurrent()) return;
     if (prompt == null) {
+      setState(() => _isLoading = false);
       return;
     }
 
+    final history = List<ChatMessage>.from(_messages);
     final userMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
       text: prompt,
       sender: MessageSender.user,
       timestamp: DateTime.now(),
@@ -461,7 +484,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     await _ensureCurrentSession(userMessage, prompt);
-    if (!mounted) return;
+    if (!mounted || !isCurrent()) return;
     _scrollToBottom();
 
     final chatModelProvider = Provider.of<ChatModelProvider>(
@@ -490,19 +513,40 @@ class _ChatScreenState extends State<ChatScreen> {
         chatModel: chatModelProvider,
         apiKeys: apiKeys,
       );
-      final stream = chatService.generateResponse(
+      await _saveCurrentSessionSnapshot();
+      if (!mounted || !isCurrent()) return;
+      final messageId = aiMessage.id;
+      final run = ToolChatRun(
+        context: context,
+        sessionId: _currentSessionId!,
+        messageId: messageId,
+        onMetadata: (metadata) {
+          if (!mounted) return;
+          final index = _messages.indexWhere((m) => m.id == messageId);
+          if (index >= 0) {
+            setState(() {
+              _messages[index] = _messages[index].copyWith(metadata: metadata);
+            });
+          }
+        },
+      );
+      _toolRun = run;
+      final stream = run.generate(
+        service: chatService,
         prompt: prompt,
-        context: _buildAiContextMessages(prompt),
+        history: history,
         model: chatModelProvider.selectedModel,
       );
 
       String fullResponse = "";
       await for (final chunk in stream) {
+        if (!mounted || !isCurrent()) return;
         fullResponse += chunk;
         _replaceLastAiMessage(text: fullResponse, isLoading: true);
         _scrollToBottom();
       }
 
+      if (!mounted || !isCurrent()) return;
       if (mounted) {
         setState(() {
           final lastMessageIndex = _messages.length - 1;
@@ -516,6 +560,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       : fullResponse, // Handle empty response
               sender: MessageSender.ai,
               timestamp: _messages[lastMessageIndex].timestamp,
+              metadata: _messages[lastMessageIndex].metadata,
               isLoading: false, // Done loading
             );
           }
@@ -524,6 +569,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       await _saveCurrentSessionSnapshot();
     } catch (e) {
+      if (!mounted || !isCurrent()) return;
       if (mounted) {
         if (e is MissingApiKeyException) {
           _handleMissingApiKeyError();
@@ -535,14 +581,14 @@ class _ChatScreenState extends State<ChatScreen> {
       debugPrint('Error receiving stream: $e');
     } finally {
       // Ensure isLoading is false if not already set by success/error blocks
-      if (mounted && _isLoading) {
+      if (isCurrent() && _isLoading) {
         setState(() {
           _isLoading = false;
         });
       }
       _scrollToBottom();
     }
-    await _saveCurrentSessionSnapshot(reloadSessions: true);
+    if (isCurrent()) await _saveCurrentSessionSnapshot(reloadSessions: true);
   }
 
   /// 显示 API 密钥缺失错误对话框
@@ -564,6 +610,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                   // Navigate to settings screen
+                  _stopGeneration();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -631,6 +678,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    if (_currentSessionId == session.id) _stopGeneration();
     await _sessionService.deleteSession(session.id);
     if (_currentSessionId == session.id) {
       setState(() {
@@ -855,6 +903,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icons.videocam_outlined,
                   '视频生成',
                   onTap: () {
+                    _stopGeneration();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -920,6 +969,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Icons.info_outline,
                   AppLocalizations.of(context)!.about,
                   onTap: () {
+                    _stopGeneration();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1158,6 +1208,7 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.settings_outlined, color: Colors.black87),
             tooltip: AppLocalizations.of(context)!.settings,
             onPressed: () {
+              _stopGeneration();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
@@ -1237,6 +1288,11 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     }
 
+    messageContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [ToolCallRecords(message: message), messageContent],
+    );
     return Align(
       alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -1532,7 +1588,12 @@ class _ChatScreenState extends State<ChatScreen> {
               builder: (context, value, child) {
                 final bool isEmpty = value.text.isEmpty;
                 return FilledButton(
-                  onPressed: _isLoading || isEmpty ? null : _sendMessage,
+                  onPressed:
+                      _isLoading
+                          ? _stopGeneration
+                          : isEmpty
+                          ? null
+                          : _sendMessage,
                   style: FilledButton.styleFrom(
                     backgroundColor:
                         _isLoading || isEmpty
@@ -1550,7 +1611,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                   ),
-                  child: Icon(Icons.arrow_upward_rounded, size: 20),
+                  child: Icon(
+                    _isLoading
+                        ? Icons.stop_rounded
+                        : Icons.arrow_upward_rounded,
+                    size: 20,
+                  ),
                 );
               },
             ),
@@ -1629,7 +1695,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             _messages.add(
               ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
                 text: AppLocalizations.of(context)!.apiKeyNotSetError,
                 sender: MessageSender.ai,
                 timestamp: DateTime.now(),
@@ -1693,7 +1759,7 @@ class _ChatScreenState extends State<ChatScreen> {
           } else {
             _messages.add(
               ChatMessage(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
                 text: AppLocalizations.of(
                   context,
                 )!.errorGeneratingImage(e.toString()),
