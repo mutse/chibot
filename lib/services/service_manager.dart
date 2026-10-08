@@ -4,6 +4,7 @@ import '../providers/api_key_provider.dart';
 import '../providers/unified_settings_provider.dart';
 import 'chat_service_factory.dart';
 import 'service_config_validator.dart';
+import 'exceptions/missing_api_key_exception.dart';
 
 /// 服务管理器 - 使用专职提供者创建和验证服务
 ///
@@ -125,9 +126,9 @@ class ServiceManager {
     // 检查 API Key
     final provider = chatModel.selectedProvider;
     if (!isProviderConfigured(apiKeys: apiKeys, provider: provider)) {
-      throw Exception(
-        'API key not configured for $provider provider. '
-        'Please configure it in settings.',
+      throw MissingApiKeyException(
+        provider: provider,
+        availableProviders: getAvailableProviders(apiKeys: apiKeys),
       );
     }
 
