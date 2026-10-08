@@ -65,6 +65,12 @@ abstract class BaseApiService {
     });
   }
 
+  // HTTP status codes worth retrying: 429 (rate limited) and 5xx (server errors).
+  // Other 4xx errors (400, 401, 403, 404, ...) fail fast without retry.
+  bool _isRetryableStatusCode(int statusCode) {
+    return statusCode == 429 || statusCode >= 500;
+  }
+
   // Execute request with retry logic and error handling
   Future<http.Response> _executeRequest(Future<http.Response> Function() request) async {
     Exception? lastException;
@@ -97,10 +103,19 @@ abstract class BaseApiService {
         logWarning('Network error (attempt $attempt/$maxRetries)', error: e);
         
       } on ApiException catch (e) {
-        // Don't retry API errors (4xx, 5xx)
-        logError('API error: ${e.message}', error: e);
-        rethrow;
-        
+        if (_isRetryableStatusCode(e.statusCode)) {
+          // Retry rate limiting (429) and server errors (5xx) with backoff
+          lastException = e;
+          logWarning(
+            'Retryable API error ${e.statusCode} (attempt $attempt/$maxRetries)',
+            error: e,
+          );
+        } else {
+          // Don't retry other client errors (400, 401, 403, 404, ...)
+          logError('API error: ${e.message}', error: e);
+          rethrow;
+        }
+
       } catch (e) {
         lastException = ApiException(
           'Unexpected error: ${e.toString()}',
