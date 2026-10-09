@@ -8,7 +8,7 @@ import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
 
 class GeminiService extends BaseApiService implements ChatService {
   GeminiService({
@@ -23,7 +23,7 @@ class GeminiService extends BaseApiService implements ChatService {
   String get providerName => 'Google Gemini';
 
   @override
-  List<String> get supportedModels => ServiceModelRegistry.geminiModels;
+  List<String> get supportedModels => ModelRegistry.geminiModels;
 
   @override
   Map<String, String> getHeaders() {
@@ -147,13 +147,13 @@ class GeminiService extends BaseApiService implements ChatService {
       ];
 
       final requestBody = _buildGenerateRequest(
-        ServiceModelRegistry.geminiTitleModel,
+        ModelRegistry.geminiTitleModel,
         contents,
         {'maxOutputTokens': 20},
       );
 
       final response = await post(
-        '/models/${ServiceModelRegistry.geminiTitleModel}:generateContent',
+        '/models/${ModelRegistry.geminiTitleModel}:generateContent',
         body: requestBody,
       );
 
