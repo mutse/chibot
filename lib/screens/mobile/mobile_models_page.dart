@@ -4,7 +4,7 @@ import 'package:chibot/providers/chat_model_provider.dart';
 import 'package:chibot/providers/image_model_provider.dart';
 import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/providers/video_model_provider.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
