@@ -3,6 +3,7 @@ import 'google_image_service.dart';
 import 'flux_kontext_service.dart';
 import 'flux_krea_service.dart';
 import 'exceptions/missing_api_key_exception.dart';
+import 'image_generation_provider.dart';
 
 /// 图像生成服务工厂 - 根据提供商创建图像生成服务
 ///
@@ -18,7 +19,7 @@ class ImageGenerationServiceFactory {
   static const String stabilityAI = 'stabilityAI';
 
   /// 根据供应商和模型创建图像生成服务
-  static dynamic createImageService({
+  static ImageGenerationProvider createImageService({
     required String provider,
     required String apiKey,
     required String model,
@@ -46,7 +47,7 @@ class ImageGenerationServiceFactory {
   }
 
   /// 根据提供商URL检测和创建服务
-  static dynamic createFromProviderUrl({
+  static ImageGenerationProvider createFromProviderUrl({
     required String providerBaseUrl,
     required String apiKey,
     required String model,
