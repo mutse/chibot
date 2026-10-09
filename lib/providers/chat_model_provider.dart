@@ -5,7 +5,6 @@ import '../constants/app_constants.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../models/model_registry.dart';
-import '../services/service_model_registry.dart';
 import '_provider_storage_helpers.dart';
 
 /// 负责聊天相关的模型配置和提供商管理
@@ -54,9 +53,9 @@ class ChatModelProvider with ChangeNotifier, ProviderStorageHelpers {
 
   // 分类的预设模型（按提供商组织）
   final Map<String, List<String>> _categorizedPresetModels = {
-    'OpenAI': List<String>.of(ServiceModelRegistry.openAIModels),
-    'Google': List<String>.of(ServiceModelRegistry.geminiModels),
-    'Anthropic': List<String>.of(ServiceModelRegistry.claudeModels),
+    'OpenAI': List<String>.of(ModelRegistry.openAIModels),
+    'Google': List<String>.of(ModelRegistry.geminiModels),
+    'Anthropic': List<String>.of(ModelRegistry.claudeModels),
   };
 
   // ==================== Getters ====================
