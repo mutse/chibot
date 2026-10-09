@@ -11,25 +11,14 @@ class ChatSessionService {
         debugLabel: 'chat session',
       );
   final PreferencesSessionStore<ChatSession> _store;
-  // All instances share a write queue: background tool results and foreground
-  // session edits must not overwrite each other or resurrect deleted sessions.
-  static Future<void> _writes = Future<void>.value();
-  Future<void> _write(Future<void> Function() action) {
-    final next = _writes.then((_) => action());
-    _writes = next.catchError((Object _) {});
-    return next;
-  }
+  // Write serialization is handled by PreferencesSessionStore (per storageKey).
 
-  Future<List<ChatSession>> loadSessions() async {
-    await _writes;
-    return _store.loadSessions();
-  }
+  Future<List<ChatSession>> loadSessions() => _store.loadSessions();
 
-  Future<void> saveSession(ChatSession session) =>
-      _write(() => _store.saveSession(session));
+  Future<void> saveSession(ChatSession session) => _store.saveSession(session);
   Future<void> deleteSession(String sessionId) =>
-      _write(() => _store.deleteSession(sessionId));
-  Future<void> clearAllSessions() => _write(_store.clearAllSessions);
+      _store.deleteSession(sessionId);
+  Future<void> clearAllSessions() => _store.clearAllSessions();
 
   Future<void> updateToolMetadata(
     String sessionId,

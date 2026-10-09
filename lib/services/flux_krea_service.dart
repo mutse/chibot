@@ -52,7 +52,9 @@ class FluxKreaService extends FluxBaseService {
     final url = Uri.parse('$baseUrl/$_pollPath')
         .replace(queryParameters: {'id': idOrUrl});
 
-    final response = await http.get(url, headers: getHeaders());
+    final response = await http
+        .get(url, headers: getHeaders())
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;

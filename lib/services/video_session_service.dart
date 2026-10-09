@@ -6,38 +6,89 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/video_session.dart';
 import '../models/video_message.dart';
 import '../core/logger.dart';
+import 'preferences_session_store.dart';
 
 class VideoSessionService {
   static const String _sessionsKey = 'video_sessions';
   static const String _currentSessionKey = 'current_video_session';
 
-  Future<List<VideoSession>> getAllSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final sessionsJson = prefs.getString(_sessionsKey);
+  VideoSessionService()
+      : _store = PreferencesSessionStore<VideoSession>(
+          storageKey: _sessionsKey,
+          toJson: (session) => session.toJson(),
+          fromJson: (json) => VideoSession.fromJson(json),
+          idOf: (session) => session.id,
+          debugLabel: 'video session',
+        );
 
-    if (sessionsJson == null) {
-      return [];
-    }
+  final PreferencesSessionStore<VideoSession> _store;
+
+  bool _migrationDone = false;
+
+  /// One-time migration from the legacy whole-list JSON string format to the
+  /// per-item StringList format used by [PreferencesSessionStore].
+  ///
+  /// The migration is atomic (single write) and never deletes data before the
+  /// new format is safely persisted. Corrupted legacy data is backed up to a
+  /// separate key instead of being silently dropped.
+  Future<void> _ensureMigrated() async {
+    if (_migrationDone) return;
+    _migrationDone = true;
+
+    final prefs = await SharedPreferences.getInstance();
+    // New format already present (StringList) — nothing to do.
+    if (prefs.getStringList(_sessionsKey) != null) return;
+    // Old format: single JSON string of the whole list.
+    final legacyJson = prefs.getString(_sessionsKey);
+    if (legacyJson == null || legacyJson.isEmpty) return;
 
     try {
-      final List<dynamic> sessionsList = jsonDecode(sessionsJson);
-      return sessionsList
-          .map((json) => VideoSession.fromJson(json as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => b.updatedAt?.compareTo(a.updatedAt ?? a.createdAt) ??
-                         b.createdAt.compareTo(a.createdAt));
+      final List<dynamic> list = jsonDecode(legacyJson);
+      final sessions = <VideoSession>[];
+      for (final item in list) {
+        try {
+          sessions.add(VideoSession.fromJson(item as Map<String, dynamic>));
+        } catch (e) {
+          // Skip individual corrupted sessions instead of dropping everything.
+          AppLogger.warning(
+            'Skipping corrupted video session during migration',
+            error: e,
+          );
+        }
+      }
+      // Atomic write of the new format.
+      final sessionsJson =
+          sessions.map((s) => jsonEncode(s.toJson())).toList();
+      await prefs.setStringList(_sessionsKey, sessionsJson);
+      AppLogger.info(
+        'Migrated ${sessions.length} video sessions to per-item storage',
+      );
     } catch (e) {
-      AppLogger.error('Error loading video sessions', error: e);
-      return [];
+      // Whole-list JSON is corrupted: back it up for manual recovery instead
+      // of silently dropping it.
+      AppLogger.error(
+        'Video sessions data corrupted, backing up raw JSON',
+        error: e,
+      );
+      final backupKey =
+          '${_sessionsKey}_corrupted_backup_${DateTime.now().millisecondsSinceEpoch}';
+      await prefs.setString(backupKey, legacyJson);
     }
   }
 
-  Future<void> saveSessions(List<VideoSession> sessions) async {
-    final prefs = await SharedPreferences.getInstance();
-    final sessionsJson = jsonEncode(
-      sessions.map((session) => session.toJson()).toList(),
+  void _sortSessions(List<VideoSession> sessions) {
+    sessions.sort(
+      (a, b) =>
+          b.updatedAt?.compareTo(a.updatedAt ?? a.createdAt) ??
+          b.createdAt.compareTo(a.createdAt),
     );
-    await prefs.setString(_sessionsKey, sessionsJson);
+  }
+
+  Future<List<VideoSession>> getAllSessions() async {
+    await _ensureMigrated();
+    final sessions = await _store.loadSessions();
+    _sortSessions(sessions);
+    return sessions;
   }
 
   Future<VideoSession?> getSession(String id) async {
@@ -53,6 +104,7 @@ class VideoSessionService {
     required String title,
     VideoSettings? settings,
   }) async {
+    await _ensureMigrated();
     final sessions = await getAllSessions();
     final newSession = VideoSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -63,30 +115,22 @@ class VideoSessionService {
       settings: settings ?? VideoSettings(),
     );
 
-    sessions.insert(0, newSession);
-    await saveSessions(sessions);
+    await _store.saveSession(newSession);
     await setCurrentSessionId(newSession.id);
 
     return newSession;
   }
 
   Future<VideoSession> updateSession(VideoSession session) async {
-    final sessions = await getAllSessions();
-    final index = sessions.indexWhere((s) => s.id == session.id);
-
-    if (index != -1) {
-      sessions[index] = session.copyWith(updatedAt: DateTime.now());
-      await saveSessions(sessions);
-      return sessions[index];
-    }
-
-    return session;
+    await _ensureMigrated();
+    final updated = session.copyWith(updatedAt: DateTime.now());
+    await _store.saveSession(updated);
+    return updated;
   }
 
   Future<void> deleteSession(String id) async {
-    final sessions = await getAllSessions();
-    sessions.removeWhere((session) => session.id == id);
-    await saveSessions(sessions);
+    await _ensureMigrated();
+    await _store.deleteSession(id);
 
     // Delete associated video files if they exist
     await _deleteSessionVideos(id);
@@ -106,8 +150,7 @@ class VideoSessionService {
       await _deleteSessionVideos(session.id);
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_sessionsKey);
+    await _store.clearAllSessions();
     await clearCurrentSessionId();
   }
 
@@ -210,15 +253,21 @@ class VideoSessionService {
   Future<Map<String, dynamic>> getStatistics() async {
     final sessions = await getAllSessions();
     final totalSessions = sessions.length;
-    final totalVideos = sessions.fold(0, (sum, session) => sum + session.videoCount);
-    final totalDuration = sessions.fold(0, (sum, session) => sum + session.totalDuration);
+    final totalVideos =
+        sessions.fold(0, (sum, session) => sum + session.videoCount);
+    final totalDuration =
+        sessions.fold(0, (sum, session) => sum + session.totalDuration);
 
     return {
       'totalSessions': totalSessions,
       'totalVideos': totalVideos,
       'totalDuration': totalDuration,
-      'averageVideosPerSession': totalSessions > 0 ? (totalVideos / totalSessions).toStringAsFixed(1) : '0',
-      'averageDuration': totalVideos > 0 ? (totalDuration / totalVideos).toStringAsFixed(1) : '0',
+      'averageVideosPerSession': totalSessions > 0
+          ? (totalVideos / totalSessions).toStringAsFixed(1)
+          : '0',
+      'averageDuration': totalVideos > 0
+          ? (totalDuration / totalVideos).toStringAsFixed(1)
+          : '0',
     };
   }
 }

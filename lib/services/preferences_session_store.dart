@@ -23,7 +23,45 @@ class PreferencesSessionStore<T> {
   final String Function(T session) idOf;
   final String debugLabel;
 
+  // All instances sharing the same storageKey serialize writes through one
+  // queue: background tool results and foreground session edits must not
+  // overwrite each other or resurrect deleted sessions.
+  static final Map<String, Future<void>> _writeQueues = {};
+
+  Future<void> _write(Future<void> Function() action) {
+    final current = _writeQueues[storageKey] ?? Future<void>.value();
+    final next = current.then((_) => action());
+    _writeQueues[storageKey] = next.catchError((Object _) {});
+    return next;
+  }
+
   Future<List<T>> loadSessions() async {
+    // Wait for pending writes so reads see a consistent snapshot.
+    await (_writeQueues[storageKey] ?? Future<void>.value());
+    return _loadSessionsUnsafe();
+  }
+
+  Future<void> saveSession(T session) => _write(() async {
+        final sessions = await _loadSessionsUnsafe();
+        final sessionId = idOf(session);
+        sessions.removeWhere((existing) => idOf(existing) == sessionId);
+        sessions.add(session);
+        await _persist(sessions);
+      });
+
+  Future<void> deleteSession(String sessionId) => _write(() async {
+        final sessions = await _loadSessionsUnsafe();
+        sessions.removeWhere((session) => idOf(session) == sessionId);
+        await _persist(sessions);
+      });
+
+  Future<void> clearAllSessions() => _write(() async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(storageKey);
+      });
+
+  /// Load without going through the write queue; only call from within [_write].
+  Future<List<T>> _loadSessionsUnsafe() async {
     final prefs = await SharedPreferences.getInstance();
     final sessionsJson = prefs.getStringList(storageKey) ?? const <String>[];
     return sessionsJson
@@ -41,25 +79,6 @@ class PreferencesSessionStore<T> {
         })
         .whereType<T>()
         .toList();
-  }
-
-  Future<void> saveSession(T session) async {
-    final sessions = await loadSessions();
-    final sessionId = idOf(session);
-    sessions.removeWhere((existing) => idOf(existing) == sessionId);
-    sessions.add(session);
-    await _persist(sessions);
-  }
-
-  Future<void> deleteSession(String sessionId) async {
-    final sessions = await loadSessions();
-    sessions.removeWhere((session) => idOf(session) == sessionId);
-    await _persist(sessions);
-  }
-
-  Future<void> clearAllSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(storageKey);
   }
 
   Future<void> _persist(List<T> sessions) async {

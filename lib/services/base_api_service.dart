@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../core/exceptions.dart';
 import '../core/logger.dart';
@@ -71,6 +72,16 @@ abstract class BaseApiService {
     return statusCode == 429 || statusCode >= 500;
   }
 
+  /// Parse the Retry-After header (delta seconds) into a Duration.
+  /// HTTP-date form is uncommon for 429 responses; ignored here.
+  Duration? _parseRetryAfter(Map<String, String> headers) {
+    final value = headers['retry-after'];
+    if (value == null || value.isEmpty) return null;
+    final seconds = int.tryParse(value.trim());
+    if (seconds == null) return null;
+    return Duration(seconds: max(0, seconds));
+  }
+
   // Execute request with retry logic and error handling
   Future<http.Response> _executeRequest(Future<http.Response> Function() request) async {
     Exception? lastException;
@@ -83,7 +94,24 @@ abstract class BaseApiService {
         
         logInfo('API response: ${response.statusCode}');
         
-        validateResponse(response);
+        try {
+          validateResponse(response);
+        } on ApiException catch (e) {
+          // Preserve server Retry-After header for 429 backoff
+          final retryAfter = _parseRetryAfter(response.headers);
+          if (retryAfter != null && e.retryAfter == null) {
+            throw ApiException(
+              e.message,
+              e.statusCode,
+              code: e.code,
+              originalError: e.originalError,
+              stackTrace: e.stackTrace,
+              responseData: e.responseData,
+              retryAfter: retryAfter,
+            );
+          }
+          rethrow;
+        }
         return response;
         
       } on TimeoutException catch (e) {
@@ -126,9 +154,21 @@ abstract class BaseApiService {
         logError('Unexpected error (attempt $attempt/$maxRetries)', error: e);
       }
       
-      // Wait before retry (exponential backoff)
+      // Wait before retry (exponential backoff with jitter)
       if (attempt < maxRetries) {
-        final delay = Duration(milliseconds: 1000 * attempt);
+        // Exponential: 1s, 2s, 4s... (was linear 1s, 2s, 3s)
+        var delayMs = 1000 * (1 << (attempt - 1));
+        // Respect server Retry-After header on 429
+        if (lastException is ApiException) {
+          final retryAfter = (lastException as ApiException).retryAfter;
+          if (retryAfter != null) {
+            delayMs = max(delayMs, retryAfter.inMilliseconds);
+          }
+        }
+        // Add ±25% jitter to avoid thundering herd
+        final jitter =
+            (delayMs * 0.25 * (Random().nextDouble() * 2 - 1)).round();
+        final delay = Duration(milliseconds: max(0, delayMs + jitter));
         logInfo('Retrying in ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
       }
