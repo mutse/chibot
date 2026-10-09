@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/settings_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/image_model_provider.dart';
@@ -54,9 +53,6 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
     return MultiProvider(
       providers: [
-        // Legacy SettingsProvider for backward compatibility
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-
         // New specialized providers (Phase 1 refactoring)
         ChangeNotifierProvider(create: (_) => ApiKeyProvider()),
         ChangeNotifierProvider(create: (_) => PluginProvider()),

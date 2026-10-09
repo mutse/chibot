@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/logger.dart';
+import '../../core/exceptions.dart';
+import '../exceptions/missing_api_key_exception.dart';
 import '../base_api_service.dart';
 import 'flux_dtos.dart';
 
@@ -36,10 +38,11 @@ abstract class FluxBaseService extends BaseApiService {
   @override
   void validateResponse(http.Response response) {
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('$fluxLabel API error: ${enrichHttpError(
+      throw ApiException(
+        '$fluxLabel API error: ${enrichHttpError(response.statusCode, response.body)}',
         response.statusCode,
-        response.body,
-      )}');
+        code: 'FLUX_API_ERROR',
+      );
     }
   }
 
@@ -101,8 +104,9 @@ abstract class FluxBaseService extends BaseApiService {
   /// 提交一个生成请求并解析为 [FluxSubmitResponse]。
   Future<FluxSubmitResponse> submit(FluxGenerationRequest request) async {
     if (apiKey.isEmpty) {
-      throw Exception(
-        '$fluxLabel API key is empty. Please configure your API key in settings.',
+      throw MissingApiKeyException(
+        provider: fluxLabel,
+        availableProviders: const [],
       );
     }
 
@@ -110,7 +114,9 @@ abstract class FluxBaseService extends BaseApiService {
     final body = jsonEncode(request.toJson());
     AppLogger.debug('[$fluxLabel] POST $url body=$body');
 
-    final response = await http.post(url, headers: getHeaders(), body: body);
+    final response = await http
+        .post(url, headers: getHeaders(), body: body)
+        .timeout(const Duration(seconds: 60));
     AppLogger.debug(
       '[$fluxLabel] submit status=${response.statusCode} body=${response.body}',
     );
@@ -121,10 +127,11 @@ abstract class FluxBaseService extends BaseApiService {
       return FluxSubmitResponse.fromJson(json);
     }
 
-    throw Exception('$fluxLabel API error: ${enrichHttpError(
+    throw ApiException(
+      '$fluxLabel API error: ${enrichHttpError(response.statusCode, response.body)}',
       response.statusCode,
-      response.body,
-    )}');
+      code: 'FLUX_API_ERROR',
+    );
   }
 
   /// 轮询单次结果。`idOrUrl` 可以是完整 polling URL，也可以是 request id（视子类而定）。
@@ -148,12 +155,14 @@ abstract class FluxBaseService extends BaseApiService {
           if (url != null && url.isNotEmpty) {
             return url;
           }
-          throw Exception('$fluxLabel returned no image URL');
+          throw ApiException('$fluxLabel returned no image URL', 0, code: 'NO_IMAGE_URL');
         }
 
         if (status == 'error' || status == 'failed') {
-          throw Exception(
+          throw ApiException(
             '$fluxLabel generation failed: ${result.error ?? "Unknown error"}',
+            0,
+            code: 'GENERATION_FAILED',
           );
         }
       } catch (e) {
@@ -170,8 +179,10 @@ abstract class FluxBaseService extends BaseApiService {
       await Future.delayed(pollInterval);
     }
 
-    throw Exception(
+    throw ApiException(
       '$fluxLabel generation timed out after ${maxWaitTime.inSeconds} seconds',
+      0,
+      code: 'GENERATION_TIMEOUT',
     );
   }
 }

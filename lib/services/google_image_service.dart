@@ -66,11 +66,13 @@ class GoogleImageService {
         print('[GoogleImageService] Request body: ${jsonEncode(body)}');
       }
 
-      http.Response response = await _client.post(
-        endpointUri,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      http.Response response = await _client
+          .post(
+            endpointUri,
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 60));
 
       if (_shouldRetryWithLegacyFormat(response)) {
         body = _buildRequestBody(
@@ -88,11 +90,13 @@ class GoogleImageService {
           );
         }
 
-        response = await _client.post(
-          endpointUri,
-          headers: headers,
-          body: jsonEncode(body),
-        );
+        response = await _client
+            .post(
+              endpointUri,
+              headers: headers,
+              body: jsonEncode(body),
+            )
+            .timeout(const Duration(seconds: 60));
       }
 
       if (kDebugMode) {

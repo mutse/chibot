@@ -329,16 +329,29 @@ class MobileChatPageState extends State<MobileChatPage> {
       );
 
       var fullResponse = '';
+      // Throttle UI updates during streaming to ~10fps.
+      var lastUiUpdate = DateTime.now();
       await for (final chunk in stream) {
         if (!isCurrent()) {
           return;
         }
         fullResponse += chunk;
+        final now = DateTime.now();
+        if (now.difference(lastUiUpdate).inMilliseconds >= 100) {
+          lastUiUpdate = now;
+          _replaceLastAiMessage(
+            fullResponse.isEmpty ? localizations.aiIsThinking : fullResponse,
+            isLoading: true,
+          );
+          _scrollToBottom();
+        }
+      }
+      // Final update to ensure the complete response is rendered.
+      if (isCurrent()) {
         _replaceLastAiMessage(
           fullResponse.isEmpty ? localizations.aiIsThinking : fullResponse,
           isLoading: true,
         );
-        _scrollToBottom();
       }
       if (!isCurrent()) {
         return;

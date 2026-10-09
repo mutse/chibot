@@ -91,14 +91,6 @@ class VideoSessionService {
     return sessions;
   }
 
-  Future<void> saveSessions(List<VideoSession> sessions) async {
-    await _ensureMigrated();
-    final prefs = await SharedPreferences.getInstance();
-    final sessionsJson =
-        sessions.map((session) => jsonEncode(session.toJson())).toList();
-    await prefs.setStringList(_sessionsKey, sessionsJson);
-  }
-
   Future<VideoSession?> getSession(String id) async {
     final sessions = await getAllSessions();
     try {

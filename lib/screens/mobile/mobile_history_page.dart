@@ -498,9 +498,12 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                           style: TextStyle(color: MobilePalette.textSecondary),
                         ),
                       )
-                    : ListView(
+                    : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                        children: grouped.entries.map((group) {
+                        // 按分组懒加载，避免一次性构建所有历史卡片
+                        itemCount: grouped.length,
+                        itemBuilder: (context, index) {
+                          final group = grouped.entries.elementAt(index);
                           final entries = group.value;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 18),
@@ -533,7 +536,7 @@ class MobileHistoryPageState extends State<MobileHistoryPage> {
                               ],
                             ),
                           );
-                        }).toList(),
+                        },
                       ),
               ),
             ],

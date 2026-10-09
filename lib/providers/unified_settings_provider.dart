@@ -56,6 +56,8 @@ class UnifiedSettingsProvider with ChangeNotifier {
     _selectedModelType =
         available_model.ModelType.values[prefs.getInt(_selectedModelTypeKey) ??
             available_model.ModelType.text.index];
+    // 异步加载完成后必须通知，否则 watch 点一直显示错误的默认 text 模式
+    notifyListeners();
   }
 
   available_model.ModelType get selectedModelType => _selectedModelType;
@@ -324,6 +326,9 @@ class UnifiedSettingsProvider with ChangeNotifier {
   }
 
   /// 从扁平 Map 提取 API 密钥设置
+  ///
+  /// 注意：`google_search_engine_id` 是搜索配置而非 API 密钥，归属 search；
+  /// `google_search_api_key` 归属 apiKeys。两处不再重复，避免键碰撞。
   Map<String, dynamic> _extractApiKeys(Map<String, dynamic> flat) {
     const keys = [
       'openai_api_key',
@@ -332,7 +337,6 @@ class UnifiedSettingsProvider with ChangeNotifier {
       'flux_kontext_api_key',
       'tavily_api_key',
       'google_search_api_key',
-      'google_search_engine_id',
       'custom_provider_api_keys_map',
       'custom_image_provider_api_keys_map',
     ];
@@ -405,14 +409,15 @@ class UnifiedSettingsProvider with ChangeNotifier {
 
   /// 从扁平 Map 提取搜索设置
   ///
-  /// 注意：`google_search_api_key` 和 `google_search_engine_id` 归属 apiKeys，
-  /// 这里不再重复提取，避免导入/导出时的键碰撞导致静默数据丢失。
+  /// 注意：`google_search_engine_id` 归属 search（搜索配置），
+  /// `google_search_api_key` 归属 apiKeys。两处不再重复，避免键碰撞。
   Map<String, dynamic> _extractSearch(Map<String, dynamic> flat) {
     const keys = [
       'google_search_enabled',
       'google_search_result_count',
       'google_search_provider',
       'tavily_search_enabled',
+      'google_search_engine_id',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {
