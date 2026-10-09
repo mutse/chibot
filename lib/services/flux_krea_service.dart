@@ -6,13 +6,14 @@ import 'package:http/http.dart' as http;
 import '../core/logger.dart';
 import 'flux/flux_base_service.dart';
 import 'flux/flux_dtos.dart';
+import '../image_generation_provider.dart';
 
 // 旧的类型名以 typedef 形式重新导出。
 typedef FluxKreaRequest = FluxGenerationRequest;
 typedef FluxKreaResponse = FluxSubmitResponse;
 typedef FluxKreaResult = FluxPollResult;
 
-class FluxKreaService extends FluxBaseService {
+class FluxKreaService extends FluxBaseService implements ImageGenerationProvider {
   FluxKreaService({required super.apiKey}) : super(baseUrl: 'https://api.bfl.ai');
 
   @override
@@ -88,6 +89,7 @@ class FluxKreaService extends FluxBaseService {
   /// 兼容旧调用方暴露的公共方法名。
   Future<FluxPollResult> pollResult(String requestId) => poll(requestId);
 
+  @override
   Future<String> generateImage({
     required String prompt,
     String? aspectRatio,
