@@ -8,7 +8,7 @@ import '../models/chat_message.dart';
 import '../models/tool_call.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
 
 class OpenAIService extends BaseApiService
     implements ChatService, ToolChatService {
@@ -26,7 +26,7 @@ class OpenAIService extends BaseApiService
   String get providerName => _isOpenRouter ? 'OpenRouter' : 'OpenAI';
 
   @override
-  List<String> get supportedModels => ServiceModelRegistry.openAIModels;
+  List<String> get supportedModels => ModelRegistry.openAIModels;
 
   @override
   Map<String, String> getHeaders() {
@@ -268,7 +268,7 @@ class OpenAIService extends BaseApiService
           'Generate a short, descriptive title (max 5 words) for this conversation: "${firstMessage.text}"';
 
       final requestBody = _buildChatRequest(
-        ServiceModelRegistry.openAITitleModel,
+        ModelRegistry.openAITitleModel,
         [
           {'role': 'user', 'content': prompt},
         ],
