@@ -5,7 +5,7 @@ import 'package:chibot/models/image_message.dart';
 import 'package:chibot/models/image_session.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/image_model_provider.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/services/image_generation_service.dart';
 import 'package:chibot/services/image_save_service.dart';
 import 'package:chibot/services/image_session_service.dart';

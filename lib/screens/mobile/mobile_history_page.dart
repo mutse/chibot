@@ -5,7 +5,7 @@ import 'package:chibot/models/chat_session.dart';
 import 'package:chibot/models/image_session.dart';
 import 'package:chibot/models/video_message.dart';
 import 'package:chibot/models/video_session.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/image_session_service.dart';
 import 'package:chibot/services/video_session_service.dart';

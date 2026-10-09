@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/settings_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/image_model_provider.dart';
@@ -12,7 +11,7 @@ import 'providers/search_provider.dart';
 import 'providers/unified_settings_provider.dart';
 import 'package:chibot/screens/chat_screen.dart';
 import 'package:chibot/screens/mobile/mobile_home_shell.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
@@ -54,9 +53,6 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
     return MultiProvider(
       providers: [
-        // Legacy SettingsProvider for backward compatibility
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-
         // New specialized providers (Phase 1 refactoring)
         ChangeNotifierProvider(create: (_) => ApiKeyProvider()),
         ChangeNotifierProvider(create: (_) => PluginProvider()),

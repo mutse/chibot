@@ -1,6 +1,6 @@
 import 'package:chibot/constants/app_constants.dart';
 import 'package:chibot/l10n/app_localizations.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:flutter/material.dart';
 
 class AboutScreen extends StatelessWidget {

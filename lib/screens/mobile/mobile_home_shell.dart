@@ -8,7 +8,7 @@ import 'package:chibot/providers/unified_settings_provider.dart';
 import 'package:chibot/screens/mobile/mobile_chat_page.dart';
 import 'package:chibot/screens/mobile/mobile_history_page.dart';
 import 'package:chibot/screens/mobile/mobile_image_studio_page.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/screens/mobile/mobile_video_studio_page.dart';
 import 'package:chibot/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
