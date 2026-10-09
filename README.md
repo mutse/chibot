@@ -2,7 +2,7 @@
 
 <img src=./assets/images/logo.png width=40% height=40%/>
   
-A sophisticated cross-platform AI chatbot application built with Flutter that supports multiple AI providers including OpenAI, Google Gemini, and Anthropic Claude. Features text and image generation capabilities with a clean, modern interface.
+A sophisticated cross-platform AI chatbot application built with Flutter that supports multiple AI providers including OpenAI, Google Gemini, and Anthropic Claude. Features text, image and video generation capabilities with a clean, modern interface.
 
 ## Screenshots
 
@@ -12,9 +12,13 @@ A sophisticated cross-platform AI chatbot application built with Flutter that su
 
 - **Multi-Provider Support**: OpenAI, Google Gemini, Anthropic Claude, and custom AI models
 - **Real-time Streaming**: Live response streaming for OpenAI and Claude
-- **Image Generation**: AI-powered image creation (DALL-E, Gemini, etc.)
-- **Web Search**: Integrated web search capabilities (Tavily, Bing)
-- **Session Management**: Persistent conversation history
+- **Image Generation**: AI-powered image creation (FLUX.1 via BFL/Krea/Kontext, Google)
+- **Video Generation**: AI video creation (e.g. Google Veo) with playback and history
+- **Web Search**: Integrated web search capabilities (Google, Tavily, Bing)
+- **Tool / Plugin System**: Extensible tool calls (e.g. GitHub tools) with orchestration
+- **Session Management**: Persistent conversation history for chat, image and video
+- **Markdown Export**: Export chat sessions to Markdown
+- **Auto-Update**: In-app update checking with update dialog
 - **Desktop Integration**: System tray, window management, context menus
 - **Multi-language Support**: English, Chinese, German, French, Japanese
 - **Responsive Design**: Adaptive UI for all screen sizes
@@ -77,40 +81,78 @@ The application follows a clean architecture pattern with clear separation of co
 
 ```
 lib/
-├── main.dart                 # Application entry point
-├── providers/               # State management
-│   ├── settings_provider.dart # App configuration & API keys
-│   └── chat_provider.dart    # Chat session management
-├── services/                # Business logic & APIs
-│   ├── base_api_service.dart  # Abstract base with retry logic
-│   ├── openai_service.dart    # OpenAI GPT implementation
-│   ├── gemini_service.dart    # Google Gemini implementation
-│   ├── claude_service.dart    # Anthropic Claude implementation
-│   ├── chat_service_factory.dart # Service creation factory
-│   ├── service_manager.dart   # Integrated service management
-│   ├── image_generation_service.dart # Image creation
-│   ├── chat_session_service.dart     # Conversation persistence
-│   ├── image_session_service.dart    # Image history
-│   ├── web_search_service.dart       # Web search integration
-│   └── image_save_service.dart       # Device storage
-├── models/                  # Data structures
-│   ├── chat_message.dart    # Core message structure
-│   ├── chat_session.dart    # Conversation sessions
-│   ├── image_session.dart   # Image generation sessions
-│   └── image_message.dart   # Image content messages
-├── screens/                 # UI components
-│   ├── chat_screen.dart     # Main chat interface
-│   ├── settings_screen.dart # Configuration UI
-│   └── about_screen.dart    # App information
-├── l10n/                    # Localization
+├── main.dart                  # Application entry point
+├── core/                      # Shared core utilities
+│   ├── exceptions.dart        # Exception types
+│   ├── logger.dart            # Logging
+│   └── shared_preferences_manager.dart
+├── constants/                 # App-wide constants
+├── providers/                 # State management (Provider pattern)
+│   ├── api_key_provider.dart        # Centralized API key management
+│   ├── chat_model_provider.dart     # Chat model selection & config
+│   ├── image_model_provider.dart    # Image model selection & config
+│   ├── video_model_provider.dart    # Video model selection & config
+│   ├── search_provider.dart         # Search configuration
+│   ├── plugin_provider.dart         # Plugin/tool settings
+│   ├── unified_settings_provider.dart # Bridge for backward compatibility
+│   └── settings_provider.dart       # Legacy monolithic provider
+├── services/                  # Business logic & APIs
+│   ├── base_api_service.dart        # Abstract base with retry logic
+│   ├── openai_chat_service.dart     # OpenAI GPT implementation
+│   ├── gemini_chat_service.dart     # Google Gemini implementation
+│   ├── claude_chat_service.dart     # Anthropic Claude implementation
+│   ├── chat_service_factory.dart    # Service creation factory
+│   ├── service_manager.dart         # Integrated service management
+│   ├── image_generation_service.dart       # Image creation orchestration
+│   ├── image_generation_service_manager.dart
+│   ├── flux_image_service.dart      # FLUX.1 via Black Forest Labs
+│   ├── flux_krea_service.dart       # FLUX.1 via Krea
+│   ├── flux_kontext_service.dart    # FLUX.1 via Kontext
+│   ├── google_image_service.dart    # Google image generation
+│   ├── video_generation_service.dart       # Video generation
+│   ├── video_generation_service_manager.dart
+│   ├── veo3_service.dart            # Google Veo video model
+│   ├── chat_session_service.dart    # Conversation persistence
+│   ├── image_session_service.dart   # Image history
+│   ├── video_session_service.dart   # Video history
+│   ├── web_search_service.dart      # Web search integration
+│   ├── google_search_service.dart   # Google Search implementation
+│   ├── search_service_factory.dart  # Search service creation
+│   ├── search_command_handler.dart  # Search commands in chat
+│   ├── image_save_service.dart      # Device storage
+│   ├── markdown_export_service.dart # Export sessions to Markdown
+│   ├── update_service.dart          # In-app update checking
+│   ├── service_config_validator.dart# Settings validation
+│   ├── service_model_registry.dart  # Model definitions
+│   └── tools/                       # Plugin tool implementations
+├── models/                    # Data structures
+│   ├── chat_message.dart      # Core message structure
+│   ├── chat_session.dart      # Conversation sessions
+│   ├── image_message.dart     # Image content messages
+│   ├── image_session.dart     # Image generation sessions
+│   ├── video_message.dart     # Video content messages
+│   ├── video_session.dart     # Video generation sessions
+│   ├── tool_call.dart         # Tool call records
+│   └── search_result.dart     # Search result model
+├── repositories/              # Data persistence (repository pattern)
+│   ├── interfaces.dart
+│   ├── chat_repository_impl.dart
+│   └── settings_repository_impl.dart
+├── screens/                   # UI screens
+│   ├── chat_screen.dart             # Main chat interface
+│   ├── settings_screen.dart         # Configuration UI
+│   ├── about_screen.dart            # App information
+│   ├── update_dialog.dart           # Update notification dialog
+│   ├── video_generation_screen.dart # Video generation UI
+│   └── video_generation_settings_screen.dart
+├── widgets/                   # Reusable UI components
+├── l10n/                      # Localization
 │   ├── app_en.arb          # English
 │   ├── app_zh.arb          # Chinese
 │   ├── app_de.arb          # German
 │   ├── app_fr.arb          # French
 │   └── app_ja.arb          # Japanese
-└── utils/                   # Utilities
-    ├── constants.dart      # App configuration
-    └── validators.dart     # Input validation
+└── utils/                     # Utilities
 ```
 
 ## 🔑 API Configuration
