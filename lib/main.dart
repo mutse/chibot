@@ -54,9 +54,6 @@ class MyApp extends StatelessWidget with TrayListener, WindowListener {
 
     return MultiProvider(
       providers: [
-        // Legacy SettingsProvider for backward compatibility
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-
         // New specialized providers (Phase 1 refactoring)
         ChangeNotifierProvider(create: (_) => ApiKeyProvider()),
         ChangeNotifierProvider(create: (_) => PluginProvider()),

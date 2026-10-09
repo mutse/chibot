@@ -539,11 +539,22 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       String fullResponse = "";
+      // Throttle UI updates during streaming to ~10fps: setState on every
+      // chunk rebuilds the whole page and drops frames on long responses.
+      DateTime lastUiUpdate = DateTime.now();
       await for (final chunk in stream) {
         if (!mounted || !isCurrent()) return;
         fullResponse += chunk;
+        final now = DateTime.now();
+        if (now.difference(lastUiUpdate).inMilliseconds >= 100) {
+          lastUiUpdate = now;
+          _replaceLastAiMessage(text: fullResponse, isLoading: true);
+          _scrollToBottom();
+        }
+      }
+      // Final update to ensure the complete response is rendered.
+      if (mounted && isCurrent()) {
         _replaceLastAiMessage(text: fullResponse, isLoading: true);
-        _scrollToBottom();
       }
 
       if (!mounted || !isCurrent()) return;

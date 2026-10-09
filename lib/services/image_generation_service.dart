@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../core/exceptions.dart';
+import 'exceptions/missing_api_key_exception.dart';
 import 'image_generation_service_factory.dart';
 import 'google_image_service.dart';
 import 'flux_kontext_service.dart';
@@ -27,10 +29,10 @@ class ImageGenerationService {
     }
 
     if (apiKey.isEmpty) {
-      throw Exception('API Key is not set.');
+      throw MissingApiKeyException('Image generation API key is not set.');
     }
     if (prompt.isEmpty) {
-      throw Exception('Prompt cannot be empty.');
+      throw ApiException('Prompt cannot be empty.', 0, code: 'INVALID_PROMPT');
     }
 
     Uri endpointUri;
@@ -110,17 +112,21 @@ class ImageGenerationService {
         pollIntervalMs: pollIntervalMs,
       );
     } else {
-      throw Exception(
+      throw ApiException(
         'Unsupported image generation provider or base URL. Supported: api.openai.com, stability.ai, api.bfl.ai, generativelanguage.googleapis.com',
+        0,
+        code: 'UNSUPPORTED_PROVIDER',
       );
     }
 
     try {
-      final response = await http.post(
-        endpointUri,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .post(
+            endpointUri,
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
@@ -134,9 +140,9 @@ class ImageGenerationService {
             if (base64 != null && base64.isNotEmpty) {
               return 'data:image/png;base64,$base64';
             }
-            throw Exception('Image data not found in OpenAI response.');
+            throw ApiException('Image data not found in OpenAI response.', 0, code: 'INVALID_RESPONSE');
           } else {
-            throw Exception('Image data not found in OpenAI response.');
+            throw ApiException('Image data not found in OpenAI response.', 0, code: 'INVALID_RESPONSE');
           }
         } else if (providerBaseUrl.contains('stability.ai')) {
           if (responseBody['artifacts'] != null &&
@@ -145,11 +151,13 @@ class ImageGenerationService {
             if (artifact['base64'] != null) {
               return 'data:image/png;base64,${artifact['base64']}';
             }
-            throw Exception(
+            throw ApiException(
               'Base64 image data not found in Stability AI response artifact.',
+              0,
+              code: 'INVALID_RESPONSE',
             );
           } else {
-            throw Exception('Artifacts not found in Stability AI response.');
+            throw ApiException('Artifacts not found in Stability AI response.', 0, code: 'INVALID_RESPONSE');
           }
         }
         return null; // Should not reach here if provider is supported
@@ -182,10 +190,19 @@ class ImageGenerationService {
             errorMessage += '\nError: ${errorBody['error']['message']}';
           }
         } catch (e) {
-          // If error body is not JSON or doesn't match expected structure
-          errorMessage += '\nResponse body: $responseBodyString';
+          // If error body is not JSON or doesn't match expected structure,
+          // include only a truncated snippet to avoid dumping HTML error pages.
+          final snippet = responseBodyString.length > 200
+              ? '${responseBodyString.substring(0, 200)}...'
+              : responseBodyString;
+          errorMessage += '\nResponse body: $snippet';
         }
-        throw Exception(errorMessage);
+        // statusCode is unknown here (non-200 handled above); use 0.
+        throw ApiException(
+          errorMessage,
+          response.statusCode,
+          code: 'IMAGE_GENERATION_FAILED',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -252,7 +269,7 @@ class ImageGenerationService {
       if (kDebugMode) {
         print('[ImageGenerationService] Google Generative AI error: $e');
       }
-      throw Exception('Google Generative AI error: $e');
+      throw ApiException('Google Generative AI error: $e', 0, code: 'IMAGE_GENERATION_FAILED', originalError: e);
     }
   }
 
@@ -340,7 +357,7 @@ class ImageGenerationService {
       if (kDebugMode) {
         print('[ImageGenerationService] FLUX.1 error: $e');
       }
-      throw Exception('FLUX.1 error: $e');
+      throw ApiException('FLUX.1 error: $e', 0, code: 'IMAGE_GENERATION_FAILED', originalError: e);
     }
   }
 }
