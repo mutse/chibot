@@ -269,32 +269,41 @@ class UnifiedSettingsProvider with ChangeNotifier {
   }
 
   /// 将嵌套的设置 Map 展平为扁平 Map 用于 XML 处理
+  ///
+  /// 注意：若多个 section 包含相同键，保留首次出现的值（apiKeys 优先），
+  /// 避免静默覆盖导致数据丢失。
   Map<String, dynamic> _flattenSettingsMap(Map<String, dynamic> nested) {
     final flat = <String, dynamic>{};
 
+    void addAllKeepFirst(Map<String, dynamic> map) {
+      for (final entry in map.entries) {
+        flat.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
+
     // 展平 API 密钥
     if (nested.containsKey('apiKeys')) {
-      flat.addAll(nested['apiKeys'] as Map<String, dynamic>);
+      addAllKeepFirst(nested['apiKeys'] as Map<String, dynamic>);
     }
 
     // 展平聊天模型设置
     if (nested.containsKey('chatModel')) {
-      flat.addAll(nested['chatModel'] as Map<String, dynamic>);
+      addAllKeepFirst(nested['chatModel'] as Map<String, dynamic>);
     }
 
     // 展平图像模型设置
     if (nested.containsKey('imageModel')) {
-      flat.addAll(nested['imageModel'] as Map<String, dynamic>);
+      addAllKeepFirst(nested['imageModel'] as Map<String, dynamic>);
     }
 
     // 展平视频模型设置
     if (nested.containsKey('videoModel')) {
-      flat.addAll(nested['videoModel'] as Map<String, dynamic>);
+      addAllKeepFirst(nested['videoModel'] as Map<String, dynamic>);
     }
 
     // 展平搜索设置
     if (nested.containsKey('search')) {
-      flat.addAll(nested['search'] as Map<String, dynamic>);
+      addAllKeepFirst(nested['search'] as Map<String, dynamic>);
     }
 
     // 添加模型类型
@@ -395,14 +404,15 @@ class UnifiedSettingsProvider with ChangeNotifier {
   }
 
   /// 从扁平 Map 提取搜索设置
+  ///
+  /// 注意：`google_search_api_key` 和 `google_search_engine_id` 归属 apiKeys，
+  /// 这里不再重复提取，避免导入/导出时的键碰撞导致静默数据丢失。
   Map<String, dynamic> _extractSearch(Map<String, dynamic> flat) {
     const keys = [
       'google_search_enabled',
       'google_search_result_count',
       'google_search_provider',
       'tavily_search_enabled',
-      'google_search_api_key',
-      'google_search_engine_id',
     ];
     final extracted = <String, dynamic>{};
     for (final key in keys) {
