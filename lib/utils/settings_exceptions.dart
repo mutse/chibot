@@ -28,14 +28,10 @@ abstract class SettingsException implements Exception {
 /// Thrown when the XML format is invalid or corrupted
 class InvalidSettingsException extends SettingsException {
   InvalidSettingsException({
-    required String message,
-    String? details,
-    StackTrace? stackTrace,
-  }) : super(
-    message: message,
-    details: details,
-    stackTrace: stackTrace,
-  );
+    required super.message,
+    super.details,
+    super.stackTrace,
+  });
 
   factory InvalidSettingsException.malformedXml(String? reason) {
     return InvalidSettingsException(
@@ -68,27 +64,24 @@ class SettingsVersionMismatchException extends SettingsException {
     required this.exportedVersion,
     required this.currentVersion,
     String? details,
-    StackTrace? stackTrace,
+    super.stackTrace,
   }) : super(
     message: 'Settings version mismatch',
     details: details ??
       'The configuration file was exported with version $exportedVersion, '
       'but your app supports version $currentVersion. '
       'Some settings may not be compatible.',
-    stackTrace: stackTrace,
   );
 }
 
 /// Thrown when API key decryption fails
 class DecryptionFailedException extends SettingsException {
   DecryptionFailedException({
-    required String message,
+    required super.message,
     String? details,
-    StackTrace? stackTrace,
+    super.stackTrace,
   }) : super(
-    message: message,
     details: details ?? 'Failed to decrypt sensitive data. The configuration file may be corrupted.',
-    stackTrace: stackTrace,
   );
 
   factory DecryptionFailedException.keyDecryptionFailed(String keyName) {
@@ -104,21 +97,17 @@ class SettingsValidationException extends SettingsException {
   final List<String> validationErrors;
 
   SettingsValidationException({
-    required String message,
+    required super.message,
     required this.validationErrors,
-    String? details,
-    StackTrace? stackTrace,
-  }) : super(
-    message: message,
-    details: details,
-    stackTrace: stackTrace,
-  );
+    super.details,
+    super.stackTrace,
+  });
 
   factory SettingsValidationException.fromErrors(List<String> errors) {
     return SettingsValidationException(
       message: 'Settings validation failed',
       validationErrors: errors,
-      details: 'Found ${errors.length} validation error(s):\n' + errors.map((e) => '  • $e').join('\n'),
+      details: 'Found ${errors.length} validation error(s):\n${errors.map((e) => '  • $e').join('\n')}',
     );
   }
 }
@@ -126,27 +115,23 @@ class SettingsValidationException extends SettingsException {
 /// Thrown when import/export operation is cancelled by user
 class SettingsOperationCancelledException extends SettingsException {
   SettingsOperationCancelledException({
-    String message = 'Settings operation cancelled',
+    super.message = 'Settings operation cancelled',
     String? details,
-    StackTrace? stackTrace,
+    super.stackTrace,
   }) : super(
-    message: message,
     details: details ?? 'The operation was cancelled by the user.',
-    stackTrace: stackTrace,
   );
 }
 
 /// Thrown when file I/O operations fail during import/export
 class SettingsFileException extends SettingsException {
   SettingsFileException({
-    required String message,
+    required super.message,
     String? filePath,
     String? details,
-    StackTrace? stackTrace,
+    super.stackTrace,
   }) : super(
-    message: message,
     details: details ?? (filePath != null ? 'File: $filePath' : null),
-    stackTrace: stackTrace,
   );
 
   factory SettingsFileException.fileNotFound(String filePath) {
