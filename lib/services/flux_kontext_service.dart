@@ -28,10 +28,12 @@ class FluxKontextService extends FluxBaseService {
   /// 轮询单次结果，参数为 [submit] 返回的完整 `polling_url`。
   @override
   Future<FluxPollResult> poll(String idOrUrl) async {
-    final response = await http.get(
-      Uri.parse(idOrUrl),
-      headers: getHeaders(),
-    );
+    final response = await http
+        .get(
+          Uri.parse(idOrUrl),
+          headers: getHeaders(),
+        )
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       return FluxPollResult.fromJson(
