@@ -7,7 +7,7 @@ import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
 import '../repositories/interfaces.dart';
 import 'base_api_service.dart';
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
 
 class ClaudeService extends BaseApiService implements ChatService {
   ClaudeService({
@@ -22,7 +22,7 @@ class ClaudeService extends BaseApiService implements ChatService {
   String get providerName => 'Anthropic Claude';
 
   @override
-  List<String> get supportedModels => ServiceModelRegistry.claudeModels;
+  List<String> get supportedModels => ModelRegistry.claudeModels;
 
   @override
   Map<String, String> getHeaders() {
@@ -51,7 +51,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
 
       final requestBody = _buildMessagesRequest(
-        ServiceModelRegistry.claudeTitleModel,
+        ModelRegistry.claudeTitleModel,
         testMessage,
         {'max_tokens': 10},
         stream: false,
@@ -184,7 +184,7 @@ class ClaudeService extends BaseApiService implements ChatService {
       ];
 
       final requestBody = _buildMessagesRequest(
-        ServiceModelRegistry.claudeTitleModel,
+        ModelRegistry.claudeTitleModel,
         requestMessages,
         {'max_tokens': 20},
         stream: false,

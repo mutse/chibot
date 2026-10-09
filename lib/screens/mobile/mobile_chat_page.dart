@@ -14,7 +14,7 @@ import 'package:chibot/services/chat_session_service.dart';
 import 'package:chibot/services/exceptions/missing_api_key_exception.dart';
 import 'package:chibot/services/markdown_export_service.dart';
 import 'package:chibot/services/search_service_factory.dart';
-import 'package:chibot/services/service_manager.dart';
+import 'package:chibot/services/chat_service_factory.dart';
 import 'package:chibot/widgets/chat_markdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -299,7 +299,7 @@ class MobileChatPageState extends State<MobileChatPage> {
     }
 
     try {
-      final chatService = ServiceManager.createChatService(
+      final chatService = ChatServiceFactory.createFromProviders(
         chatModel: chatModelProvider,
         apiKeys: apiKeys,
       );

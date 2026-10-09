@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/video_message.dart';
 import 'base_api_service.dart';
 import 'video_generation_service.dart';
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
 
 class Veo3Service extends BaseApiService implements VideoGenerationService {
   static const String _veo3BaseUrl =
@@ -46,7 +46,7 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
   ) async {
     // Use the correct predictLongRunning endpoint for Veo API
     final url = Uri.parse(
-      '$_veo3BaseUrl/models/${ServiceModelRegistry.defaultVideoModel}:predictLongRunning',
+      '$_veo3BaseUrl/models/${ModelRegistry.defaultVideoModel}:predictLongRunning',
     );
 
     try {

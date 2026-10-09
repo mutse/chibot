@@ -16,7 +16,7 @@ import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/chat_model_provider.dart';
 import 'package:chibot/providers/image_model_provider.dart';
 import 'package:chibot/providers/search_provider.dart';
-import 'package:chibot/services/service_manager.dart';
+import 'package:chibot/services/chat_service_factory.dart';
 import 'package:chibot/models/image_message.dart'; // Added for image messages
 import 'package:chibot/services/image_generation_service.dart'
     as image_service; // Added for image generation
@@ -509,7 +509,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      final chatService = ServiceManager.createChatService(
+      final chatService = ChatServiceFactory.createFromProviders(
         chatModel: chatModelProvider,
         apiKeys: apiKeys,
       );

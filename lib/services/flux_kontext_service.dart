@@ -6,13 +6,14 @@ import 'package:http/http.dart' as http;
 import '../core/logger.dart';
 import 'flux/flux_base_service.dart';
 import 'flux/flux_dtos.dart';
+import '../image_generation_provider.dart';
 
 // 旧的类型名以 typedef 形式重新导出，保留所有外部引用。
 typedef FluxKontextRequest = FluxGenerationRequest;
 typedef FluxKontextResponse = FluxSubmitResponse;
 typedef FluxKontextResult = FluxPollResult;
 
-class FluxKontextService extends FluxBaseService {
+class FluxKontextService extends FluxBaseService implements ImageGenerationProvider {
   FluxKontextService({required super.apiKey})
       : super(baseUrl: 'https://api.bfl.ai/v1');
 
@@ -45,6 +46,7 @@ class FluxKontextService extends FluxBaseService {
   /// 兼容旧调用方暴露的公共方法名。
   Future<FluxPollResult> pollResult(String pollingUrl) => poll(pollingUrl);
 
+  @override
   Future<String> generateImage({
     required String prompt,
     String? aspectRatio,

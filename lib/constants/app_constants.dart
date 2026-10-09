@@ -1,4 +1,4 @@
-import '../services/service_model_registry.dart';
+import '../models/model_registry.dart';
 
 class AppConstants {
   // UI Constants
@@ -33,9 +33,9 @@ class AppConstants {
 
   // Default Models
   static const String defaultTextModel =
-      ServiceModelRegistry.defaultOpenAIModel;
+      ModelRegistry.defaultOpenAIModel;
   static const String defaultImageModel =
-      ServiceModelRegistry.defaultOpenAIImageModel;
+      ModelRegistry.defaultOpenAIImageModel;
   static const String defaultProvider = 'OpenAI';
 
   // App Info
