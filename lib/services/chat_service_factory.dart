@@ -5,7 +5,7 @@ import 'openai_chat_service.dart';
 import 'gemini_chat_service.dart';
 import 'claude_chat_service.dart';
 import 'exceptions/missing_api_key_exception.dart';
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
 import 'service_config_validator.dart';
 
 /// 聊天服务工厂 - 使用专职提供者创建聊天服务
@@ -72,6 +72,36 @@ class ChatServiceFactory {
         .toList();
   }
 
+  /// 检查特定提供商是否已配置
+  ///
+  /// 返回 true 如果 API Key 已配置且非空
+  static bool isProviderConfigured({
+    required ApiKeyProvider apiKeys,
+    required String provider,
+  }) {
+    final apiKey = apiKeys.getApiKeyForProvider(provider);
+    return ServiceConfigValidator.hasText(apiKey);
+  }
+
+  /// 验证聊天模型提供商是否完整配置
+  ///
+  /// 检查项：
+  /// 1. API Key 是否已设置
+  /// 2. 模型是否已选择
+  static bool isChatConfigured({
+    required ChatModelProvider chatModel,
+    required ApiKeyProvider apiKeys,
+  }) {
+    final provider = chatModel.selectedProvider;
+    final hasApiKey = isProviderConfigured(
+      apiKeys: apiKeys,
+      provider: provider,
+    );
+    final hasModel = chatModel.selectedModel.isNotEmpty;
+
+    return hasApiKey && hasModel;
+  }
+
   /// 传统方式创建聊天服务（保持向后兼容）
   static ChatService create({
     required String provider,
@@ -101,7 +131,7 @@ class ChatServiceFactory {
 
   /// 获取指定提供商支持的模型列表 (使用注册表，无需创建虚拟实例)
   static List<String> getModelsForProvider(String provider) {
-    return ServiceModelRegistry.getChatModelsForProvider(provider);
+    return ModelRegistry.getChatModelsForProvider(provider);
   }
 
   /// 获取所有可用的提供商和模型
