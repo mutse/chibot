@@ -138,9 +138,12 @@ class MarkdownExportService {
               action: SnackBarAction(
                 label: 'Share',
                 onPressed: () {
-                  Share.shareXFiles([
-                    XFile(filePath),
-                  ], text: 'Exported chat from Chibot');
+                  SharePlus.instance.share(
+                    ShareParams(
+                      files: [XFile(filePath)],
+                      text: 'Exported chat from Chibot',
+                    ),
+                  );
                 },
               ),
             ),
@@ -292,9 +295,12 @@ class MarkdownExportService {
               action: SnackBarAction(
                 label: 'Share',
                 onPressed: () {
-                  Share.shareXFiles([
-                    XFile(filePath),
-                  ], text: 'Exported chats from Chibot');
+                  SharePlus.instance.share(
+                    ShareParams(
+                      files: [XFile(filePath)],
+                      text: 'Exported chats from Chibot',
+                    ),
+                  );
                 },
               ),
             ),
