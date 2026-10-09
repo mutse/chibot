@@ -6,7 +6,6 @@ import '../models/model_registry.dart';
 import '../models/available_model.dart';
 import '../models/available_model.dart' as available_model;
 import '../services/google_image_service.dart';
-import '../services/service_model_registry.dart';
 import '_provider_storage_helpers.dart';
 
 /// 负责图像生成相关的模型配置
@@ -51,7 +50,7 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
 
   // 分类的预设图像生成模型
   final Map<String, List<String>> _categorizedPresetImageModels = {
-    'OpenAI': List<String>.of(ServiceModelRegistry.openAIImageModels),
+    'OpenAI': List<String>.of(ModelRegistry.openAIImageModels),
     'Stability AI': ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6'],
     'Black Forest Labs': [
       'flux-kontext-pro',
