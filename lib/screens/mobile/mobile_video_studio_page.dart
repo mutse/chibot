@@ -7,7 +7,7 @@ import 'package:chibot/models/video_message.dart';
 import 'package:chibot/models/video_session.dart';
 import 'package:chibot/providers/api_key_provider.dart';
 import 'package:chibot/providers/video_model_provider.dart';
-import 'package:chibot/screens/mobile/mobile_ui.dart';
+import 'package:chibot/widgets/mobile_ui.dart';
 import 'package:chibot/services/veo3_service.dart';
 import 'package:chibot/services/video_generation_service.dart';
 import 'package:chibot/services/video_session_service.dart';
