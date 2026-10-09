@@ -133,7 +133,7 @@ class SearchCommandHandler {
       ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         text:
-            '为您找到 ${searchResult.items.length} 条关于 "${query}" 的${isImage ? "图片" : "网页"}搜索结果：',
+            '为您找到 ${searchResult.items.length} 条关于 "$query" 的${isImage ? "图片" : "网页"}搜索结果：',
         sender: MessageSender.ai,
         timestamp: DateTime.now(),
         metadata: {'type': 'system'},
