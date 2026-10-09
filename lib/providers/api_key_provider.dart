@@ -41,10 +41,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
   String? _googleSearchApiKey;
   static const String _googleSearchApiKeyKey = 'google_search_api_key';
 
-  // Google Search Engine ID
-  String? _googleSearchEngineId;
-  static const String _googleSearchEngineIdKey = 'google_search_engine_id';
-
   // 自定义文本提供商 API Key（按 provider 保存）
   Map<String, String> _customProviderApiKeys = {};
   static const String _customProviderApiKeysKey =
@@ -63,7 +59,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
   String? get fluxKontextApiKey => _fluxKontextApiKey;
   String? get tavilyApiKey => _tavilyApiKey;
   String? get googleSearchApiKey => _googleSearchApiKey;
-  String? get googleSearchEngineId => _googleSearchEngineId;
   Map<String, String> get customProviderApiKeys =>
       Map.unmodifiable(_customProviderApiKeys);
   Map<String, String> get customImageProviderApiKeys =>
@@ -169,7 +164,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
     _fluxKontextApiKey = prefs.getString(_fluxKontextApiKeyKey);
     _tavilyApiKey = prefs.getString(_tavilyApiKeyKey);
     _googleSearchApiKey = prefs.getString(_googleSearchApiKeyKey);
-    _googleSearchEngineId = prefs.getString(_googleSearchEngineIdKey);
     _customProviderApiKeys = decodeStringMap(
       prefs.getString(_customProviderApiKeysKey),
       'Error loading custom provider API keys',
@@ -233,17 +227,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
     notifyListeners();
   }
 
-  Future<void> setGoogleSearchEngineId(String? id) async {
-    _googleSearchEngineId = normalizeNullableInput(id);
-    final prefs = await SharedPreferences.getInstance();
-    await persistNullableString(
-      prefs,
-      _googleSearchEngineIdKey,
-      _googleSearchEngineId,
-    );
-    notifyListeners();
-  }
-
   // ==================== 验证方法 ====================
 
   /// 检查指定提供商是否已配置 API Key
@@ -272,7 +255,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
       _fluxKontextApiKeyKey: _fluxKontextApiKey,
       _tavilyApiKeyKey: _tavilyApiKey,
       _googleSearchApiKeyKey: _googleSearchApiKey,
-      _googleSearchEngineIdKey: _googleSearchEngineId,
       _customProviderApiKeysKey: _customProviderApiKeys,
       _customImageProviderApiKeysKey: _customImageProviderApiKeys,
     };
@@ -297,9 +279,6 @@ class ApiKeyProvider with ChangeNotifier, ProviderStorageHelpers {
     }
     if (data.containsKey(_googleSearchApiKeyKey)) {
       await setGoogleSearchApiKey(data[_googleSearchApiKeyKey] as String?);
-    }
-    if (data.containsKey(_googleSearchEngineIdKey)) {
-      await setGoogleSearchEngineId(data[_googleSearchEngineIdKey] as String?);
     }
     if (data.containsKey(_customProviderApiKeysKey)) {
       await _importCustomProviderApiKeys(data[_customProviderApiKeysKey]);

@@ -20,6 +20,7 @@ abstract class AppException implements Exception {
 class ApiException extends AppException {
   final int statusCode;
   final Map<String, dynamic>? responseData;
+  final Duration? retryAfter;
   
   const ApiException(
     super.message,
@@ -28,6 +29,7 @@ class ApiException extends AppException {
     super.originalError,
     super.stackTrace,
     this.responseData,
+    this.retryAfter,
   });
   
   @override
