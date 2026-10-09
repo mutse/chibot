@@ -24,7 +24,8 @@ class ChatSessionService {
     String sessionId,
     String messageId,
     Map<String, dynamic> metadata,
-  ) => _write(() async {
+  ) async {
+    // Write serialization is handled by PreferencesSessionStore.
     final sessions = await _store.loadSessions();
     final matches = sessions.where((s) => s.id == sessionId);
     if (matches.isEmpty) return;
@@ -43,5 +44,5 @@ class ChatSessionService {
         updatedAt: DateTime.now(),
       ),
     );
-  });
+  }
 }

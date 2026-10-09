@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/settings_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/image_model_provider.dart';

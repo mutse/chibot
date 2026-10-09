@@ -105,7 +105,8 @@ abstract class FluxBaseService extends BaseApiService {
   Future<FluxSubmitResponse> submit(FluxGenerationRequest request) async {
     if (apiKey.isEmpty) {
       throw MissingApiKeyException(
-        '$fluxLabel API key is empty. Please configure your API key in settings.',
+        provider: fluxLabel,
+        availableProviders: const [],
       );
     }
 

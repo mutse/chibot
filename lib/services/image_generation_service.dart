@@ -29,7 +29,10 @@ class ImageGenerationService {
     }
 
     if (apiKey.isEmpty) {
-      throw MissingApiKeyException('Image generation API key is not set.');
+      throw MissingApiKeyException(
+        provider: 'image generation',
+        availableProviders: const [],
+      );
     }
     if (prompt.isEmpty) {
       throw ApiException('Prompt cannot be empty.', 0, code: 'INVALID_PROMPT');

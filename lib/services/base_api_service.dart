@@ -160,7 +160,7 @@ abstract class BaseApiService {
         var delayMs = 1000 * (1 << (attempt - 1));
         // Respect server Retry-After header on 429
         if (lastException is ApiException) {
-          final retryAfter = (lastException as ApiException).retryAfter;
+          final retryAfter = lastException.retryAfter;
           if (retryAfter != null) {
             delayMs = max(delayMs, retryAfter.inMilliseconds);
           }
