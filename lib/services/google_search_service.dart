@@ -12,16 +12,13 @@ class GoogleSearchService extends BaseApiService {
   final String searchEngineId;
 
   GoogleSearchService({
-    required String apiKey,
+    required super.apiKey,
     required this.searchEngineId,
     this.provider = SearchProvider.googleCustomSearch,
-    Duration timeout = const Duration(seconds: 10),
-    int maxRetries = 3,
+    super.timeout = const Duration(seconds: 10),
+    super.maxRetries = 3,
   }) : super(
     baseUrl: _baseUrl,
-    apiKey: apiKey,
-    timeout: timeout,
-    maxRetries: maxRetries,
   );
 
   @override
