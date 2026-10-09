@@ -158,9 +158,10 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
     );
     if (_selectedImageModel != normalizedModel) {
       _selectedImageModel = normalizedModel;
+      // 先同步通知 UI 更新，再后台持久化，避免图片页收不到更新
+      notifyListeners();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedImageModelKey, normalizedModel);
-      notifyListeners();
     }
   }
 
@@ -168,10 +169,11 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
   Future<void> setSelectedImageProvider(String provider) async {
     if (_selectedImageProvider != provider) {
       _selectedImageProvider = provider;
+      _validateSelectedImageModelForProvider();
+      // 先同步通知 UI 更新，再后台持久化
+      notifyListeners();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedImageProviderKey, provider);
-      _validateSelectedImageModelForProvider();
-      notifyListeners();
     }
   }
 
