@@ -19,8 +19,8 @@ class Veo3Service extends BaseApiService implements VideoGenerationService {
   final Map<String, StreamController<VideoGenerationProgress>>
   _progressControllers = {};
 
-  Veo3Service({required String apiKey})
-    : super(apiKey: apiKey, baseUrl: _veo3BaseUrl);
+  Veo3Service({required super.apiKey})
+    : super(baseUrl: _veo3BaseUrl);
 
   @override
   String get providerName => 'Google Veo3';
