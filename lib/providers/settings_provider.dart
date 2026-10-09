@@ -9,7 +9,6 @@ import 'dart:convert';
 import '../constants/app_constants.dart';
 import '../models/model_registry.dart';
 import '../models/available_model.dart' as available_model;
-import '../services/service_model_registry.dart';
 
 class SettingsProvider with ChangeNotifier {
   final ModelRegistry? modelRegistry;
@@ -119,21 +118,21 @@ class SettingsProvider with ChangeNotifier {
 
   // 可选模型列表
   final List<String> _presetModels = [
-    ...ServiceModelRegistry.openAIModels,
-    ...ServiceModelRegistry.geminiModels,
-    ...ServiceModelRegistry.claudeModels,
+    ...ModelRegistry.openAIModels,
+    ...ModelRegistry.geminiModels,
+    ...ModelRegistry.claudeModels,
   ];
 
   // 分类预设模型
   final Map<String, List<String>> _categorizedPresetModels = {
-    'OpenAI': List<String>.of(ServiceModelRegistry.openAIModels),
-    'Google': List<String>.of(ServiceModelRegistry.geminiModels),
-    'Anthropic': List<String>.of(ServiceModelRegistry.claudeModels),
+    'OpenAI': List<String>.of(ModelRegistry.openAIModels),
+    'Google': List<String>.of(ModelRegistry.geminiModels),
+    'Anthropic': List<String>.of(ModelRegistry.claudeModels),
   };
 
   // Preset models for image generation
   final Map<String, List<String>> _categorizedPresetImageModels = {
-    'OpenAI': List<String>.of(ServiceModelRegistry.openAIImageModels),
+    'OpenAI': List<String>.of(ModelRegistry.openAIImageModels),
     'Stability AI': [
       'stable-diffusion-xl-1024-v1-0', // Example model ID
       'stable-diffusion-v1-6', // Example model ID
