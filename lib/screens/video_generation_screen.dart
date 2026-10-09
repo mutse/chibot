@@ -14,7 +14,7 @@ import '../utils/snackbar_utils.dart';
 import 'video_generation_settings_screen.dart';
 
 class VideoGenerationScreen extends StatefulWidget {
-  const VideoGenerationScreen({Key? key}) : super(key: key);
+  const VideoGenerationScreen({super.key});
 
   @override
   State<VideoGenerationScreen> createState() => _VideoGenerationScreenState();
@@ -110,9 +110,7 @@ class _VideoGenerationScreenState extends State<VideoGenerationScreen> {
       return;
     }
 
-    if (_veo3Service == null) {
-      _veo3Service = Veo3Service(apiKey: veo3ApiKey);
-    }
+    _veo3Service ??= Veo3Service(apiKey: veo3ApiKey);
 
     setState(() {
       _isGenerating = true;

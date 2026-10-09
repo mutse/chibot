@@ -1,5 +1,5 @@
-/// 共享的 FLUX 请求/响应 DTO，用作 flux_kontext / flux_krea / flux_image
-/// 服务的公共数据模型，避免在每个 service 文件中重新定义相同字段。
+// 共享的 FLUX 请求/响应 DTO，用作 flux_kontext / flux_krea / flux_image
+// 服务的公共数据模型，避免在每个 service 文件中重新定义相同字段。
 library;
 
 /// 通用的 FLUX 图像生成请求体。

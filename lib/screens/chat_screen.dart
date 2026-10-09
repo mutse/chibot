@@ -1430,6 +1430,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     final imageSource = message.bestImageSource;
                     if (imageSource != null && imageSource.isNotEmpty) {
                       await ImageSaveService.saveImage(imageSource, context);
+                      if (!context.mounted) return;
                     }
                   } else if (value == 'save_prompt') {
                     await Clipboard.setData(ClipboardData(text: message.text));

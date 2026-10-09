@@ -382,16 +382,15 @@ class _VideoGenerationSettingsScreenState
                         _veo3ApiKeyController.text.trim(),
                       );
 
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('视频设置已保存'),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      }
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('视频设置已保存'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.pop(context);
                     },
                     icon: const Icon(Icons.check),
                     label: const Text('保存'),
