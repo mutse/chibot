@@ -411,7 +411,7 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
       final bytes = base64Decode(source.split(',').last);
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Image.memory(bytes, fit: BoxFit.cover),
+        child: Image.memory(bytes, fit: BoxFit.cover, cacheWidth: 800),
       );
     }
 
@@ -422,13 +422,13 @@ class MobileImageStudioPageState extends State<MobileImageStudioPage> {
               : source;
       return ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Image.file(File(path), fit: BoxFit.cover),
+        child: Image.file(File(path), fit: BoxFit.cover, cacheWidth: 800),
       );
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
-      child: Image.network(source, fit: BoxFit.cover),
+      child: Image.network(source, fit: BoxFit.cover, cacheWidth: 800),
     );
   }
 
