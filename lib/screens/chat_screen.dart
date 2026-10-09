@@ -1430,11 +1430,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     final imageSource = message.bestImageSource;
                     if (imageSource != null && imageSource.isNotEmpty) {
                       await ImageSaveService.saveImage(imageSource, context);
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                     }
                   } else if (value == 'save_prompt') {
                     await Clipboard.setData(ClipboardData(text: message.text));
-                    if (!context.mounted) return;
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(localizations.promptCopied)),
                     );

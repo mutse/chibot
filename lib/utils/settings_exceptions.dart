@@ -2,6 +2,7 @@
 ///
 /// These exceptions provide specific error types and helpful messages
 /// for better error handling and user feedback during config management
+library;
 
 /// Base exception for all settings-related errors
 abstract class SettingsException implements Exception {
