@@ -11,12 +11,12 @@ class VideoPlayerWidget extends StatefulWidget {
   final VoidCallback? onDelete;
 
   const VideoPlayerWidget({
-    Key? key,
+    super.key,
     required this.videoMessage,
     this.onDownload,
     this.onShare,
     this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
