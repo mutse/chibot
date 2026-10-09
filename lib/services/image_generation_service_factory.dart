@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'google_image_service.dart';
 import 'flux_kontext_service.dart';
 import 'flux_krea_service.dart';
+import 'exceptions/missing_api_key_exception.dart';
 
 /// 图像生成服务工厂 - 根据提供商创建图像生成服务
 ///
@@ -23,7 +24,10 @@ class ImageGenerationServiceFactory {
     required String model,
   }) {
     if (apiKey.isEmpty) {
-      throw Exception('API Key is not set.');
+      throw MissingApiKeyException(
+        provider: provider,
+        availableProviders: const [],
+      );
     }
 
     switch (provider) {
@@ -48,7 +52,10 @@ class ImageGenerationServiceFactory {
     required String model,
   }) {
     if (apiKey.isEmpty) {
-      throw Exception('API Key is not set.');
+      throw MissingApiKeyException(
+        provider: providerBaseUrl,
+        availableProviders: const [],
+      );
     }
 
     if (kDebugMode) {

@@ -2,6 +2,7 @@ import '../providers/image_model_provider.dart';
 import '../providers/api_key_provider.dart';
 import 'image_generation_service.dart';
 import 'service_config_validator.dart';
+import 'exceptions/missing_api_key_exception.dart';
 
 /// 图像生成服务管理器 - 使用专职提供者创建图像生成服务
 ///
@@ -52,9 +53,15 @@ class ImageGenerationServiceManager {
     final apiKey = apiKeys.getImageApiKeyForProvider(provider);
 
     if (!ServiceConfigValidator.hasText(apiKey)) {
-      throw Exception(
-        'API key not configured for $provider image provider. '
-        'Please configure it in settings.',
+      throw MissingApiKeyException(
+        provider: provider,
+        availableProviders: imageModel.allImageProviderNames
+            .where(
+              (name) => ServiceConfigValidator.hasText(
+                apiKeys.getImageApiKeyForProvider(name),
+              ),
+            )
+            .toList(),
       );
     }
 
