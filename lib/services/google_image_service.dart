@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import 'service_model_registry.dart';
+import '../models/model_registry.dart';
+import 'image_generation_provider.dart';
 
-class GoogleImageService {
+class GoogleImageService implements ImageGenerationProvider {
   final String apiKey;
   final http.Client _client;
 
@@ -13,14 +14,15 @@ class GoogleImageService {
 
   static const String baseUrl = 'https://generativelanguage.googleapis.com';
   static const String nanoBanana2Model =
-      ServiceModelRegistry.defaultGoogleImageModel;
+      ModelRegistry.defaultGoogleImageModel;
   static const String nanoBanana2LiteModel =
-      ServiceModelRegistry.googleImageLiteModel;
+      ModelRegistry.googleImageLiteModel;
   static const String nanoBananaProModel =
-      ServiceModelRegistry.googleImageProModel;
+      ModelRegistry.googleImageProModel;
   static const String nanoBananaModel =
-      ServiceModelRegistry.legacyGoogleImageModel;
+      ModelRegistry.legacyGoogleImageModel;
 
+  @override
   Future<String?> generateImage({
     required String prompt,
     String model = nanoBanana2Model,
@@ -179,7 +181,7 @@ class GoogleImageService {
 
   /// Get supported models for Google image generation
   static List<String> getSupportedModels() {
-    return ServiceModelRegistry.googleImageModels;
+    return ModelRegistry.googleImageModels;
   }
 
   static String getDisplayName(String model) {
