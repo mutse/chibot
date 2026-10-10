@@ -211,6 +211,8 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
       _customImageModels.add(model);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_customImageModelsKey, _customImageModels);
+      // 同步到 ModelRegistry，否则设置页的下拉框（读 registry）看不到新模型
+      await syncModelsToRegistry();
       notifyListeners();
     }
   }
@@ -220,6 +222,8 @@ class ImageModelProvider with ChangeNotifier, ProviderStorageHelpers {
     if (_customImageModels.remove(model)) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_customImageModelsKey, _customImageModels);
+      // 同步到 ModelRegistry，保持设置页下拉框一致
+      await syncModelsToRegistry();
       notifyListeners();
     }
   }
